@@ -1,0 +1,11 @@
+lime==0.2.0.1
+pyparsing==3.2.1
+rdkit==2024.9.6
+scikit-learn==1.6.1
+scipy==1.15.2
+seaborn==0.10.1
+shap==0.47.0
+tensorboardX==2.6.2.2
+torch==2.6.0
+torch-geometric==2.6.1
+torchvision==0.21.0
