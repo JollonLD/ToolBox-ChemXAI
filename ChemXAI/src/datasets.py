@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import os
+from torch_geometric.datasets import Planetoid
+from sklearn.datasets import load_iris
 
 #================================================================#
 # Tubular Datasets
@@ -136,7 +138,13 @@ class qm9_tubular:
         df.columns = self.properties
         
         return df  
+
+
+class iris_dataset:
+    def __init__(self):
+        self.data = load_iris()
     
 #================================================================#
 # Graph Based Datasets
 #================================================================#
+
