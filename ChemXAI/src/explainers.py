@@ -10,6 +10,8 @@ from sklearn.linear_model import LassoLars
 from torch_geometric.nn import MessagePassing
 from copy import deepcopy
 
+from src.plots import k_hop_subgraph
+
 #================================================================#
 # Tubular Explainers
 #================================================================#
@@ -100,8 +102,6 @@ class Shap:
         return all_local_importances, global_feature_importance
 
 class LIME:
-
-
     def __init__(self, model, train_loader, test_loader, device, mode='regression'):
         """
         Initializes the LIME class with the model and DataLoaders.
@@ -174,27 +174,29 @@ class LIME:
 #================================================================#
 
 class GNNEx:
-    
-    def __init__(self, model, data):
+    """
+
+    """
+    def __init__(self, model, data, epochs, mode, task_level):
         self.model = model
         self.data = data
 
     
         self.explainer = Explainer(
             model=model,
-            algorithm=GNNExplainer(epochs=200),
+            algorithm=GNNExplainer(epochs=epochs),
             explanation_type='model',
             node_mask_type='attributes',
             edge_mask_type='object',
             model_config=dict(
-                mode='multiclass_classification',
-                task_level='node',
+                mode=mode,
+                task_level=task_level,
                 return_type='log_probs',  # Model returns log probabilities.
             ),
         )
-    def explanation(self):
-        # Generate explanation for the node at index `10`:
-        explanation = self.explainer(self.data.x, self.data.edge_index, index=10)
+    def explanation(self, index):
+        # Generate explanation for the node at index
+        explanation = self.explainer(self.data.x, self.data.edge_index, index=index)
         print(explanation.edge_mask)
         print(explanation.node_mask)
 
@@ -509,3 +511,5 @@ class GraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
         #	print('weighted r2: ', r2_score(fz, y_pred, weights))
 
         return phi[:-1], phi[-1]
+    
+

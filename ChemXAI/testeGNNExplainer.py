@@ -17,7 +17,7 @@ class GCN(torch.nn.Module):
         return F.log_softmax(x, dim=1)
 
 # Carregar dados do conjunto de dados Planetoid (Cora, Citeseer, Pubmed)
-dataset = Planetoid(root='/tmp/Cora', name='Cora')
+dataset = Planetoid(root='data/Cora',name='Cora')
 data = dataset[0]
 
 # Criando o modelo
@@ -70,6 +70,7 @@ def main():
         loss.backward()
         optimizer.step()
 
+    torch.save(model.state_dict(), 'GCN_model_Cora.pth')
     # Imprime as previsões do modelo
     model.eval()
     out = model(data.x, data.edge_index)
