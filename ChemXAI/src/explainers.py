@@ -7,6 +7,8 @@ import scipy.special
 import torch
 from torch_geometric.explain import Explainer, GNNExplainer
 from sklearn.linear_model import LassoLars
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 from torch_geometric.nn import MessagePassing
 from copy import deepcopy
 
@@ -177,7 +179,7 @@ class GNNEx:
     """
 
     """
-    def __init__(self, model, data, epochs, mode, task_level):
+    def __init__(self, model, data, epochs, mode, task_level, return_type):
         self.model = model
         self.data = data
 
@@ -191,18 +193,16 @@ class GNNEx:
             model_config=dict(
                 mode=mode,
                 task_level=task_level,
-                return_type='raw',  # Model returns log probabilities.
+                return_type=return_type,
             ),
         )
     def explanation(self, index):
         # Generate explanation for the node at index
         explanation = self.explainer(self.data.x, self.data.edge_index, index=index)
-        print(explanation.edge_mask)
-        print(explanation.node_mask)
+        # print(explanation.edge_mask)
+        # print(explanation.node_mask)
 
-        explanation.visualize_feature_importance(top_k=10)
-
-        explanation.visualize_graph()
+        return explanation.visualize_feature_importance(top_k=10), explanation.visualize_graph()
 
 class GraphLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
     """ GraphLIME explainer - code taken from original repository
@@ -307,51 +307,76 @@ class GraphLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
         return G
 
     def explain(self, node_index, hops, num_samples, info=False, multiclass=False, *unused, **kwargs):
-        # hops, num_samples, info are useless: just to copy graphshap pipeline
+        # Preparar dados do grafo
         x = self.data.x
         edge_index = self.data.edge_index
 
+        # Predição do modelo
         probas = self.__init_predict__(x, edge_index, **kwargs)
 
+        # Extrai subgrafo centrado no nó-alvo
         x, probas, _, _, _, _ = self.__subgraph__(
             node_index, x, probas, edge_index, **kwargs)
 
+        # Preparar para regressão (converter tensores)
         x = x.cpu().detach().numpy()  # (n, d)
         y = probas.cpu().detach().numpy()  # (n, classes)
 
         n, d = x.shape
 
+        # Kernel de similaridade
+        K = self.__compute_kernel__(x, reduce=False)  # (n, n, d)
+
         if multiclass:
-            K = self.__compute_kernel__(x, reduce=False)  # (n, n, d)
             L = self.__compute_kernel__(y, reduce=False)  # (n, n, 1)
-
-            K_bar = self.__compute_gram_matrix__(K)  # (n, n, d)
-            L_bar = self.__compute_gram_matrix__(L)  # (n, n, 1)
-
-            K_bar = K_bar.reshape(n ** 2, d)  # (n ** 2, d)
-            L_bar = L_bar.reshape(n ** 2, self.data.num_classes)  # (n ** 2,)
-
-            solver = LassoLars(self.rho, fit_intercept=False,
-                               normalize=False, positive=True)
-            solver.fit(K_bar * n, L_bar * n)
-
-            return solver.coef_.T
-
         else:
-            K = self.__compute_kernel__(x, reduce=False)  # (n, n, d)
             L = self.__compute_kernel__(y, reduce=True)  # (n, n, 1)
 
-            K_bar = self.__compute_gram_matrix__(K)  # (n, n, d)
-            L_bar = self.__compute_gram_matrix__(L)  # (n, n, 1)
+        # Centralizar e normalizar gram matrix
+        K_bar = self.__compute_gram_matrix__(K)  # (n, n, d)
+        L_bar = self.__compute_gram_matrix__(L)  # (n, n, 1)
 
-            K_bar = K_bar.reshape(n ** 2, d)  # (n ** 2, d)
-            L_bar = L_bar.reshape(n ** 2,)  # (n ** 2,)
+        # Flatten para usar no Lasso
+        K_bar_flat = K_bar.reshape(n**2, d)
 
-            solver = LassoLars(self.rho, fit_intercept=False,
-                               normalize=False, positive=True)
-            solver.fit(K_bar * n, L_bar * n)
+        if multiclass:
+            L_bar_flat = L_bar.reshape(n**2, self.data.num_classes)
+        else:
+            L_bar_flat = L_bar.reshape(n**2,)
 
-            return solver.coef_
+        # Redução de dimensionalidade com PCA
+        n_components = min(50, K_bar_flat.shape[0], K_bar_flat.shape[1])
+        pca = PCA(n_components=n_components)
+        K_bar_reduced = pca.fit_transform(K_bar_flat)
+
+        # Normalização dos targets
+        if multiclass:
+            scaler_Y = StandardScaler()
+            L_bar_scaled = scaler_Y.fit_transform(L_bar_flat * n)
+        else:
+            L_bar_scaled = (L_bar_flat * n - np.mean(L_bar_flat * n)) / (np.std(L_bar_flat * n) + 1e-10)
+
+        # Regressão com LassoLars
+        solver = LassoLars(self.rho, fit_intercept=False, positive=True)
+        solver.fit(K_bar_reduced, L_bar_scaled)
+
+        coef_pca = solver.coef_.T if multiclass else solver.coef_  # shape: (n_components, n_classes)
+
+        # Mapear de volta para as features originais
+        coef_original = np.dot(pca.components_.T, coef_pca)  # shape: (n_features_original, n_classes)
+
+        # Top features por classe
+        top_features = {}
+        for c in range(coef_original.shape[1]):
+            indices = np.argsort(coef_original[:, c])[::-1][:5]
+            top_features[c] = indices
+
+        return {
+            "coef_pca": coef_pca,                  # shape: (n_components, n_classes)
+            "coef_original": coef_original,        # shape: (1433, n_classes)
+            "top_features": top_features           # dict: classe -> top 5 features
+        }
+
 
 class GraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
     """ KernelSHAP explainer - adapted to GNNs
@@ -412,7 +437,25 @@ class GraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
         # OLS estimator for weighted linear regression
         phi, base_value = self.OLS(z_, weights, fz)  # dim (M*num_classes)
 
-        return phi
+        # Calcular top-k features por classe
+        phi = np.array(phi)  # garantir que é NumPy
+
+        top_features = {}
+        top_values = {}
+        top_k = 10  # número de features mais relevantes por classe
+
+        num_classes = phi.shape[1] if multiclass else 1
+        for c in range(num_classes):
+            class_phi = np.abs(phi[:, c]) if multiclass else np.abs(phi)
+            top_idx = np.argsort(class_phi)[::-1][:top_k]
+            top_features[c] = top_idx
+            top_values[c] = phi[top_idx, c] if multiclass else phi[top_idx]
+
+        return {
+            "shap_values": phi,         # (1433, 7)
+            "top_features": top_features,
+            "top_values": top_values,
+        }
 
     def shapley_kernel(self, s):
         """

@@ -71,7 +71,7 @@ class ImprovedGCN(torch.nn.Module):
         # Dropout para regularização
         self.dropout = dropout
 
-    def forward(self, x, edge_index, batch, edge_weight=None):
+    def forward(self, x, edge_index, batch=None, edge_weight=None):
         # Primeira camada convolucional
         x = self.conv1(x, edge_index, edge_weight)
         x = self.bn1(x)
@@ -94,12 +94,16 @@ class ImprovedGCN(torch.nn.Module):
         x = self.conv4(x, edge_index, edge_weight)
         x = F.relu(x)
         
+        if batch is None:
+          # assume que todos os nós pertencem ao mesmo grafo
+          batch = x.new_zeros(x.size(0), dtype=torch.long)
+
+
         # Pooling - combinando mean pooling com add pooling
         x1 = global_mean_pool(x, batch)
         x2 = global_add_pool(x, batch)
         x = x1 + x2  # Combinação dos dois tipos de pooling
         
-        # Camada linear final
-        x = self.lin(x).squeeze(-1)
+        x = self.lin(x)
         
         return x
