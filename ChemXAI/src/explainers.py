@@ -191,7 +191,7 @@ class GNNEx:
             model_config=dict(
                 mode=mode,
                 task_level=task_level,
-                return_type='log_probs',  # Model returns log probabilities.
+                return_type='raw',  # Model returns log probabilities.
             ),
         )
     def explanation(self, index):

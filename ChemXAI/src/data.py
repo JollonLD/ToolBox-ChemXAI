@@ -6,7 +6,15 @@
 # Packages
 from torch_geometric.datasets import PCQM4Mv2, QM9
 import torch_geometric.transforms as T
+import torch
+from sklearn.preprocessing import StandardScaler
+from sklearn.utils import shuffle
+from torch.utils.data import Dataset, DataLoader, random_split
+from ase import Atoms
+from dscribe.descriptors import CoulombMatrix
 import os as os
+import zipfile
+import requests
 import numpy as np
 import pandas as pd
 from sklearn.datasets import load_iris
@@ -44,7 +52,13 @@ def prepare_data_graph(dataset_name='QM9'):
 
 class qm9_tubular:
     def __init__(self):
-        self.directory_path = r"C:\IC\toolboxXAI\DataSets\QM9"
+        # Caminho absoluto baseado na localização do script atual
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
+        self.directory_path = os.path.join(base_dir, "data", "QM9_tubular_Data")
+        self.zip_path = os.path.join(base_dir, "data", "QM9.zip")
+        self.qm9_folder = self.directory_path
+
         self.properties = [
             'Rotational constant A: GHz',
             'Rotational constant B: GHz',
@@ -62,8 +76,28 @@ class qm9_tubular:
             'Free energy at 298.15 K (G): Hartree (Ha)',
             'Heat capacity at 298.15 K (Cv): cal/mol·K'
         ]
-        
-    
+
+        self.url = "https://www.dropbox.com/scl/fi/lbs52lc0av3eqi9zws3wp/QM9.zip?rlkey=925vtuebvf7kf9ifq9143d6az&dl=1"
+
+        # Baixar o arquivo se ele não existir localmente
+        if not os.path.exists(self.zip_path):
+            print("Baixando o arquivo QM9.zip...")
+            response = requests.get(self.url, stream=True)
+            with open(self.zip_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            print("Download concluído.")
+
+        # Criar a pasta de extração, se necessário
+        if not os.path.exists(self.qm9_folder):
+            os.makedirs(self.qm9_folder)
+
+        # Extrair o conteúdo do arquivo zip
+        with zipfile.ZipFile(self.zip_path, 'r') as zip_ref:
+            zip_ref.extractall(self.qm9_folder)
+
+        print(f"Dados salvos em: {self.qm9_folder}")
+
     def load_qm9_xyz(self, file_path):
         """Load a single QM9.xyz file."""
         
@@ -123,8 +157,6 @@ class qm9_tubular:
         
         return data_numpy, targets_numpy
 
-
-    
     def get_smiles(self, file_path):
         """Get the SMILES representation of a molecule."""
         
@@ -172,7 +204,52 @@ class qm9_tubular:
         df.columns = self.properties
         
         return df  
+    
+    class Data(Dataset):
+        def __init__(self, data, targets):
+            self.data = data
+            self.targets = targets
 
+        def __len__(self):
+            return len(self.data)
+
+        def __getitem__(self, idx):
+            return torch.from_numpy(self.data[idx]).float(), torch.from_numpy(self.targets[idx]).float()
+
+    def get_dataloader(self, att_index=10, batch_size=256, descriptor_type='CM', list_mols=[]):
+        coords, props, natoms = self.load_qm9_dataset(list_mols=list_mols)
+        props = np.array(props)
+
+        # Convertendo para formato do ASE
+        mols = [Atoms(positions=xyz, symbols=symbols) for symbols, xyz in coords]
+        n_atoms_max = max(natoms)
+
+        if descriptor_type == 'CM':
+            cm = CoulombMatrix(n_atoms_max=n_atoms_max, permutation="eigenspectrum")
+            X = cm.create(mols)
+        
+        # Shuffle e normalização
+        X, props = shuffle(X, props, random_state=0)
+        Ys = props[:, att_index].reshape(-1, 1)
+
+        scaler = StandardScaler()
+        Xn = scaler.fit_transform(X)
+
+        dataset = self.Data(Xn, Ys)
+        
+        # Split
+        train_len = int(0.8 * len(dataset))
+        val_len = int(0.1 * len(dataset))
+        test_len = len(dataset) - train_len - val_len
+
+        train_dataset, val_dataset, test_dataset = random_split(dataset, [train_len, val_len, test_len])
+        
+        # Loaders
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+        return train_loader, val_loader, test_loader, X
 
 class iris_dataset:
     def __init__(self):

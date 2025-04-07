@@ -33,56 +33,6 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.layers(x)
 
-    def train_model(self, dataloader):
-        self.train()
-        total_loss = 0
-        for batch_x, batch_y in dataloader:
-            batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
-            self.optimizer.zero_grad()
-            outputs = self(batch_x)
-            loss = self.criterion(outputs, batch_y)
-            loss.backward()
-            self.optimizer.step()
-            total_loss += loss.item()
-        return total_loss / len(dataloader)
-
-    def validate_model(self, dataloader):
-        self.eval()
-        total_loss = 0
-        with torch.no_grad():
-            for batch_x, batch_y in dataloader:
-                batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
-                outputs = self(batch_x)
-                loss = self.criterion(outputs, batch_y)
-                total_loss += loss.item()
-        return total_loss / len(dataloader)
-
-    def test_model(self, dataloader):
-        self.eval()
-        predictions = []
-        targets = []
-        total_loss = 0
-        with torch.no_grad():
-            for batch_x, batch_y in dataloader:
-                batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
-                outputs = self(batch_x)
-                loss = self.criterion(outputs, batch_y)
-                total_loss += loss.item()
-                predictions.extend(outputs.cpu().tolist())
-                targets.extend(batch_y.cpu().tolist())
-        return predictions, targets, total_loss / len(dataloader)
-
-    def predict(self, dataloader):
-        self.eval()
-        predictions = []
-        with torch.no_grad():
-            for batch_x, _ in dataloader:
-                batch_x = batch_x.to(self.device)
-                outputs = self(batch_x)
-                predictions.extend(outputs.cpu().tolist())
-        return predictions
-
-
 
 #================================================================#
 # Graph Based Models
@@ -150,6 +100,6 @@ class ImprovedGCN(torch.nn.Module):
         x = x1 + x2  # Combinação dos dois tipos de pooling
         
         # Camada linear final
-        x = self.lin(x)
+        x = self.lin(x).squeeze(-1)
         
         return x
