@@ -1,8 +1,4 @@
-/GraphSVX/
 /venv/
-/gnn-model-explainer/
-/data/
-/ChemXAI/models/
-/ChemXAI/data/
 /ChemXAI/__pycache__/
 /ChemXAI/src/__pycache__/
+/__pycache__/
