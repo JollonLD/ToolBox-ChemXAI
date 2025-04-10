@@ -452,7 +452,7 @@ class GraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
             top_values[c] = phi[top_idx, c] if multiclass else phi[top_idx]
 
         return {
-            "shap_values": phi,         # (1433, 7)
+            "shap_values": phi,         
             "top_features": top_features,
             "top_values": top_values,
         }
