@@ -1,4 +1,5 @@
 /venv/
+/ChemXAI/data/
 /ChemXAI/__pycache__/
 /ChemXAI/src/__pycache__/
 /__pycache__/

@@ -1,11 +1,8 @@
-from src.data import prepare_data_graph
-from src.explainers import GNNEx, GraphLIME, GraphShap
+from src.train import train_molecular_gcn_qm9, train_gcn_pcqm4
 
 def main():
 
-    data_QM9 = prepare_data_graph('QM9')
-
-    exp_GNN = GNNEx()
+    train_gcn_pcqm4()
 
 if __name__ == '__main__':
     main()

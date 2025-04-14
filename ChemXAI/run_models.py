@@ -1,8 +1,10 @@
 import torch
+from torchinfo import summary
 from torch_geometric.datasets import Planetoid
+from torch_geometric.data import DataLoader
 from src.explainers import GNNEx, Shap, GraphShap, GraphLIME
 from src.data import prepare_data_graph, qm9_tubular
-from src.models import GCN, ImprovedGCN, MLP
+from src.models import GCN, MLP
 
 
 def load_model(model, dataset, device):
@@ -88,6 +90,37 @@ def main():
     # # solved_coef = exp.explain(node_index=500, multiclass=True, hops=None, num_samples=None)
     # # print(solved_coef)
     
+
+    # Teste GCN com PCQM4 e GNNExplainer ->
+    
+    data = prepare_data_graph('PCQM4')
+    model = GCN(num_features=data[0].x.size(1))
+
+    # Defina o dispositivo (GPU ou CPU)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device)
+    data = data[0].to(device)
+
+    # Inicialize o explicador GraphShap
+    explainer = GraphShap(data, model, device, gpu=torch.cuda.is_available())
+
+    # Escolha um índice de nó para a explicação (você pode escolher um nó aleatório ou fixo)
+    node_index = 0  # Aqui estamos escolhendo o primeiro nó
+
+    # Gere a explicação
+    explanation = explainer.explain(node_index=node_index, hops=2, num_samples=100, multiclass=False)
+
+    # Exiba as explicações
+    print("Shapley Values for Node Features:")
+    print(explanation['shap_values'])
+
+    print("\nTop Features per Class (if applicable):")
+    print(explanation['top_features'])
+
+    print("\nTop Shapley Values per Class (if applicable):")
+    print(explanation['top_values'])
+
+
 
 if __name__ == '__main__':
     main()

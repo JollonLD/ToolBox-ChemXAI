@@ -383,10 +383,13 @@ class GraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
     Explains only node features
 
     """
-    def __init__(self, data, model, gpu=False):
+    def __init__(self, data, model, device, gpu=False):
         self.model = model
-        self.data = data
         self.gpu = gpu
+        self.data = data
+        if self.gpu:
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            self.data = self.data.to(device)
         # number of nonzero features - for each node index
         self.M = self.data.num_features
         self.neighbours = None

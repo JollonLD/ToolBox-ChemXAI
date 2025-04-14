@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, global_mean_pool, global_add_pool
 import torch.optim as optim
+from torch_geometric.nn import GCNConv, GATConv, GraphConv
+from torch_geometric.nn import MessagePassing, global_add_pool
 
 #================================================================#
 # Tubular Models
@@ -38,72 +40,165 @@ class MLP(nn.Module):
 # Graph Based Models
 #================================================================#
 
-# GCN (Graph Convolutional Network)
+
+import torch
+import torch.nn.functional as F
+from torch_geometric.nn import GCNConv, global_add_pool
+from torch.nn import Linear, BatchNorm1d, Dropout
+
 class GCN(torch.nn.Module):
-    def __init__(self, num_features, hidden_channels, num_classes):
+    def __init__(self, num_features, hidden_dim=256):
         super(GCN, self).__init__()
-        self.conv1 = GCNConv(num_features, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, num_classes)
+        self.conv1 = GCNConv(num_features, hidden_dim)
+        self.bn1 = BatchNorm1d(hidden_dim)
+        
+        self.conv2 = GCNConv(hidden_dim, hidden_dim)
+        self.bn2 = BatchNorm1d(hidden_dim)
+        
+        self.conv3 = GCNConv(hidden_dim, hidden_dim)
+        self.bn3 = BatchNorm1d(hidden_dim)
 
-    def forward(self, x, edge_index):
-        x = F.relu(self.conv1(x, edge_index))
-        x = self.conv2(x, edge_index)
-        return F.log_softmax(x, dim=1)
-    
-# More complex GCN model
-class ImprovedGCN(torch.nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, dropout=0.3):
-        super().__init__()
-        # Aumentar a profundidade da rede
-        self.conv1 = GCNConv(in_channels, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, hidden_channels)
-        self.conv3 = GCNConv(hidden_channels, hidden_channels // 2)
-        self.conv4 = GCNConv(hidden_channels // 2, hidden_channels // 4)
-        
-        # Batch Normalization para estabilizar o treinamento
-        self.bn1 = torch.nn.BatchNorm1d(hidden_channels)
-        self.bn2 = torch.nn.BatchNorm1d(hidden_channels)
-        self.bn3 = torch.nn.BatchNorm1d(hidden_channels // 2)
-        
-        # Camada linear para saída
-        self.lin = torch.nn.Linear(hidden_channels // 4, out_channels)
-        
-        # Dropout para regularização
-        self.dropout = dropout
+        self.lin1 = Linear(hidden_dim, hidden_dim)
+        self.lin2 = Linear(hidden_dim, 1)
+        self.dropout = Dropout(0.3)
 
-    def forward(self, x, edge_index, batch=None, edge_weight=None):
-        # Primeira camada convolucional
-        x = self.conv1(x, edge_index, edge_weight)
+    def forward(self, x, edge_index, batch=None):
+        # Se batch não for passado, assume-se um grafo único
+        if batch is None:
+            batch = torch.zeros(x.size(0), dtype=torch.long, device=x.device)
+
+        x = self.conv1(x, edge_index)
         x = self.bn1(x)
         x = F.relu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        
-        # Segunda camada convolucional
-        x = self.conv2(x, edge_index, edge_weight)
+
+        x = self.conv2(x, edge_index)
         x = self.bn2(x)
         x = F.relu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        
-        # Terceira camada convolucional
-        x = self.conv3(x, edge_index, edge_weight)
+
+        x = self.conv3(x, edge_index)
         x = self.bn3(x)
         x = F.relu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
+
+        x = global_add_pool(x, batch)
+
+        x = self.dropout(F.relu(self.lin1(x)))
+        x = self.lin2(x)
+
+        return x.view(-1)
+
+
+
+class MolecularGCN(torch.nn.Module):
+    def __init__(self, num_node_features, hidden_dim=64, output_dim=1):
+        super(MolecularGCN, self).__init__()
+        self.conv1 = GCNConv(num_node_features, hidden_dim)
+        self.conv2 = GCNConv(hidden_dim, hidden_dim)
+        self.conv3 = GCNConv(hidden_dim, hidden_dim)
         
-        # Quarta camada convolucional
-        x = self.conv4(x, edge_index, edge_weight)
+        # Pooling global para obter representação do grafo inteiro
+        self.pool = global_mean_pool
+        
+        # Camadas de regressão
+        self.lin1 = nn.Linear(hidden_dim, hidden_dim)
+        self.lin2 = nn.Linear(hidden_dim, output_dim)  # output_dim=1 para regressão
+        
+    def forward(self, x, edge_index, batch=None):
+        # Convolução de grafo
+        x = F.relu(self.conv1(x, edge_index))
+        x = F.dropout(x, p=0.2, training=self.training)
+        x = F.relu(self.conv2(x, edge_index))
+        x = F.dropout(x, p=0.2, training=self.training)
+        x = self.conv3(x, edge_index)
+        
+        # Pooling global (necessário para regressão de grafos)
+        x = self.pool(x, batch)
+        
+        # MLP para regressão
+        x = F.relu(self.lin1(x))
+        x = F.dropout(x, p=0.2, training=self.training)
+        x = self.lin2(x)
+        
+        return x
+    
+
+# For Graph Classification
+class MoleculeGNN(torch.nn.Module):
+    def __init__(self, num_node_features, num_classes, hidden_dim=64):
+        super(MoleculeGNN, self).__init__()
+        # Graph convolution layers
+        self.conv1 = GCNConv(num_node_features, hidden_dim)
+        self.conv2 = GCNConv(hidden_dim, hidden_dim)
+        self.conv3 = GCNConv(hidden_dim, hidden_dim)
+        
+        # Readout layer (graph-level pooling)
+        self.pool = global_mean_pool
+        
+        # Classification layers
+        self.lin1 = nn.Linear(hidden_dim, hidden_dim)
+        self.lin2 = nn.Linear(hidden_dim, num_classes)
+        
+    def forward(self, x, edge_index, batch=None):
+        # Node embedding
+        x = F.relu(self.conv1(x, edge_index))
+        x = F.relu(self.conv2(x, edge_index))
+        x = self.conv3(x, edge_index)
+        
+        # Readout (aggregate node features to graph features)
+        x = self.pool(x, batch)
+        
+        # Classification
+        x = F.relu(self.lin1(x))
+        x = F.dropout(x, p=0.5, training=self.training)
+        x = self.lin2(x)
+        
+        return F.log_softmax(x, dim=1)
+    
+
+class MPNNLayer(MessagePassing):
+    def __init__(self, node_dim, edge_dim, out_dim):
+        super(MPNNLayer, self).__init__(aggr='add')
+        self.node_mlp = nn.Sequential(
+            nn.Linear(node_dim + edge_dim, out_dim),
+            nn.ReLU(),
+            nn.Linear(out_dim, out_dim)
+        )
+
+        self.res_connection = nn.Linear(node_dim, out_dim) if node_dim != out_dim else nn.Identity()
+
+    def forward(self, x, edge_index, edge_attr):
+        return self.propagate(edge_index, x=x, edge_attr=edge_attr)
+
+    def message(self, x_j, edge_attr):
+        inputs = torch.cat([x_j, edge_attr], dim=1)
+        return self.node_mlp(inputs)
+
+    def update(self, aggr_out, x):
+        return aggr_out + self.res_connection(x)
+
+
+class ChemicalMPNN(torch.nn.Module):
+    def __init__(self, num_node_features, num_edge_features, output_dim=1, hidden_dim=64):
+        super(ChemicalMPNN, self).__init__()
+        self.mp1 = MPNNLayer(num_node_features, num_edge_features, hidden_dim)
+        self.mp2 = MPNNLayer(hidden_dim, num_edge_features, hidden_dim)
+        self.mp3 = MPNNLayer(hidden_dim, num_edge_features, hidden_dim)
+        
+        self.readout = global_add_pool
+        
+        self.lin1 = nn.Linear(hidden_dim, hidden_dim)
+        self.lin2 = nn.Linear(hidden_dim, output_dim)
+        
+    def forward(self, x, edge_index, edge_attr, batch):
+        x = self.mp1(x, edge_index, edge_attr)
         x = F.relu(x)
+        x = self.mp2(x, edge_index, edge_attr)
+        x = F.relu(x)
+        x = self.mp3(x, edge_index, edge_attr)
         
-        if batch is None:
-          # assume que todos os nós pertencem ao mesmo grafo
-          batch = x.new_zeros(x.size(0), dtype=torch.long)
-
-
-        # Pooling - combinando mean pooling com add pooling
-        x1 = global_mean_pool(x, batch)
-        x2 = global_add_pool(x, batch)
-        x = x1 + x2  # Combinação dos dois tipos de pooling
+        x = self.readout(x, batch)
         
-        x = self.lin(x)
+        x = F.relu(self.lin1(x))
+        x = F.dropout(x, p=0.2, training=self.training)
+        x = self.lin2(x)
         
         return x

@@ -22,8 +22,13 @@ from sklearn.datasets import load_iris
 #================================================================#
 # Graph Based Datasets
 #================================================================#
+class CastXToFloat:
+    def __call__(self, data):
+        data.x = data.x.float()
+        return data
 
-def prepare_data_graph(dataset_name='QM9'):
+
+def prepare_data_graph(dataset_name='PCQM4'):
     """Get Data to be used
 
     Parameter:
@@ -36,9 +41,14 @@ def prepare_data_graph(dataset_name='QM9'):
     dirname = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     # Download the dataset
-    if dataset_name == 'PCQM4Mv2':
-        path = os.path.join(dirname, 'data')
-        data = PCQM4Mv2(root=path, split='train', transform=T.NormalizeFeatures())
+
+    if dataset_name == 'PCQM4':
+        path = os.path.join(dirname, 'data', 'PCQM4')
+        transform = T.Compose([
+            CastXToFloat(),
+            T.NormalizeFeatures()
+        ])
+        data = PCQM4Mv2(root=path, transform=transform)
 
     elif dataset_name == 'QM9':
         path = os.path.join(dirname, 'data', 'QM9')
