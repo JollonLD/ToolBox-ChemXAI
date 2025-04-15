@@ -210,7 +210,7 @@ class GraphLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
 
     """
 
-    def __init__(self, data, model, gpu=False, hop=2, rho=0.1, cached=True):
+    def __init__(self, data, model, device, gpu=False, hop=2, rho=0.1, cached=True):
         self.data = data
         self.model = model
         self.hop = hop
@@ -219,7 +219,12 @@ class GraphLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
         self.cached_result = None
         self.M = self.data.num_features
         self.F = self.data.num_features
+        self.model = model
         self.gpu = gpu
+        self.data = data
+        if self.gpu:
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            self.data = self.data.to(device)
 
         self.model.eval()
 
@@ -315,7 +320,7 @@ class GraphLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
         probas = self.__init_predict__(x, edge_index, **kwargs)
 
         # Extrai subgrafo centrado no nó-alvo
-        x, probas, _, _, _, _ = self.__subgraph__(
+        x, probas, _, _, _, _ = self.model(
             node_index, x, probas, edge_index, **kwargs)
 
         # Preparar para regressão (converter tensores)
@@ -412,10 +417,11 @@ class GraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
                     'cuda' if torch.cuda.is_available() else 'cpu')
                 self.model = self.model.to(device)
                 true_conf, true_pred = self.model(
-                    x=self.data.x.cuda(), edge_index=self.data.edge_index.cuda()).exp()[node_index][0].max(dim=0)
+                    x=self.data.x.cuda(), edge_index=self.data.edge_index.cuda()).exp()[node_index].max(dim=0)
+
             else:
                 true_conf, true_pred = self.model(
-                    x=self.data.x, edge_index=self.data.edge_index).exp()[node_index][0].max(dim=0)
+                    x=self.data.x, edge_index=self.data.edge_index).exp()[node_index].max(dim=0)
 
         # Determine z => features whose importance is investigated
         # Decrease number of samples because nodes are not considered

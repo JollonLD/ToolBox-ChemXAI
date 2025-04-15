@@ -8,7 +8,7 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
-from src.models import MolecularGCN, ChemicalMPNN, GCN
+from src.models import GCN
 from src.data import prepare_data_graph
 
 def train_molecular_gcn_qm9(target_idx=3, epochs=100, batch_size=64, lr=0.001, weight_decay=1e-4):
@@ -111,8 +111,9 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
     val_size = total_size - train_size
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size)
+    # 3. Loaders com drop_last para evitar batches incompletos
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, drop_last=True)
 
     model = GCN(num_features=dataset[0].x.shape[1]).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -127,8 +128,9 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
         for data in train_loader:
             data = data.to(device)
             optimizer.zero_grad()
-            pred = model(data.x, data.edge_index, data.batch)
-            loss = criterion(pred, data.y.view(-1))
+            pred = model(data.x, data.edge_index, data.batch).view(-1)
+            target = data.y.view(-1)
+            loss = criterion(pred, target)
             loss.backward()
             optimizer.step()
             total_loss += loss.item() * data.num_graphs
@@ -141,8 +143,9 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
         with torch.no_grad():
             for data in val_loader:
                 data = data.to(device)
-                pred = model(data.x, data.edge_index, data.batch)
-                loss = criterion(pred, data.y.view(-1))
+                pred = model(data.x, data.edge_index, data.batch).view(-1)
+                target = data.y.view(-1)
+                loss = criterion(pred, target)
                 val_loss += loss.item() * data.num_graphs
 
         avg_val_loss = val_loss / len(val_loader.dataset)
@@ -153,17 +156,17 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
 
         print(f"[{epoch:02d}/{epochs}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
 
-    # 5. Avaliação final
+    # 5. Avaliação final (com drop_last=True, garante mesmo tamanho)
     model.load_state_dict(torch.load('models/gcn_pcqm4.pth'))
     model.eval()
     final_val_loss = 0
     with torch.no_grad():
         for data in val_loader:
             data = data.to(device)
-            pred = model(data.x, data.edge_index, data.batch)
-            final_val_loss += F.mse_loss(pred, data.y.view(-1)).item() * data.num_graphs
+            pred = model(data.x, data.edge_index, data.batch).view(-1)
+            target = data.y.view(-1)
+            final_val_loss += criterion(pred, target).item() * data.num_graphs
 
     final_val_loss /= len(val_loader.dataset)
     print(f"\nMSE final na validação: {final_val_loss:.4f}")
     print(f"RMSE final na validação: {final_val_loss ** 0.5:.4f}")
-

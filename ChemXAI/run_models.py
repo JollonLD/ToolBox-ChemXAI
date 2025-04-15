@@ -1,7 +1,8 @@
 import torch
 from torchinfo import summary
 from torch_geometric.datasets import Planetoid
-from torch_geometric.data import DataLoader
+from torch_geometric.loader import DataLoader
+from torch.utils.data import random_split
 from src.explainers import GNNEx, Shap, GraphShap, GraphLIME
 from src.data import prepare_data_graph, qm9_tubular
 from src.models import GCN, MLP
@@ -14,30 +15,6 @@ def load_model(model, dataset, device):
 
 
 def main():
-    # Teste GCN com CORA e GNNExplainer -> Funcional
-    # # dataset = Planetoid(root='data/Cora', name='Cora')
-    # # data = dataset[0]
-    # # model = GCN(num_features=dataset.num_features, hidden_channels=16, num_classes=dataset.num_classes)
-    # # model.load_state_dict(torch.load('models/GCN_model_Cora.pth'))
-    # # print(model)
-    # # model.eval()
-    # # out = model(data.x, data.edge_index)
-    # # print(out)
-    # # exp = GNNEx(model=model, data=dataset, epochs=200, mode='multiclass_classification', task_level='node', return_type='log_probs')
-    # # feature_importance, graph = exp.explanation(index=10)
-
-
-
-
-    # Teste GCN com QM9 e GNNExplainer -> Não Funcional
-    # # dataset = prepare_data_graph('QM9')
-    # # model = ImprovedGCN(in_channels=dataset.num_features, hidden_channels=128, out_channels=1)
-    # # model.load_state_dict(torch.load('models/best_qm9_model.pt', map_location=torch.device('cpu')))
-    # # print(model)
-    # # exp = GNNEx(model=model, data=data, epochs=200, mode='multiclass_classification', task_level='node', return_type='log_probs')
-    # # exp.explanation(index=10)
-
-
     # Teste MLP com QM9 e Shap -> Funcional
     # #  data = qm9_tubular()
     # #  train_loader, _, test_loader, X = data.get_dataloader()
@@ -59,68 +36,42 @@ def main():
     # # # print(out)
     # # exp = GNNEx(model=model, data=dataset, epochs=50, mode='regression', task_level='node', return_type='raw')
     # # exp.explanation(index=10)
-    
 
+    # Teste GCN com PCQM4 e GraphShap -> Funcional -> Explicação para as características do nó 0 e grafo 0
+    # data = prepare_data_graph('PCQM4')
+    # model = GCN(num_features=data[0].x.size(1))
+    # model.load_state_dict(torch.load('models/gcn_pcqm4.pth'))
+    # model.eval()
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # model = model.to(device)
+    # dataset = data[:100000]
+    # explainer = GraphShap(dataset[0], model, device, gpu=torch.cuda.is_available())
+    # node_index = 0
+    # explanation = explainer.explain(node_index=node_index, hops=2, num_samples=100, multiclass=False)
+    # print("Shapley Values for Node Features:")
+    # print(explanation['shap_values'])
+    # print("\nTop Features per Class (if applicable):")
+    # print(explanation['top_features'])
+    # print("\nTop Shapley Values per Class (if applicable):")
+    # print(explanation['top_values'])
 
-    # Teste GCN com Cora e GraphShap -> Funcional
-    # # dataset = Planetoid(root='data/Cora', name='Cora')
-    # # data = dataset[0]
-    # # model = GCN(num_features=dataset.num_features, hidden_channels=16, num_classes=dataset.num_classes)
-    # # model.load_state_dict(torch.load('models/GCN_model_Cora.pth'))
-    # # print(model)
-    # # # model.eval()
-    # # # out = model(data.x, data.edge_index)
-    # # # print(out)
-    # # exp = GraphShap(model=model, data=dataset)
-    # # phi = exp.explain(node_index=0, multiclass=True)
-    # # print(phi)
-
-
-
-    # Teste GCN com Cora e GraphLIME -> Funcional
-    # # dataset = Planetoid(root='data/Cora', name='Cora')
-    # # data = dataset[0]
-    # # model = GCN(num_features=dataset.num_features, hidden_channels=16, num_classes=dataset.num_classes)
-    # # model.load_state_dict(torch.load('models/GCN_model_Cora.pth'))
-    # # print(model)
-    # # # model.eval()
-    # # # out = model(data.x, data.edge_index)
-    # # # print(out)
-    # # exp = GraphLIME(model=model, data=dataset)
-    # # solved_coef = exp.explain(node_index=500, multiclass=True, hops=None, num_samples=None)
-    # # print(solved_coef)
-    
-
-    # Teste GCN com PCQM4 e GNNExplainer ->
-    
+    # Teste GCN com PCQM4 e GraphLIME -> Funcional -> Explicação para as características do nó 0 e grafo 0
     data = prepare_data_graph('PCQM4')
     model = GCN(num_features=data[0].x.size(1))
-
-    # Defina o dispositivo (GPU ou CPU)
+    model.load_state_dict(torch.load('models/gcn_pcqm4.pth'))
+    model.eval()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
-    data = data[0].to(device)
-
-    # Inicialize o explicador GraphShap
-    explainer = GraphShap(data, model, device, gpu=torch.cuda.is_available())
-
-    # Escolha um índice de nó para a explicação (você pode escolher um nó aleatório ou fixo)
-    node_index = 0  # Aqui estamos escolhendo o primeiro nó
-
-    # Gere a explicação
+    dataset = data[:100000]
+    explainer = GraphLIME(dataset[0], model, device, gpu=torch.cuda.is_available())
+    node_index = 0
     explanation = explainer.explain(node_index=node_index, hops=2, num_samples=100, multiclass=False)
-
-    # Exiba as explicações
     print("Shapley Values for Node Features:")
     print(explanation['shap_values'])
-
     print("\nTop Features per Class (if applicable):")
     print(explanation['top_features'])
-
     print("\nTop Shapley Values per Class (if applicable):")
     print(explanation['top_values'])
-
-
 
 if __name__ == '__main__':
     main()
