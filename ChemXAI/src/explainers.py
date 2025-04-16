@@ -11,6 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from torch_geometric.nn import MessagePassing
 from copy import deepcopy
+import torch.nn.functional as F
 
 from src.plots import k_hop_subgraph
 
@@ -179,10 +180,9 @@ class GNNEx:
     """
 
     """
-    def __init__(self, model, data, epochs, mode, task_level, return_type):
+    def __init__(self, model, device, data, epochs, mode='regression', task_level='node', return_type='raw'):
         self.model = model
-        self.data = data
-
+        self.data = data.to(device)
     
         self.explainer = Explainer(
             model=model,
@@ -197,12 +197,12 @@ class GNNEx:
             ),
         )
     def explanation(self, index):
-        # Generate explanation for the node at index
+        # Generate explanation for the node index
         explanation = self.explainer(self.data.x, self.data.edge_index, index=index)
         # print(explanation.edge_mask)
         # print(explanation.node_mask)
 
-        return explanation.visualize_feature_importance(top_k=10), explanation.visualize_graph()
+        return explanation.node_mask.squeeze().tolist(), explanation.prediction.item()
 
 class GraphLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
     """ GraphLIME explainer - code taken from original repository
@@ -221,10 +221,10 @@ class GraphLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
         self.F = self.data.num_features
         self.model = model
         self.gpu = gpu
-        self.data = data
         if self.gpu:
-            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-            self.data = self.data.to(device)
+            self.data = data.to(device)
+        else:
+            self.data = data
 
         self.model.eval()
 
@@ -320,8 +320,14 @@ class GraphLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
         probas = self.__init_predict__(x, edge_index, **kwargs)
 
         # Extrai subgrafo centrado no nó-alvo
-        x, probas, _, _, _, _ = self.model(
-            node_index, x, probas, edge_index, **kwargs)
+        x_sub, y_sub, edge_index_sub, mapping, edge_mask, _ = self.__subgraph__(
+        node_index, x, self.data.y, edge_index, **kwargs
+        )
+
+        # Calcula a predição no subgrafo
+        with torch.no_grad():
+            logits = self.model(x_sub, edge_index_sub)
+            probas = F.softmax(logits, dim=-1)
 
         # Preparar para regressão (converter tensores)
         x = x.cpu().detach().numpy()  # (n, d)
@@ -564,4 +570,57 @@ class GraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
 
         return phi[:-1], phi[-1]
     
+class GraphLIMEGraphLevel:
+    def __init__(self, model, device='cpu', rho=0.1):
+        self.model = model.to(device)
+        self.device = device
+        self.rho = rho
+        self.model.eval()
 
+    def explain(self, data, num_samples=100):
+        x = data.x.clone().to(self.device)  # (n_nodes, n_features)
+        edge_index = data.edge_index.to(self.device)
+
+        with torch.no_grad():
+            base_pred = self.model(data.x.to(self.device), data.edge_index.to(self.device))
+            base_pred = base_pred.item()  # valor escalar
+
+        n_nodes, n_feats = x.shape
+        X_perturbed = []
+        y_preds = []
+
+        # Gerar perturbações
+        for _ in range(num_samples):
+            mask = torch.bernoulli(torch.full((n_nodes, n_feats), 0.8)).to(self.device)  # 80% dos valores mantidos
+            x_new = x * mask
+            with torch.no_grad():
+                pred = self.model(x_new, edge_index)
+                y_preds.append(pred.item())
+                X_perturbed.append(mask.cpu().numpy().flatten())  # flatten para usar no Lasso
+
+        X_perturbed = np.array(X_perturbed)  # shape (samples, n_nodes * n_feats)
+        y_preds = np.array(y_preds)  # shape (samples, )
+
+        # Padronização
+        scaler_X = StandardScaler()
+        scaler_y = StandardScaler()
+        X_scaled = scaler_X.fit_transform(X_perturbed)
+        y_scaled = scaler_y.fit_transform(y_preds.reshape(-1, 1)).flatten()
+
+        # Regressão LassoLars
+        reg = LassoLars(alpha=self.rho, positive=True)
+        reg.fit(X_scaled, y_scaled)
+
+        # Coeficientes reshape
+        coef = reg.coef_.reshape(n_nodes, n_feats)
+
+        # Agregar importância por feature
+        feature_importance = coef.sum(axis=0)  # shape: (n_feats,)
+
+        top_features = np.argsort(feature_importance)[::-1][:5]
+
+        return {
+            "feature_importance": feature_importance,
+            "top_features": top_features,
+            "coef_matrix": coef
+        }

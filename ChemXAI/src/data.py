@@ -261,7 +261,10 @@ class qm9_tubular:
 
         return train_loader, val_loader, test_loader, X
 
-class iris_dataset:
-    def __init__(self):
-        self.data = load_iris()
-    
+
+if __name__ == '__main__':
+    data_qm9 = prepare_data_graph('QM9')
+    data_pcqm = prepare_data_graph('PCQM4')
+
+    print(data_qm9.data)
+    print(data_pcqm.data)

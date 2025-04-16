@@ -8,10 +8,10 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
-from src.models import GCN
-from src.data import prepare_data_graph
+from models import GCN
+from data import prepare_data_graph
 
-def train_molecular_gcn_qm9(target_idx=3, epochs=100, batch_size=64, lr=0.001, weight_decay=1e-4):
+def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay=1e-4):
     # Detectar GPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Usando dispositivo: {device}")
@@ -37,10 +37,8 @@ def train_molecular_gcn_qm9(target_idx=3, epochs=100, batch_size=64, lr=0.001, w
     test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
     # 4. Instanciar modelo para regressão
-    model = ChemicalMPNN(
-        num_node_features=dataset.num_node_features,
-        num_edge_features=dataset.num_edge_features,
-        output_dim=1  # Regressão
+    model = GCN(
+        num_features=dataset.data.x.size(1)
     ).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -54,8 +52,9 @@ def train_molecular_gcn_qm9(target_idx=3, epochs=100, batch_size=64, lr=0.001, w
         for batch in train_loader:
             batch = batch.to(device)
             optimizer.zero_grad()
-            pred = model(batch.x, batch.edge_index, batch.edge_attr, batch.batch)
-            loss = criterion(pred, batch.y)
+            pred = model(batch.x, batch.edge_index, batch.batch).view(-1)
+            target = batch.y.view(-1)
+            loss = criterion(pred, target)
             loss.backward()
             optimizer.step()
             total_loss += loss.item() * batch.num_graphs
@@ -66,8 +65,9 @@ def train_molecular_gcn_qm9(target_idx=3, epochs=100, batch_size=64, lr=0.001, w
         with torch.no_grad():
             for batch in val_loader:
                 batch = batch.to(device)
-                pred = model(batch.x, batch.edge_index, batch.edge_attr, batch.batch)
-                loss = criterion(pred, batch.y)
+                pred = model(batch.x, batch.edge_index, batch.batch).view(-1)
+                target = batch.y.view(-1)
+                loss = criterion(pred, target)
                 val_loss += loss.item() * batch.num_graphs
 
         avg_train_loss = total_loss / len(train_loader.dataset)
@@ -75,19 +75,19 @@ def train_molecular_gcn_qm9(target_idx=3, epochs=100, batch_size=64, lr=0.001, w
 
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
-            torch.save(model.state_dict(), 'models/molecularGCN_qm9.pth')
+            torch.save(model.state_dict(), '../models/gcn_qm9.pth')
 
         print(f"[{epoch+1}/{epochs}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
 
     # 6. Avaliação final
-    model.load_state_dict(torch.load('models/molecularGCN_qm9.pth'))
+    model.load_state_dict(torch.load('../models/gcn_qm9.pth'))
     model.to(device)
     model.eval()
     test_loss = 0
     with torch.no_grad():
         for batch in test_loader:
             batch = batch.to(device)
-            pred = model(batch.x, batch.edge_index, batch.edge_attr, batch.batch)
+            pred = model(batch.x, batch.edge_index, batch.batch).view(-1)
             pred = pred * std + mean
             y_true = batch.y * std + mean
             test_loss += F.mse_loss(pred, y_true).item() * batch.num_graphs
@@ -170,3 +170,8 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
     final_val_loss /= len(val_loader.dataset)
     print(f"\nMSE final na validação: {final_val_loss:.4f}")
     print(f"RMSE final na validação: {final_val_loss ** 0.5:.4f}")
+
+
+
+if __name__ == '__main__':
+    train_gcn_qm9()
