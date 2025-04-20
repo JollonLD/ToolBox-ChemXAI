@@ -176,7 +176,7 @@ class LIME:
 # Graph Based Explainers
 #================================================================#
 
-class GNNEx:
+class GNNExplainer:
     """
 
     """
@@ -204,7 +204,7 @@ class GNNEx:
 
         return explanation.node_mask.squeeze().tolist(), explanation.prediction.item()
 
-class GraphLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
+class NodeGrapLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
     """ GraphLIME explainer - code taken from original repository
     Explains only node features
 
@@ -388,8 +388,7 @@ class GraphLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
             "top_features": top_features           # dict: classe -> top 5 features
         }
 
-
-class GraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
+class NodeGraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
     """ KernelSHAP explainer - adapted to GNNs
     Explains only node features
 
@@ -570,7 +569,7 @@ class GraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
 
         return phi[:-1], phi[-1]
     
-class GraphLIMEGraphLevel:
+class GraphLIME: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
     def __init__(self, model, device='cpu', rho=0.1):
         self.model = model.to(device)
         self.device = device
@@ -617,10 +616,115 @@ class GraphLIMEGraphLevel:
         # Agregar importância por feature
         feature_importance = coef.sum(axis=0)  # shape: (n_feats,)
 
-        top_features = np.argsort(feature_importance)[::-1][:5]
+        top_features = np.argsort(feature_importance)[::-1]
 
         return {
             "feature_importance": feature_importance,
             "top_features": top_features,
             "coef_matrix": coef
         }
+
+class GraphShap: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
+    """
+    KernelSHAP adapted for graph-level prediction.
+    Explains how node features (aggregated) influence the prediction for the whole graph.
+    """
+
+    def __init__(self, data, model, device=None, gpu=False):
+        self.model = model
+        self.gpu = gpu
+        self.device = device or torch.device('cuda' if gpu and torch.cuda.is_available() else 'cpu')
+        self.data = data.to(self.device)
+        self.model = self.model.to(self.device)
+        self.model.eval()
+        self.M = self.data.num_features  # número de features por nó
+        self.F = self.M
+
+    def explain(self, num_samples=30, info=True):
+        """
+        Realiza explicação graph-level baseada nas features dos nós.
+        """
+
+        # Output real do modelo (para o grafo inteiro)
+        with torch.no_grad():
+            batch = torch.zeros(self.data.x.size(0), dtype=torch.long).to(self.device)
+            true_output = self.model(
+                x=self.data.x,
+                edge_index=self.data.edge_index,
+                batch=batch
+            )
+            true_output = true_output.view(-1)  # Flatten caso seja [1,1]
+
+        # Amostras binárias para presença/ausência de features
+        z_ = torch.empty(num_samples, self.M).random_(2)
+        s = (z_ != 0).sum(dim=1)
+
+        weights = self.shapley_kernel(s)
+        fz = self.compute_pred(z_, true_output)
+
+        phi, base_value = self.OLS(z_, weights, fz)
+
+        # Seleção das top features
+        phi = np.array(phi)
+        top_idx = np.argsort(np.abs(phi))[::-1]
+
+        return {
+            "shap_values": phi,
+            "top_features": top_idx,
+            "top_values": phi[top_idx],
+            "true_prediction": true_output.item(),
+            "base_value": base_value
+        }
+
+    def shapley_kernel(self, s):
+        shap_kernel = []
+        for i in range(s.shape[0]):
+            a = s[i].item()
+            if a == 0 or a == self.M:
+                shap_kernel.append(1000)
+            elif scipy.special.binom(self.M, a) == float('+inf'):
+                shap_kernel.append(1 / self.M)
+            else:
+                shap_kernel.append((self.M - 1) / (scipy.special.binom(self.M, a) * a * (self.M - a)))
+        return torch.tensor(shap_kernel)
+
+    def compute_pred(self, z_, true_output):
+        """
+        Aplica z_ às features dos nós e coleta as predições do grafo.
+        """
+        fz = torch.zeros(z_.size(0)).to(self.device)
+
+        for i in range(z_.size(0)):
+            X_masked = self.data.x.clone()
+
+            for j in range(self.F):
+                if z_[i, j].item() == 0:
+                    X_masked[:, j] = 0  # zera a feature j em todos os nós
+
+            batch = torch.zeros(X_masked.size(0), dtype=torch.long).to(self.device)
+
+            with torch.no_grad():
+                out = self.model(x=X_masked.to(self.device),
+                                 edge_index=self.data.edge_index.to(self.device),
+                                 batch=batch)
+                fz[i] = out.view(-1)
+
+        return fz
+
+    def OLS(self, z_, weights, fz):
+        z_ = torch.cat([z_, torch.ones(z_.shape[0], 1)], dim=1)  # intercepto
+        z_np = z_.cpu().detach().numpy()
+        w_np = weights.cpu().detach().numpy()
+        fz_np = fz.cpu().detach().numpy()
+
+        try:
+            tmp = np.linalg.inv(z_np.T @ np.diag(w_np) @ z_np)
+        except np.linalg.LinAlgError:
+            tmp = z_np.T @ np.diag(w_np) @ z_np
+            tmp += np.diag(1e-5 * np.random.randn(tmp.shape[1]))
+            tmp = np.linalg.inv(tmp)
+
+        phi = tmp @ (z_np.T @ np.diag(w_np) @ fz_np)
+
+        return phi[:-1], phi[-1]
+    
