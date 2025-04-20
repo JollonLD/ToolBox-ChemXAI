@@ -176,10 +176,30 @@ class LIME:
 # Graph Based Explainers
 #================================================================#
 
-class GNNExplainer:
+class GNNExplain:
+    """
+    GNNExplainer (Model Explainability for Graph Neural Networks)
+
+    This class implements an explainer for Graph Neural Networks (GNNs). It is designed to explain the predictions of a GNN model by identifying the important nodes and edges that contribute to the prediction of a specific node. The method uses a masking strategy, where it iteratively removes or perturbs nodes and edges in the graph to measure their impact on the model's output.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The trained GNN model to be explained.
+    device : torch.device
+        The device to run the model (CPU or GPU).
+    data : torch_geometric.data.Data
+        The graph data containing node features and edge indices.
+    epochs : int
+        Number of epochs for training the explainer.
+    mode : str, optional (default='regression')
+        The type of prediction task ('regression' or 'classification').
+    task_level : str, optional (default='node')
+        Whether the explanation is at the node level or graph level.
+    return_type : str, optional (default='raw')
+        The format of the returned explanation ('raw' or 'probabilities').
     """
 
-    """
     def __init__(self, model, device, data, epochs, mode='regression', task_level='node', return_type='raw'):
         self.model = model
         self.data = data.to(device)
@@ -196,19 +216,55 @@ class GNNExplainer:
                 return_type=return_type,
             ),
         )
-    def explanation(self, index):
-        # Generate explanation for the node index
+    def explain(self, index):
+        """
+        Explains the prediction of a graph neural network (GNN) model for a specific node by calculating
+        a mask of important features using the GNNExplainer method.
+
+        This function computes the feature importance mask for a given node in the graph, indicating which
+        features (nodes/edges) are most relevant to the model's prediction.
+
+        Args:
+            index (int): The index of the node for which the explanation is generated.
+
+        Returns:
+            tuple: A tuple containing:
+                - node_mask (list): A list of feature importances for each node in the graph.
+                - prediction (float): The predicted value for the specified node.
+
+        Example:
+            >>> explainer = GNNExplainer(model)
+            >>> node_mask, prediction = explainer.explain(node_index)
+        """
+
         explanation = self.explainer(self.data.x, self.data.edge_index, index=index)
-        # print(explanation.edge_mask)
-        # print(explanation.node_mask)
 
         return explanation.node_mask.squeeze().tolist(), explanation.prediction.item()
 
 class NodeGrapLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
-    """ GraphLIME explainer - code taken from original repository
-    Explains only node features
-
     """
+    NodeGrapLIME (Graph LIME for Node Features)
+
+    This class adapts the LIME (Local Interpretable Model-agnostic Explanations) technique to graph neural networks. It explains the predictions of a GNN by perturbing node features and observing the effect on the prediction. The method uses a kernel-based similarity function to identify which features of the node and its neighbors are most influential for the model's prediction.
+
+    Parameters
+    ----------
+    data : torch_geometric.data.Data
+        The graph data containing node features and edge indices.
+    model : torch.nn.Module
+        The trained GNN model to be explained.
+    device : torch.device
+        The device to run the model (CPU or GPU).
+    gpu : bool, optional (default=False)
+        Whether to use GPU acceleration for model inference.
+    hop : int, optional (default=2)
+        The number of hops for extracting the subgraph around the node of interest.
+    rho : float, optional (default=0.1)
+        Regularization parameter for Lasso regression.
+    cached : bool, optional (default=True)
+        Whether to cache the model's predictions for efficiency.
+    """
+
 
     def __init__(self, data, model, device, gpu=False, hop=2, rho=0.1, cached=True):
         self.data = data
@@ -312,6 +368,32 @@ class NodeGrapLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.g
         return G
 
     def explain(self, node_index, hops, num_samples, info=False, multiclass=False, *unused, **kwargs):
+        """
+        Generates a LIME (Local Interpretable Model-agnostic Explanations) explanation for a specific node's 
+        prediction in a graph-based model by approximating the decision boundary of the model using a simpler 
+        model trained on perturbed versions of the graph.
+
+        This function computes an explanation that shows the importance of various nodes and features in 
+        predicting the class of a given target node.
+
+        Args:
+            node_index (int): The index of the target node whose prediction is being explained.
+            hops (int): The number of hops to consider when creating the subgraph around the target node.
+            num_samples (int): The number of perturbed graphs to generate for the LIME explanation.
+            info (bool, optional): Whether to return additional information about the explanation.
+            multiclass (bool, optional): Whether the model is a multiclass classifier.
+
+        Returns:
+            dict: A dictionary containing:
+                - "coef_pca" (np.ndarray): The PCA-reduced coefficients for the perturbed graph.
+                - "coef_original" (np.ndarray): The original feature coefficients before PCA reduction.
+                - "top_features" (dict): A dictionary mapping each class to the top 5 features influencing the prediction.
+
+        Example:
+            >>> explainer = NodeGraphLIME(model)
+            >>> explanation = explainer.explain(node_index=0, hops=2, num_samples=100)
+        """
+
         # Preparar dados do grafo
         x = self.data.x
         edge_index = self.data.edge_index
@@ -389,10 +471,23 @@ class NodeGrapLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.g
         }
 
 class NodeGraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
-    """ KernelSHAP explainer - adapted to GNNs
-    Explains only node features
-
     """
+    NodeGraphShap (KernelSHAP for Node Features in Graphs)
+
+    This class implements the KernelSHAP algorithm for explaining node-level predictions in graph neural networks. The method computes Shapley values by sampling perturbations of node features and using weighted least squares to approximate the Shapley values. It helps to identify which features of a node and its neighbors are most important for a given prediction.
+
+    Parameters
+    ----------
+    data : torch_geometric.data.Data
+        The graph data containing node features and edge indices.
+    model : torch.nn.Module
+        The trained GNN model to be explained.
+    device : torch.device
+        The device to run the model (CPU or GPU).
+    gpu : bool, optional (default=False)
+        Whether to use GPU acceleration for model inference.
+    """
+
     def __init__(self, data, model, device, gpu=False):
         self.model = model
         self.gpu = gpu
@@ -409,12 +504,31 @@ class NodeGraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.
 
     def explain(self, node_index=0, hops=2, num_samples=10, info=True, multiclass=False, *unused):
         """
-        :param node_index: index of the node of interest
-        :param hops: number k of k-hop neighbours to consider in the subgraph around node_index
-        :param num_samples: number of samples we want to form GraphSVX's new dataset 
+        Generates a SHAP (SHapley Additive exPlanations) explanation for the prediction of a specific node 
+        in a graph-based model by calculating the Shapley values, which measure the contribution of each 
+        feature (node/edge) to the prediction of the target node.
 
-        :return: shapley values for features that influence node v's pred
+        This function approximates the Shapley values for a node's prediction by sampling different feature 
+        combinations and using weighted linear regression.
+
+        Args:
+            node_index (int, optional): The index of the target node to explain. Default is 0.
+            hops (int, optional): The number of hops to consider for the subgraph around the target node.
+            num_samples (int, optional): The number of samples to generate for the Shapley explanation.
+            info (bool, optional): Whether to return additional information about the explanation.
+            multiclass (bool, optional): Whether the model is a multiclass classifier.
+
+        Returns:
+            dict: A dictionary containing:
+                - "shap_values" (np.ndarray): The Shapley values for each feature in the graph.
+                - "top_features" (dict): A dictionary of the top features contributing to the prediction for each class.
+                - "top_values" (dict): The corresponding Shapley values for the top features.
+
+        Example:
+            >>> explainer = NodeGraphShap(model)
+            >>> explanation = explainer.explain(node_index=0, num_samples=50)
         """
+
         # Compute true prediction of model, for original instance
         with torch.no_grad():
             if self.gpu:
@@ -570,6 +684,21 @@ class NodeGraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.
         return phi[:-1], phi[-1]
     
 class GraphLIME: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
+    """
+    GraphLIME (LIME for Graph-Level Prediction)
+
+    This class adapts the LIME method for graph-level predictions. It explains how the aggregated features of the nodes in a graph influence the graph's prediction. The method perturbs node features and calculates the impact on the prediction, using a regression model to identify the importance of each node feature.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The trained GNN model to be explained.
+    device : torch.device, optional (default='cpu')
+        The device to run the model (CPU or GPU).
+    rho : float, optional (default=0.1)
+        Regularization parameter for Lasso regression.
+    """
+
     def __init__(self, model, device='cpu', rho=0.1):
         self.model = model.to(device)
         self.device = device
@@ -577,6 +706,30 @@ class GraphLIME: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
         self.model.eval()
 
     def explain(self, data, num_samples=100):
+        """
+        Generates a LIME (Local Interpretable Model-agnostic Explanations) explanation for the prediction of 
+        a graph-based model by approximating the decision boundary using a simpler model trained on perturbed 
+        versions of the entire graph.
+
+        This function computes the explanation by generating perturbed versions of the graph, using them to 
+        predict the output, and then applying Lasso regression to determine the most important features for 
+        the graph's prediction.
+
+        Args:
+            data (torch_geometric.data.Data): The graph data containing node features and edge indices.
+            num_samples (int, optional): The number of perturbed graphs to generate for the LIME explanation.
+
+        Returns:
+            dict: A dictionary containing:
+                - "feature_importance" (np.ndarray): The importance of each feature (node/edge) for the graph.
+                - "top_features" (np.ndarray): The indices of the most important features.
+                - "coef_matrix" (np.ndarray): The Lasso regression coefficients indicating feature importance.
+
+        Example:
+            >>> explainer = GraphLIME(model)
+            >>> explanation = explainer.explain(graph_data, num_samples=100)
+        """
+
         x = data.x.clone().to(self.device)  # (n_nodes, n_features)
         edge_index = data.edge_index.to(self.device)
 
@@ -626,8 +779,20 @@ class GraphLIME: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
 
 class GraphShap: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
     """
-    KernelSHAP adapted for graph-level prediction.
-    Explains how node features (aggregated) influence the prediction for the whole graph.
+    GraphShap (KernelSHAP for Graph-Level Prediction)
+
+    This class implements the KernelSHAP algorithm for explaining graph-level predictions in Graph Neural Networks. It explains how the aggregated features of the nodes influence the graph's prediction. The method perturbs node features and computes Shapley values based on the impact of these perturbations on the overall graph prediction.
+
+    Parameters
+    ----------
+    data : torch_geometric.data.Data
+        The graph data containing node features and edge indices.
+    model : torch.nn.Module
+        The trained GNN model to be explained.
+    device : torch.device
+        The device to run the model (CPU or GPU).
+    gpu : bool, optional (default=False)
+        Whether to use GPU acceleration for model inference.
     """
 
     def __init__(self, data, model, device=None, gpu=False):
@@ -642,7 +807,28 @@ class GraphShap: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
 
     def explain(self, num_samples=30, info=True):
         """
-        Realiza explicação graph-level baseada nas features dos nós.
+        Generates a SHAP (SHapley Additive exPlanations) explanation for the prediction of the entire graph 
+        by calculating the Shapley values for the graph features (nodes and edges) and identifying which 
+        components of the graph contribute most to the model's prediction.
+
+        This function approximates the Shapley values for the graph's prediction by using binary feature 
+        masks and weighted linear regression.
+
+        Args:
+            num_samples (int, optional): The number of binary samples to generate for the SHAP explanation.
+            info (bool, optional): Whether to return additional information about the explanation.
+
+        Returns:
+            dict: A dictionary containing:
+                - "shap_values" (np.ndarray): The SHAP values for each feature (node/edge) in the graph.
+                - "top_features" (np.ndarray): The indices of the most important features for the prediction.
+                - "top_values" (np.ndarray): The SHAP values for the top features.
+                - "true_prediction" (float): The true prediction value for the entire graph.
+                - "base_value" (float): The base value for the prediction before considering feature importance.
+
+        Example:
+            >>> explainer = GraphShap(model)
+            >>> explanation = explainer.explain(num_samples=50)
         """
 
         # Output real do modelo (para o grafo inteiro)

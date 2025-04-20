@@ -3,7 +3,7 @@ import torch
 from torch_geometric.datasets import Planetoid
 from torch_geometric.loader import DataLoader
 from torch.utils.data import random_split
-from src.explainers import Shap, GNNExplainer, NodeGraphShap, GraphShap, NodeGrapLIME, GraphLIME
+from src.explainers import Shap, GNNExplain, NodeGraphShap, GraphShap, NodeGrapLIME, GraphLIME
 from src.data import prepare_data_graph, qm9_tubular
 from src.models import GCN, MLP
 
@@ -102,14 +102,14 @@ def main():
 
 
     # Teste GCN com PCQM4 e GNNExplainer -> Funcional -> Explicação para as características do grafo 0
-    # data = prepare_data_graph('PCQM4')
-    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # model = GCN(num_features=data[0].x.size(1))
-    # model.load_state_dict(torch.load('models/gcn_pcqm4.pth', map_location=torch.device(device)))
-    # model = model.to(device)
-    # exp = GNNExplainer(model=model, data=data[0], device=device, epochs=20, mode='regression', task_level='graph', return_type='raw')
-    # graph_exp, pred = exp.explanation(index=0)
-    # print(f'Explicação para o Grafo 0 {graph_exp[0]}')
+    data = prepare_data_graph('PCQM4')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = GCN(num_features=data[0].x.size(1))
+    model.load_state_dict(torch.load('models/gcn_pcqm4.pth', map_location=torch.device(device)))
+    model = model.to(device)
+    exp = GNNExplain(model=model, data=data[0], device=device, epochs=20, mode='regression', task_level='graph', return_type='raw')
+    graph_exp, pred = exp.explain(index=0)
+    print(f'Explicação para o Grafo 0 {graph_exp[0]}')
 
 
 

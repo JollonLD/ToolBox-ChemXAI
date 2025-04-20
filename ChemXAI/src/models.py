@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, global_mean_pool, global_add_pool
 import torch.optim as optim
-from torch_geometric.nn import GCNConv, GATConv, GraphConv
-from torch_geometric.nn import MessagePassing, global_add_pool
+from torch_geometric.nn import GCNConv, global_add_pool
+from torch.nn import Linear, BatchNorm1d, Dropout
+
+
 
 #================================================================#
 # Tubular Models
@@ -39,12 +40,6 @@ class MLP(nn.Module):
 #================================================================#
 # Graph Based Models
 #================================================================#
-
-
-import torch
-import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, global_add_pool
-from torch.nn import Linear, BatchNorm1d, Dropout
 
 class GCN(torch.nn.Module):
     def __init__(self, num_features, hidden_dim=256):
