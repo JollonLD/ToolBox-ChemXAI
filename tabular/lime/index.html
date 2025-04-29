@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>LIME - XAI Toolbox</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "LIME";
+        var mkdocs_page_input_path = "tabular/lime.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> XAI Toolbox
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tabular Explainers</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../shap/">SHAP</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">LIME</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#theory">Theory</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#implementation">Implementation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#initialization">Initialization</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#local-explanation">Local Explanation</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#example">Example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#customization">Customization</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#limitations">Limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#references">References</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Graph Explainers</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../graph/overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../graph/gnn-explainer/">GNN Explainer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../graph/node-graph-lime/">Node Graph LIME</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../graph/node-graph-shap/">Node Graph SHAP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../graph/graph-lime/">Graph LIME</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../graph/graph-shap/">Graph SHAP</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../api-reference/">API Reference</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../examples/">Examples</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">XAI Toolbox</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Tabular Explainers</li>
+      <li class="breadcrumb-item active">LIME</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="lime-local-interpretable-model-agnostic-explanations">LIME (Local Interpretable Model-agnostic Explanations)<a class="headerlink" href="#lime-local-interpretable-model-agnostic-explanations" title="Permanent link">&para;</a></h1>
+<p>The LIME explainer in the XAI Toolbox implements the Local Interpretable Model-agnostic Explanations algorithm for tabular data. LIME helps explain individual predictions of any black-box machine learning model by learning an interpretable model locally around the prediction.</p>
+<h2 id="theory">Theory<a class="headerlink" href="#theory" title="Permanent link">&para;</a></h2>
+<p>LIME works by creating a locally interpretable model around a specific prediction. It generates perturbed samples around the instance being explained, gets predictions from the black-box model for these samples, and then trains a simpler, interpretable model (typically a sparse linear model) on this neighborhood.</p>
+<p>Key principles of LIME:</p>
+<ul>
+<li><strong>Local Fidelity</strong>: The explanation must approximate the model well in the vicinity of the instance being explained</li>
+<li><strong>Interpretability</strong>: The explanation should be easy to understand (sparse and explainable)</li>
+<li><strong>Model-Agnostic</strong>: The explanation method should work with any model</li>
+</ul>
+<h2 id="implementation">Implementation<a class="headerlink" href="#implementation" title="Permanent link">&para;</a></h2>
+<p>The <code>LIME</code> class in the XAI Toolbox uses the <code>lime_tabular</code> module from the original LIME package, adapted to work with PyTorch models and DataLoaders. It supports both classification and regression models.</p>
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<h3 id="initialization">Initialization<a class="headerlink" href="#initialization" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">from xai_toolbox import LIME
+
+explainer = LIME(model, train_loader, test_loader, device, mode='regression')
+</code></pre>
+<p>Parameters:
+- <code>model</code>: The model to be explained
+- <code>train_loader</code>: DataLoader for the training set (used to understand feature distributions)
+- <code>test_loader</code>: DataLoader for the test set (contains instances to explain)
+- <code>device</code>: Device (CPU or GPU) for operations
+- <code>mode</code>: Either 'regression' or 'classification' depending on the model type</p>
+<h3 id="local-explanation">Local Explanation<a class="headerlink" href="#local-explanation" title="Permanent link">&para;</a></h3>
+<p>Get feature importance for a specific instance:</p>
+<pre><code class="language-python">lime_explanation = explainer.local_explanation(index=0, num_features=10)
+print(lime_explanation)
+</code></pre>
+<p>Parameters:
+- <code>index</code>: Index of the instance in the test set to be explained
+- <code>num_features</code>: Number of features to include in the explanation (defaults to all features)</p>
+<p>Returns a DataFrame with feature names and their LIME values, sorted by importance.</p>
+<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
+<pre><code class="language-python">import torch
+import matplotlib.pyplot as plt
+from xai_toolbox import LIME
+
+# Assume model and data loaders are defined
+explainer = LIME(model, train_loader, test_loader, device, mode='regression')
+
+# Get local explanation for first test instance
+local_exp = explainer.local_explanation(index=0, num_features=10)
+
+# Plot the feature importance
+plt.figure(figsize=(10, 6))
+plt.barh(local_exp['Feature'], local_exp['LIME Value'])
+plt.xlabel('LIME Value')
+plt.ylabel('Feature')
+plt.title('Feature Importance for Instance #0')
+plt.tight_layout()
+plt.show()
+
+# Compare explanations for multiple instances
+fig, axes = plt.subplots(3, 1, figsize=(12, 12))
+for i, ax in enumerate(axes):
+    exp = explainer.local_explanation(index=i, num_features=5)
+    ax.barh(exp['Feature'], exp['LIME Value'])
+    ax.set_title(f'Explanation for Instance #{i}')
+    ax.set_xlabel('LIME Value')
+plt.tight_layout()
+plt.show()
+</code></pre>
+<h2 id="customization">Customization<a class="headerlink" href="#customization" title="Permanent link">&para;</a></h2>
+<p>The LIME explainer can be customized in several ways:</p>
+<ul>
+<li>Adjust the number of features in the explanation</li>
+<li>Modify the kernel width for the exponential kernel</li>
+<li>Change the discretization method for continuous features</li>
+<li>Use different feature selection methods</li>
+</ul>
+<p>Refer to the <a href="https://github.com/marcotcr/lime"><code>lime</code> package documentation</a> for more customization options.</p>
+<h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Stability</strong>: LIME explanations can be unstable if insufficient samples are used</li>
+<li><strong>Feature Dependence</strong>: LIME assumes feature independence which might not hold</li>
+<li><strong>Locality Definition</strong>: The "local" region is defined by a distance metric which might not be ideal for all data types</li>
+<li><strong>Linear Approximation</strong>: Using a linear model for the local approximation might not capture complex local behaviors</li>
+</ul>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://github.com/marcotcr/lime">LIME GitHub repository</a></li>
+<li>Ribeiro, M.T., Singh, S., Guestrin, C. (2016) "Why Should I Trust You?: Explaining the Predictions of Any Classifier"</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../shap/" class="btn btn-neutral float-left" title="SHAP"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../graph/overview/" class="btn btn-neutral float-right" title="Overview">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/JollonLD/ToolBox-ChemXAI.git" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../shap/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../graph/overview/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>GNN Explainer - XAI Toolbox</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "GNN Explainer";
+        var mkdocs_page_input_path = "graph/gnn-explainer.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> XAI Toolbox
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tabular Explainers</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../tabular/overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../tabular/shap/">SHAP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../tabular/lime/">LIME</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Graph Explainers</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">GNN Explainer</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#theory">Theory</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#implementation">Implementation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#initialization">Initialization</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#explaining-predictions">Explaining Predictions</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#example">Example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#visualizing-explanations">Visualizing Explanations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#limitations">Limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#references">References</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../node-graph-lime/">Node Graph LIME</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../node-graph-shap/">Node Graph SHAP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../graph-lime/">Graph LIME</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../graph-shap/">Graph SHAP</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../api-reference/">API Reference</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../examples/">Examples</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">XAI Toolbox</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Graph Explainers</li>
+      <li class="breadcrumb-item active">GNN Explainer</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="gnn-explainer">GNN Explainer<a class="headerlink" href="#gnn-explainer" title="Permanent link">&para;</a></h1>
+<p>The GNN Explainer is a model-specific approach for explaining predictions of Graph Neural Networks (GNNs). It identifies the most important nodes, edges, and features that contribute to the model's prediction for a specific node.</p>
+<h2 id="theory">Theory<a class="headerlink" href="#theory" title="Permanent link">&para;</a></h2>
+<p>GNN Explainer works by learning feature masks and edge masks that maximize the mutual information between the original prediction and the prediction from the masked graph. It optimizes these masks using gradient descent to identify the minimal subgraph and feature set that preserves the prediction.</p>
+<p>Key concepts:
+- <strong>Node feature mask</strong>: Identifies important node features
+- <strong>Edge mask</strong>: Identifies important edges in the node's neighborhood
+- <strong>Mutual information maximization</strong>: Ensures that the explanation preserves the model's prediction</p>
+<h2 id="implementation">Implementation<a class="headerlink" href="#implementation" title="Permanent link">&para;</a></h2>
+<p>The <code>GNNExplain</code> class in this toolbox leverages the PyTorch Geometric's <code>GNNExplainer</code> implementation, providing an easy-to-use interface compatible with various GNN architectures.</p>
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<h3 id="initialization">Initialization<a class="headerlink" href="#initialization" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">from chemxai.explainers import GNNExplain
+
+explainer = GNNExplain(
+    model=model,
+    device=device,
+    data=data,
+    epochs=100,
+    mode='regression',  # or 'classification'
+    task_level='node',  # or 'graph'
+    return_type='raw'   # or 'probabilities'
+)
+</code></pre>
+<p>Parameters:
+- <code>model</code>: The trained GNN model to be explained
+- <code>device</code>: The device to run the model (CPU or GPU)
+- <code>data</code>: The graph data containing node features and edge indices
+- <code>epochs</code>: Number of epochs for training the explainer
+- <code>mode</code>: The type of prediction task ('regression' or 'classification')
+- <code>task_level</code>: Whether the explanation is at the node level or graph level
+- <code>return_type</code>: The format of the returned explanation</p>
+<h3 id="explaining-predictions">Explaining Predictions<a class="headerlink" href="#explaining-predictions" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">node_mask, prediction = explainer.explain(index=target_node)
+</code></pre>
+<p>Parameters:
+- <code>index</code>: The index of the node for which the explanation is generated</p>
+<p>Returns:
+- <code>node_mask</code>: A list of feature importances for each node feature
+- <code>prediction</code>: The predicted value for the specified node</p>
+<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
+<pre><code class="language-python">import torch
+import numpy as np
+import matplotlib.pyplot as plt
+from torch_geometric.data import Data
+from chemxai.explainers import GNNExplain
+
+# Assume you have a trained GNN model and graph data
+model = YourGNNModel()
+data = Data(x=node_features, edge_index=edge_index)
+device = torch.device(&quot;cuda&quot; if torch.cuda.is_available() else &quot;cpu&quot;)
+
+# Initialize GNN Explainer
+explainer = GNNExplain(
+    model=model,
+    device=device,
+    data=data,
+    epochs=100,
+    mode='regression',
+    task_level='node'
+)
+
+# Explain prediction for a target node
+target_node = 0
+node_mask, prediction = explainer.explain(index=target_node)
+
+# Visualize feature importance
+plt.figure(figsize=(10, 6))
+plt.bar(range(len(node_mask)), node_mask)
+plt.xlabel('Feature Index')
+plt.ylabel('Importance')
+plt.title(f'Feature Importance for Node {target_node} (Pred: {prediction:.4f})')
+plt.tight_layout()
+plt.show()
+
+# Get top-5 important features
+top_features = np.argsort(node_mask)[::-1][:5]
+print(f&quot;Top 5 important features: {top_features}&quot;)
+print(f&quot;Their importance values: {[node_mask[i] for i in top_features]}&quot;)
+</code></pre>
+<h2 id="visualizing-explanations">Visualizing Explanations<a class="headerlink" href="#visualizing-explanations" title="Permanent link">&para;</a></h2>
+<p>To visualize the subgraph with highlighted important nodes and edges:</p>
+<pre><code class="language-python">from torch_geometric.utils import k_hop_subgraph
+from torch_geometric.data import Data
+import networkx as nx
+
+# Get k-hop subgraph around the target node
+subset, sub_edge_index, mapping, _ = k_hop_subgraph(
+    node_idx=target_node,
+    num_hops=2,
+    edge_index=data.edge_index,
+    relabel_nodes=True
+)
+
+# Create networkx graph from the subgraph
+G = nx.Graph()
+edge_list = sub_edge_index.t().tolist()
+G.add_edges_from(edge_list)
+
+# Map node importance from node_mask to the subgraph nodes
+node_importance = node_mask
+
+# Plot the graph with node importance
+plt.figure(figsize=(8, 8))
+pos = nx.spring_layout(G)
+nx.draw_networkx_edges(G, pos)
+nx.draw_networkx_nodes(G, pos, 
+                      node_color=node_importance,
+                      cmap='viridis',
+                      node_size=300)
+nx.draw_networkx_labels(G, pos)
+plt.colorbar(plt.cm.ScalarMappable(cmap='viridis'))
+plt.title(f'Node Importance for Node {target_node}')
+plt.axis('off')
+plt.tight_layout()
+plt.show()
+</code></pre>
+<h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Computational Cost</strong>: Training the explainer can be computationally expensive for large graphs</li>
+<li><strong>Local Explanations</strong>: GNN Explainer provides local explanations for specific nodes, not global model insights</li>
+<li><strong>Hyperparameter Sensitivity</strong>: Results may vary based on the number of epochs and other hyperparameters</li>
+<li><strong>Edge Explanations</strong>: The current implementation focuses mainly on node feature masks rather than edge masks</li>
+</ul>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://arxiv.org/abs/1903.03894">GNN Explainer paper</a> - Ying et al., "GNNExplainer: Generating Explanations for Graph Neural Networks"</li>
+<li><a href="https://pytorch-geometric.readthedocs.io/en/latest/modules/explain.html">PyTorch Geometric implementation</a></li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../overview/" class="btn btn-neutral float-left" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../node-graph-lime/" class="btn btn-neutral float-right" title="Node Graph LIME">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/JollonLD/ToolBox-ChemXAI.git" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../overview/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../node-graph-lime/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

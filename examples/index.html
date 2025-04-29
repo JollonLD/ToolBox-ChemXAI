@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Examples - XAI Toolbox</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Examples";
+        var mkdocs_page_input_path = "examples.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> XAI Toolbox
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting Started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tabular Explainers</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../tabular/overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tabular/shap/">SHAP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tabular/lime/">LIME</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Graph Explainers</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../graph/overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../graph/gnn-explainer/">GNN Explainer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../graph/node-graph-lime/">Node Graph LIME</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../graph/node-graph-shap/">Node Graph SHAP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../graph/graph-lime/">Graph LIME</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../graph/graph-shap/">Graph SHAP</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../api-reference/">API Reference</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Examples</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#tabular-model-explanations">Tabular Model Explanations</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#shap-example-for-tabular-data">SHAP Example for Tabular Data</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#lime-example-for-tabular-data">LIME Example for Tabular Data</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#graph-model-explanations">Graph Model Explanations</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#nodegraplime-example">NodeGrapLIME Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#nodegraphshap-example">NodeGraphSHAP Example</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#conclusion">Conclusion</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">XAI Toolbox</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Examples</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h1>
+<p>This page provides comprehensive examples of using the XAI Toolbox for explaining both tabular and graph-based models.</p>
+<h2 id="tabular-model-explanations">Tabular Model Explanations<a class="headerlink" href="#tabular-model-explanations" title="Permanent link">&para;</a></h2>
+<h3 id="shap-example-for-tabular-data">SHAP Example for Tabular Data<a class="headerlink" href="#shap-example-for-tabular-data" title="Permanent link">&para;</a></h3>
+<p>This example demonstrates how to use the SHAP explainer to interpret predictions from a tabular model.</p>
+<pre><code class="language-python">import torch
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader, TensorDataset
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from chemxai.explainers import Shap
+
+# Assume we have a trained PyTorch model and tabular data
+# Load and preprocess data
+data = pd.read_csv('your_dataset.csv')
+X = data.drop('target', axis=1).values
+y = data['target'].values
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardize features
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Create DataLoaders
+train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.FloatTensor(y_train))
+test_dataset = TensorDataset(torch.FloatTensor(X_test), torch.FloatTensor(y_test))
+
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+# Initialize model (assume it's already trained)
+device = torch.device(&quot;cuda&quot; if torch.cuda.is_available() else &quot;cpu&quot;)
+model = YourModel().to(device)
+
+# Initialize SHAP explainer
+shap_explainer = Shap(
+    model=model,
+    train_loader=train_loader,
+    test_loader=test_loader,
+    device=device
+)
+
+# Local explanation for a specific instance
+instance_idx = 5
+local_importance = shap_explainer.local_explanation(instance_idx)
+print(&quot;Local Feature Importance:&quot;)
+print(local_importance.head(10))
+
+# Plot local importance
+plt.figure(figsize=(10, 6))
+plt.barh(local_importance['Feature Index'][:10], local_importance['SHAP Value'][:10])
+plt.xlabel('SHAP Value')
+plt.ylabel('Feature Index')
+plt.title(f'Feature Importance for Instance {instance_idx}')
+plt.tight_layout()
+plt.show()
+
+# Global explanation
+all_local_importances, global_importance = shap_explainer.global_explanation()
+print(&quot;\nGlobal Feature Importance:&quot;)
+print(global_importance.head(10))
+
+# Plot global importance
+plt.figure(figsize=(10, 6))
+plt.barh(global_importance['Feature'][:10], global_importance['Importance'][:10])
+plt.xlabel('Mean |SHAP Value|')
+plt.ylabel('Feature')
+plt.title('Global Feature Importance')
+plt.tight_layout()
+plt.show()
+</code></pre>
+<h3 id="lime-example-for-tabular-data">LIME Example for Tabular Data<a class="headerlink" href="#lime-example-for-tabular-data" title="Permanent link">&para;</a></h3>
+<p>This example shows how to use LIME to explain predictions of a tabular model.</p>
+<pre><code class="language-python">import torch
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader, TensorDataset
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from chemxai.explainers import LIME
+
+# Assume we have a trained PyTorch model and tabular data
+# Setup similar to SHAP example above
+# ...
+
+# Initialize LIME explainer
+lime_explainer = LIME(
+    model=model,
+    train_loader=train_loader,
+    test_loader=test_loader,
+    device=device,
+    mode='regression'  # or 'classification' for classification models
+)
+
+# Explain a specific instance
+instance_idx = 5
+lime_explanation = lime_explainer.local_explanation(
+    index=instance_idx, 
+    num_features=10  # Show top 10 features
+)
+
+print(&quot;LIME Feature Importance:&quot;)
+print(lime_explanation)
+
+# Plot LIME explanation
+plt.figure(figsize=(10, 6))
+features = lime_explanation['Feature']
+importances = lime_explanation['Importance']
+plt.barh(features, importances)
+plt.xlabel('Feature Importance')
+plt.ylabel('Feature')
+plt.title(f'LIME Explanation for Instance {instance_idx}')
+plt.tight_layout()
+plt.show()
+
+# Feature importance with confidence intervals
+lime_explainer.plot_feature_importance(
+    instance_idx=instance_idx,
+    num_features=10,
+    show_confidence=True
+)
+</code></pre>
+<h2 id="graph-model-explanations">Graph Model Explanations<a class="headerlink" href="#graph-model-explanations" title="Permanent link">&para;</a></h2>
+<h3 id="nodegraplime-example">NodeGrapLIME Example<a class="headerlink" href="#nodegraplime-example" title="Permanent link">&para;</a></h3>
+<p>This example demonstrates how to use NodeGrapLIME to explain node predictions in a graph neural network.</p>
+<pre><code class="language-python">import torch
+import numpy as np
+import matplotlib.pyplot as plt
+import networkx as nx
+from torch_geometric.datasets import Planetoid
+from torch_geometric.nn import GCNConv
+import torch.nn.functional as F
+from chemxai.explainers import NodeGrapLIME
+
+# Load a graph dataset (e.g., Cora)
+dataset = Planetoid(root='/tmp/Cora', name='Cora')
+data = dataset[0]
+
+# Define a simple GNN model
+class GCN(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels):
+        super().__init__()
+        self.conv1 = GCNConv(in_channels, hidden_channels)
+        self.conv2 = GCNConv(hidden_channels, out_channels)
+
+    def forward(self, x, edge_index):
+        x = self.conv1(x, edge_index)
+        x = F.relu(x)
+        x = F.dropout(x, p=0.5, training=self.training)
+        x = self.conv2(x, edge_index)
+        return x
+
+# Initialize and train the model
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = GCN(dataset.num_features, 16, dataset.num_classes).to(device)
+data = data.to(device)
+
+# Assume model is trained
+# ...
+
+# Initialize NodeGrapLIME explainer
+explainer = NodeGrapLIME(
+    data=data,
+    model=model,
+    device=device,
+    hop=2,
+    rho=0.1
+)
+
+# Explain prediction for a target node
+target_node = 0
+explanation = explainer.explain(
+    node_index=target_node,
+    hops=2,
+    num_samples=100,
+    multiclass=True
+)
+
+# Extract feature importance values
+coef_original = explanation[&quot;coef_original&quot;]  # Shape: (num_features, num_classes)
+top_features = explanation[&quot;top_features&quot;]
+
+# Visualize feature importance for the predicted class
+pred_class = model(data.x, data.edge_index)[target_node].argmax().item()
+class_importance = coef_original[:, pred_class]
+top_indices = np.argsort(class_importance)[::-1][:10]  # Top 10 features
+
+plt.figure(figsize=(10, 6))
+plt.bar(range(len(top_indices)), class_importance[top_indices])
+plt.xlabel('Feature Rank')
+plt.ylabel('Importance')
+plt.title(f'Top 10 Features for Node {target_node} (Class {pred_class})')
+plt.xticks(range(len(top_indices)), [f&quot;F{i}&quot; for i in top_indices])
+plt.tight_layout()
+plt.show()
+
+# Visualize subgraph with node importances
+from torch_geometric.utils import k_hop_subgraph
+
+# Get k-hop subgraph
+subset, sub_edge_index, mapping, _ = k_hop_subgraph(
+    node_idx=target_node,
+    num_hops=2,
+    edge_index=data.edge_index,
+    relabel_nodes=True,
+    num_nodes=data.num_nodes
+)
+
+# Create networkx graph
+G = nx.Graph()
+edge_list = sub_edge_index.cpu().t().tolist()
+G.add_edges_from(edge_list)
+
+# Calculate node importance (sum of absolute feature importance)
+node_importance = []
+for node in G.nodes():
+    orig_idx = subset[node].item()
+    if orig_idx &lt; len(coef_original):
+        # Sum absolute values of feature importances for this node
+        imp = np.sum(np.abs(coef_original[orig_idx]))
+        node_importance.append(imp)
+    else:
+        node_importance.append(0)
+
+# Plot
+plt.figure(figsize=(8, 8))
+pos = nx.spring_layout(G, seed=42)
+nx.draw_networkx_edges(G, pos)
+nodes = nx.draw_networkx_nodes(G, pos, 
+                              node_color=node_importance,
+                              cmap='coolwarm',
+                              node_size=300)
+nx.draw_networkx_labels(G, pos)
+plt.colorbar(nodes)
+plt.title(f'Node Importance around Node {target_node}')
+plt.axis('off')
+plt.tight_layout()
+plt.show()
+</code></pre>
+<h3 id="nodegraphshap-example">NodeGraphSHAP Example<a class="headerlink" href="#nodegraphshap-example" title="Permanent link">&para;</a></h3>
+<p>This example demonstrates how to use NodeGraphSHAP to explain node predictions with Shapley values.</p>
+<pre><code class="language-python">import torch
+import numpy as np
+import matplotlib.pyplot as plt
+import networkx as nx
+from torch_geometric.datasets import Planetoid
+from chemxai.explainers import NodeGraphSHAP
+
+# Load dataset and model (similar setup as NodeGrapLIME example)
+# ...
+
+# Initialize NodeGraphSHAP explainer
+explainer = NodeGraphSHAP(
+    data=data,
+    model=model,
+    device=device,
+    gpu=torch.cuda.is_available()
+)
+
+# Explain prediction for a target node
+target_node = 0
+explanation = explainer.explain(
+    node_index=target_node,
+    hops=2,
+    num_samples=50,
+    multiclass=True
+)
+
+# Extract Shapley values
+shap_values = explanation[&quot;shap_values&quot;]  # Shape: (num_nodes, num_features, num_classes)
+top_features = explanation[&quot;top_features&quot;]
+top_values = explanation[&quot;top_values&quot;]
+
+# Visualize top features for the predicted class
+pred_class = model(data.x, data.edge_index)[target_node].argmax().item()
+
+plt.figure(figsize=(10, 6))
+plt.bar(range(len(top_features[pred_class])), top_values[pred_class])
+plt.xlabel('Feature Rank')
+plt.ylabel('SHAP Value')
+plt.title(f'Top Features for Node {target_node} (Class {pred_class})')
+plt.xticks(range(len(top_features[pred_class])), [f&quot;F{i}&quot; for i in top_features[pred_class]])
+plt.tight_layout()
+plt.show()
+
+# Plot SHAP value distribution across all features
+plt.figure(figsize=(12, 8))
+for i in range(min(10, data.num_features)):  # Plot first 10 features
+    feature_vals = shap_values[target_node, i, pred_class]
+    plt.scatter(i, feature_vals, s=100)
+plt.xlabel('Feature Index')
+plt.ylabel('SHAP Value')
+plt.title(f'SHAP Values Distribution for Node {target_node}')
+plt.grid(True, linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.show()
+
+# Visualize node importance in subgraph (similar to NodeGrapLIME example)
+# ...
+</code></pre>
+<h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h2>
+<p>This guide provided various examples of using the XAI Toolbox for explaining both tabular and graph models. By following these examples, you can:</p>
+<ol>
+<li>Generate local and global explanations for individual predictions</li>
+<li>Visualize feature importance using different methods</li>
+</ol>
+<p>For more advanced usage, refer to the detailed documentation for each explainer. The toolbox is designed to be flexible and extensible, allowing you to adapt the explanations to your specific use case.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../api-reference/" class="btn btn-neutral float-left" title="API Reference"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/JollonLD/ToolBox-ChemXAI.git" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../api-reference/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

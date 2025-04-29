@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Node Graph SHAP - XAI Toolbox</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Node Graph SHAP";
+        var mkdocs_page_input_path = "graph/node-graph-shap.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> XAI Toolbox
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tabular Explainers</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../tabular/overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../tabular/shap/">SHAP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../tabular/lime/">LIME</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Graph Explainers</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../gnn-explainer/">GNN Explainer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../node-graph-lime/">Node Graph LIME</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Node Graph SHAP</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#theory">Theory</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#implementation">Implementation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#initialization">Initialization</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#explaining-predictions">Explaining Predictions</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#example">Example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#visualizing-node-importance">Visualizing Node Importance</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#advantages-and-limitations">Advantages and Limitations</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#advantages">Advantages</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#limitations">Limitations</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#references">References</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../graph-lime/">Graph LIME</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../graph-shap/">Graph SHAP</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../api-reference/">API Reference</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../examples/">Examples</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">XAI Toolbox</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Graph Explainers</li>
+      <li class="breadcrumb-item active">Node Graph SHAP</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="node-graph-shap">Node Graph SHAP<a class="headerlink" href="#node-graph-shap" title="Permanent link">&para;</a></h1>
+<p>Node Graph SHAP adapts the SHAP (SHapley Additive exPlanations) method to graph neural networks at the node level. It provides theoretically grounded feature importance values that show how each feature contributes to a specific node's prediction.</p>
+<h2 id="theory">Theory<a class="headerlink" href="#theory" title="Permanent link">&para;</a></h2>
+<p>Node Graph SHAP is based on Shapley values from cooperative game theory, which provide a fair way to distribute the contribution of each feature to the prediction. It considers both node features and topological information to determine their respective contributions to a specific node's prediction.</p>
+<p>Key concepts:
+- <strong>Shapley values</strong>: A method from game theory that fairly allocates contributions among features
+- <strong>Permutation sampling</strong>: Estimating Shapley values by sampling different feature combinations
+- <strong>Weighted least squares</strong>: Using kernel weighting to approximate Shapley values efficiently</p>
+<h2 id="implementation">Implementation<a class="headerlink" href="#implementation" title="Permanent link">&para;</a></h2>
+<p>The <code>NodeGraphSHAP</code> class in this toolbox provides an implementation that:
+1. Samples different combinations of feature presence
+2. Weights samples based on the Shapley kernel formula
+3. Uses weighted linear regression to estimate feature importance
+4. Returns Shapley values for each feature as importance scores</p>
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<h3 id="initialization">Initialization<a class="headerlink" href="#initialization" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">from chemxai.explainers import NodeGraphSHAP
+
+explainer = NodeGraphSHAP(
+    data=data,
+    model=model,
+    device=device,
+    gpu=False  # Set to True for GPU acceleration
+)
+</code></pre>
+<p>Parameters:
+- <code>data</code>: The graph data containing node features and edge indices
+- <code>model</code>: The trained GNN model to be explained
+- <code>device</code>: The device to run the model (CPU or GPU)
+- <code>gpu</code>: Whether to use GPU acceleration for model inference</p>
+<h3 id="explaining-predictions">Explaining Predictions<a class="headerlink" href="#explaining-predictions" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">explanation = explainer.explain(
+    node_index=target_node,
+    hops=2,
+    num_samples=50,
+    multiclass=False
+)
+</code></pre>
+<p>Parameters:
+- <code>node_index</code>: The index of the node for which the explanation is generated
+- <code>hops</code>: The number of hops to consider in the neighborhood
+- <code>num_samples</code>: Number of samples to use for Shapley value estimation
+- <code>multiclass</code>: Whether the model is a multiclass classifier</p>
+<p>Returns:
+- A dictionary containing <code>shap_values</code>, <code>top_features</code>, and <code>top_values</code></p>
+<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
+<pre><code class="language-python">import torch
+import numpy as np
+import matplotlib.pyplot as plt
+from torch_geometric.data import Data
+from chemxai.explainers import NodeGraphSHAP
+
+# Assume you have a trained GNN model and graph data
+model = YourGNNModel()
+data = Data(x=node_features, edge_index=edge_index)
+device = torch.device(&quot;cuda&quot; if torch.cuda.is_available() else &quot;cpu&quot;)
+
+# Initialize Node Graph SHAP
+explainer = NodeGraphSHAP(
+    data=data,
+    model=model,
+    device=device,
+    gpu=torch.cuda.is_available()
+)
+
+# Explain prediction for a target node
+target_node = 0
+explanation = explainer.explain(
+    node_index=target_node,
+    hops=2,
+    num_samples=50
+)
+
+# Extract Shapley values for each feature
+shap_values = explanation[&quot;shap_values&quot;]
+top_features = explanation[&quot;top_features&quot;][0]  # Top features for class 0
+top_values = explanation[&quot;top_values&quot;][0]      # Values for top features
+
+# Visualize feature importance
+plt.figure(figsize=(10, 6))
+plt.bar(range(len(top_features)), top_values)
+plt.xlabel('Top Feature Index')
+plt.ylabel('SHAP Value')
+plt.title(f'Feature Importance for Node {target_node}')
+plt.tight_layout()
+plt.show()
+
+print(f&quot;Top 5 important features: {top_features[:5]}&quot;)
+print(f&quot;Their SHAP values: {top_values[:5]}&quot;)
+</code></pre>
+<h2 id="visualizing-node-importance">Visualizing Node Importance<a class="headerlink" href="#visualizing-node-importance" title="Permanent link">&para;</a></h2>
+<p>To visualize the neighborhood with node importance:</p>
+<pre><code class="language-python">from torch_geometric.utils import k_hop_subgraph
+import networkx as nx
+
+# Get k-hop subgraph around the target node
+subset, sub_edge_index, mapping, _ = k_hop_subgraph(
+    node_idx=target_node,
+    num_hops=2,
+    edge_index=data.edge_index,
+    relabel_nodes=True,
+    num_nodes=data.num_nodes
+)
+
+# Create networkx graph from the subgraph
+G = nx.Graph()
+edge_list = sub_edge_index.t().tolist()
+G.add_edges_from(edge_list)
+
+# Calculate importance for each node in the subgraph
+# This is just an example - you might need to adapt to your specific case
+node_importance = np.zeros(len(subset))
+for node_idx, orig_idx in enumerate(subset):
+    if node_idx &lt; len(shap_values):
+        node_importance[node_idx] = np.sum(np.abs(shap_values[node_idx]))
+
+# Plot the graph
+plt.figure(figsize=(8, 8))
+pos = nx.spring_layout(G)
+nx.draw_networkx_edges(G, pos)
+nx.draw_networkx_nodes(G, pos, 
+                      node_color=node_importance,
+                      cmap='viridis',
+                      node_size=300)
+nx.draw_networkx_labels(G, pos)
+plt.colorbar(plt.cm.ScalarMappable(cmap='viridis'))
+plt.title(f'Node Importance for Node {target_node}')
+plt.axis('off')
+plt.tight_layout()
+plt.show()
+</code></pre>
+<h2 id="advantages-and-limitations">Advantages and Limitations<a class="headerlink" href="#advantages-and-limitations" title="Permanent link">&para;</a></h2>
+<h3 id="advantages">Advantages<a class="headerlink" href="#advantages" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Solid theoretical foundation</strong>: Based on game theory with strong mathematical backing</li>
+<li><strong>Feature interactions</strong>: Captures interactions between features naturally</li>
+<li><strong>Model-agnostic</strong>: Works with any GNN architecture without requiring access to internal states</li>
+</ul>
+<h3 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Computational complexity</strong>: Computing exact Shapley values is NP-hard, requiring approximation</li>
+<li><strong>Sample efficiency</strong>: May need many samples for accurate estimates, especially with high-dimensional features</li>
+<li><strong>Local explanations</strong>: Provides explanations for individual predictions, not global model behavior</li>
+<li><strong>Memory requirements</strong>: Processing large graphs can be memory intensive</li>
+</ul>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://proceedings.neurips.cc/paper/2017/file/8a20a8621978632d76c43dfd28b67767-Paper.pdf">Original SHAP paper</a> - Lundberg and Lee, "A Unified Approach to Interpreting Model Predictions"</li>
+<li><a href="https://arxiv.org/abs/1705.07874">KernelSHAP</a> - Lundberg and Lee, "Consistent Individualized Feature Attribution for Tree Ensembles"</li>
+<li><a href="https://github.com/AlexDuvalinho/GraphSVX">GraphSVX</a> - Implementation details adapted from GraphSVX</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../node-graph-lime/" class="btn btn-neutral float-left" title="Node Graph LIME"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../graph-lime/" class="btn btn-neutral float-right" title="Graph LIME">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/JollonLD/ToolBox-ChemXAI.git" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../node-graph-lime/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../graph-lime/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
