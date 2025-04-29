@@ -1,5 +1,8 @@
 /venv/
-/ChemXAI/data/
-/ChemXAI/__pycache__/
-/ChemXAI/src/__pycache__/
+/BibChemXAI/data/
+/BibChemXAI/__pycache__/
+/BibChemXAI/chemxai/__pycache__/
 /__pycache__/
+/BibChemXAI/dist/
+/BibChemXAI/build/
+/BibChemXAI/ChemXAI.egg-info/

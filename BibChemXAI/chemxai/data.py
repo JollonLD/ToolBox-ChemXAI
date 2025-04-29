@@ -38,12 +38,12 @@ def prepare_data_graph(dataset_name='PCQM4'):
             [torch_geometric.Data]: dataset with the correct format to be used in the explanations
     """
     # Get the project path
-    dirname = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
+    dirname = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
     # Download the dataset
 
     if dataset_name == 'PCQM4':
         path = os.path.join(dirname, 'data', 'PCQM4')
+        print(path)
         transform = T.Compose([
             CastXToFloat(),
             T.NormalizeFeatures()
@@ -52,6 +52,7 @@ def prepare_data_graph(dataset_name='PCQM4'):
 
     elif dataset_name == 'QM9':
         path = os.path.join(dirname, 'data', 'QM9')
+        print(path)
         data = QM9(root=path, transform=T.NormalizeFeatures())
 
     return data

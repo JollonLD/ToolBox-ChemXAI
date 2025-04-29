@@ -12,6 +12,13 @@ from models import GCN
 from data import prepare_data_graph
 
 def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay=1e-4):
+    dirname = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    # Cria o caminho completo para o diretório 'models' dentro do 'dirname'
+    models_dir = os.path.join(dirname, 'models')
+    # Cria o diretório 'models', se não existir
+    os.makedirs(models_dir, exist_ok=True)
+    print(f'Diretório criado: {models_dir}')
+
     # Detectar GPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Usando dispositivo: {device}")
@@ -75,12 +82,13 @@ def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay
 
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
-            torch.save(model.state_dict(), '../models/gcn_qm9.pth')
+            path = dirname + '/models/gcn_qm9.pth'
+            torch.save(model.state_dict(), path)
 
         print(f"[{epoch+1}/{epochs}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
 
     # 6. Avaliação final
-    model.load_state_dict(torch.load('../models/gcn_qm9.pth'))
+    model.load_state_dict(torch.load(path))
     model.to(device)
     model.eval()
     test_loss = 0
@@ -98,6 +106,13 @@ def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay
 
 
 def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
+    dirname = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    # Cria o caminho completo para o diretório 'models' dentro do 'dirname'
+    models_dir = os.path.join(dirname, 'models')
+    # Cria o diretório 'models', se não existir
+    os.makedirs(models_dir, exist_ok=True)
+    print(f'Diretório criado: {models_dir}')
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Usando dispositivo: {device}")
 
@@ -152,12 +167,13 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
 
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
-            torch.save(model.state_dict(), 'models/gcn_pcqm4.pth')
+            path = dirname + '/models/gcn_pcqm4.pth'
+            torch.save(model.state_dict(), path)
 
         print(f"[{epoch:02d}/{epochs}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
 
     # 5. Avaliação final (com drop_last=True, garante mesmo tamanho)
-    model.load_state_dict(torch.load('models/gcn_pcqm4.pth'))
+    model.load_state_dict(torch.load(path))
     model.eval()
     final_val_loss = 0
     with torch.no_grad():

@@ -3,9 +3,9 @@ import torch
 from torch_geometric.datasets import Planetoid
 from torch_geometric.loader import DataLoader
 from torch.utils.data import random_split
-from src.explainers import Shap, GNNExplain, NodeGraphShap, GraphShap, NodeGrapLIME, GraphLIME
-from src.data import prepare_data_graph, qm9_tubular
-from src.models import GCN, MLP
+from BibChemXAI.explainers import Shap, GNNExplain, NodeGraphShap, GraphShap, NodeGrapLIME, GraphLIME
+from BibChemXAI.chemxai.data.data import prepare_data_graph, qm9_tubular
+from BibChemXAI.models import GCN, MLP
 
 
 def main():
