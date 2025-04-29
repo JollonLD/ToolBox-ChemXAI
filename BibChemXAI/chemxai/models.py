@@ -8,7 +8,7 @@ from torch.nn import Linear, BatchNorm1d, Dropout
 
 
 #================================================================#
-# Tubular Models
+# Tabular Models
 #================================================================#
 
 class MLP(nn.Module):

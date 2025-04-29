@@ -16,7 +16,7 @@ import torch.nn.functional as F
 from plots import k_hop_subgraph
 
 #================================================================#
-# Tubular Explainers
+# Tabular Explainers
 #================================================================#
 
 class Shap:
