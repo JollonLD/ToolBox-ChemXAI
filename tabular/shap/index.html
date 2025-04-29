@@ -139,7 +139,7 @@
 <p>The <code>Shap</code> class implements the KernelSHAP algorithm, which is model-agnostic (works with any model type). This implementation leverages PyTorch data loaders and works with both classification and regression models.</p>
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
 <h3 id="initialization">Initialization<a class="headerlink" href="#initialization" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python">from xai_toolbox import Shap
+<pre><code class="language-python">from chemxai.explainers import Shap
 
 explainer = Shap(model, train_loader, test_loader, device)
 </code></pre>
@@ -166,7 +166,7 @@ print(global_feature_importance.head())
 <pre><code class="language-python">import torch
 import pandas as pd
 import matplotlib.pyplot as plt
-from xai_toolbox import Shap
+from chemxai.explainers import Shap
 
 # Assume model and data loaders are defined
 explainer = Shap(model, train_loader, test_loader, device)

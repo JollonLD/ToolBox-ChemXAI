@@ -139,7 +139,7 @@
 <p>The <code>LIME</code> class in the XAI Toolbox uses the <code>lime_tabular</code> module from the original LIME package, adapted to work with PyTorch models and DataLoaders. It supports both classification and regression models.</p>
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
 <h3 id="initialization">Initialization<a class="headerlink" href="#initialization" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python">from xai_toolbox import LIME
+<pre><code class="language-python">from chemxai.explainers import LIME
 
 explainer = LIME(model, train_loader, test_loader, device, mode='regression')
 </code></pre>
@@ -161,7 +161,7 @@ print(lime_explanation)
 <h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
 <pre><code class="language-python">import torch
 import matplotlib.pyplot as plt
-from xai_toolbox import LIME
+from chemxai.explainers import LIME
 
 # Assume model and data loaders are defined
 explainer = LIME(model, train_loader, test_loader, device, mode='regression')
