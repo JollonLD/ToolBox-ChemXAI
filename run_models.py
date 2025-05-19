@@ -6,9 +6,14 @@ from torch.utils.data import random_split
 from chemxai.explainers import Shap, GNNExplain, NodeGraphShap, GraphShap, NodeGrapLIME, GraphLIME
 from chemxai.data import prepare_data_graph, qm9_tubular
 from chemxai.models import GCN, MLP
-
+from chemxai.train import train_gcn_pcqm4, train_gcn_qm9
 
 def main():
+
+    # Train_models
+    # train_gcn_qm9()
+    # train_gcn_pcqm4()
+
     # Teste MLP com QM9 e Shap -> Funcional -> Explicação para as features da instancia 0 do dataset
     # #  data = qm9_tubular()
     # #  train_loader, _, test_loader, X = data.get_dataloader()

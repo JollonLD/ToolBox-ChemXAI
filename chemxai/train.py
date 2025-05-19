@@ -12,7 +12,7 @@ from .models import GCN
 from .data import prepare_data_graph
 
 def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay=1e-4):
-    dirname = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    dirname = os.getcwd()
     # Cria o caminho completo para o diretório 'models' dentro do 'dirname'
     models_dir = os.path.join(dirname, 'models')
     # Cria o diretório 'models', se não existir
@@ -106,7 +106,7 @@ def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay
 
 
 def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
-    dirname = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    dirname = os.getcwd()
     # Cria o caminho completo para o diretório 'models' dentro do 'dirname'
     models_dir = os.path.join(dirname, 'models')
     # Cria o diretório 'models', se não existir
