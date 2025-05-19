@@ -38,7 +38,7 @@ def prepare_data_graph(dataset_name='PCQM4'):
             [torch_geometric.Data]: dataset with the correct format to be used in the explanations
     """
     # Get the project path
-    dirname = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+    dirname = os.getcwd()
     # Download the dataset
 
     if dataset_name == 'PCQM4':
@@ -264,6 +264,33 @@ class qm9_tubular:
 
 
 if __name__ == '__main__':
+
+    def get_qm9_numpy_data(att_index=10, descriptor_type='CM', batch_size=256, list_mols=[]):
+        from torch.utils.data import DataLoader
+
+        qm9 = qm9_tubular()
+
+        train_loader, val_loader, test_loader, _ = qm9.get_dataloader(
+            att_index=att_index,
+            batch_size=batch_size,
+            descriptor_type=descriptor_type,
+            list_mols=list_mols
+        )
+
+        def loader_to_numpy(loader):
+            X, y = [], []
+            for batch_x, batch_y in loader:
+                X.append(batch_x.numpy())
+                y.append(batch_y.numpy())
+            return np.vstack(X), np.vstack(y)
+
+        X_train, y_train = loader_to_numpy(train_loader)
+        X_test, y_test = loader_to_numpy(test_loader)
+
+        return X_train, X_test, y_train.ravel(), y_test.ravel()
+
+    
+
     data_qm9 = prepare_data_graph('QM9')
     data_pcqm = prepare_data_graph('PCQM4')
 

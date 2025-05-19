@@ -8,8 +8,8 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
-from models import GCN
-from data import prepare_data_graph
+from .models import GCN
+from .data import prepare_data_graph
 
 def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay=1e-4):
     dirname = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))

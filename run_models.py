@@ -3,9 +3,9 @@ import torch
 from torch_geometric.datasets import Planetoid
 from torch_geometric.loader import DataLoader
 from torch.utils.data import random_split
-from BibChemXAI.explainers import Shap, GNNExplain, NodeGraphShap, GraphShap, NodeGrapLIME, GraphLIME
-from BibChemXAI.chemxai.data.data import prepare_data_graph, qm9_tubular
-from BibChemXAI.models import GCN, MLP
+from chemxai.explainers import Shap, GNNExplain, NodeGraphShap, GraphShap, NodeGrapLIME, GraphLIME
+from chemxai.data import prepare_data_graph, qm9_tubular
+from chemxai.models import GCN, MLP
 
 
 def main():
@@ -115,4 +115,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main()                                                                                                                                                                      

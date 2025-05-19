@@ -13,7 +13,7 @@ from torch_geometric.nn import MessagePassing
 from copy import deepcopy
 import torch.nn.functional as F
 
-from plots import k_hop_subgraph
+from .plots import k_hop_subgraph
 
 #================================================================#
 # Tabular Explainers

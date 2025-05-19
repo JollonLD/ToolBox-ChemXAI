@@ -1,11 +1,6 @@
 /venv/
-/BibChemXAI/data/
-/BibChemXAI/__pycache__/
-/BibChemXAI/chemxai/__pycache__/
+/data/
+/chemxai/__pycache__/
 /__pycache__/
-/BibChemXAI/dist/
-/BibChemXAI/build/
-/BibChemXAI/ChemXAI.egg-info/
-/BibChemXAI/setup.py
 /Doc_ChemXAI/
-/BibChemXAI/NextSteps.md
+/test_evaluation/
