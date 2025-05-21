@@ -20,22 +20,22 @@ from .plots import k_hop_subgraph
 #================================================================#
 
 class Shap:
-    def __init__(self, model, train_loader, test_loader, device):
+    def __init__(self, model, background_tensor, test_tensor, device):
         """
-        Initializes the Shap class with the model, training, and test data.
+        Initializes the Shap class with the model and tensor data.
         
         Parameters:
         - model: model to be explained.
-        - train_loader: training DataLoader to obtain the background data.
-        - test_loader: test DataLoader for explanations.
+        - background_tensor: tensor containing background data for the explainer
+        - test_tensor: tensor containing test data to be explained
         - device: device (CPU or GPU) for operations.
         """
         self.model = model
         self.device = device
 
-        # Get a batch from the training DataLoader as background data
-        background = next(iter(train_loader))[0].cpu().numpy()  # Convert to numpy for KernelExplainer
-        print("Background shape:", background.shape)  # Check background shape
+        # Convert tensors to numpy arrays for KernelExplainer
+        background = background_tensor.cpu().numpy()
+        print("Background shape:", background.shape)
         
         # Define prediction function for KernelExplainer compatibility with PyTorch model
         def predict_fn(data):
@@ -47,15 +47,14 @@ class Shap:
         # Initialize KernelExplainer with model and background data
         self.explainer = shap.KernelExplainer(predict_fn, background)
         
-        # Load test data for explanations
-        self.test_data, _ = next(iter(test_loader))
-        self.test_data = self.test_data.cpu().numpy()  # Convert to numpy for KernelExplainer
-        print("Test data shape:", self.test_data.shape)  # Check test data shape
+        # Use test tensor directly
+        self.test_data = test_tensor.cpu().numpy()
+        print("Test data shape:", self.test_data.shape)
         
         # Compute shap_values for test data
         self.shap_values = self.explainer.shap_values(self.test_data)
 
-    def local_explanation(self, index):
+    def explain_local(self, index):
         """
         Generates a local explanation for a specific instance and displays a DataFrame
         with feature indices and SHAP values for the chosen instance.
@@ -74,21 +73,15 @@ class Shap:
         
         return feature_importance
 
-    def global_explanation(self):
+    def explain_global(self):
         """
-        Generates global explanations by calculating the average feature importance for each instance
-        in the test data and the overall mean importance across all instances.
+        Generates global explanations by calculating the overall mean importance across all instances.
         
         Returns:
-        - all_local_importances: DataFrame where each row represents an instance and each column represents a feature.
-        - global_feature_importance: DataFrame with average feature importance across all instances.
+        - feature_importance: DataFrame with average feature importance across all instances.
         """
         # Squeeze shap_values to remove any extra dimension if present
         shap_values_2d = np.squeeze(self.shap_values)  # Converts to Matrix
-        
-        # Compute local explanations for each instance and collect them in a DataFrame
-        all_local_importances = pd.DataFrame(shap_values_2d)
-        all_local_importances.columns = [f'Feature {i}' for i in range(shap_values_2d.shape[1])]
         
         # Compute global importance as the mean of absolute SHAP values across all instances
         mean_absolute_shap_values = np.mean(np.abs(shap_values_2d), axis=0)
@@ -97,22 +90,22 @@ class Shap:
         print("Global SHAP values shape:", mean_absolute_shap_values.shape)
         
         # DataFrame with mean absolute feature importance across all instances
-        global_feature_importance = pd.DataFrame({
+        feature_importance = pd.DataFrame({
             'Feature': [f'{i}' for i in range(len(mean_absolute_shap_values))],
             'Importance': mean_absolute_shap_values
         }).sort_values(by='Importance', ascending=False).reset_index(drop=True)
         
-        return all_local_importances, global_feature_importance
+        return feature_importance
 
 class LIME:
-    def __init__(self, model, train_loader, test_loader, device, mode='regression'):
+    def __init__(self, model, background_tensor, test_tensor, device, mode='regression'):
         """
-        Initializes the LIME class with the model and DataLoaders.
+        Initializes the LIME class with the model and tensor data.
         
         Parameters:
         - model: model to be explained.
-        - train_loader: DataLoader for the training set.
-        - test_loader: DataLoader for the test set.
+        - background_tensor: tensor containing background data for the explainer
+        - test_tensor: tensor containing test data to be explained
         - device: device (CPU or GPU) for operations.
         - mode: select whether it is a regression or classification model.
         """
@@ -120,11 +113,15 @@ class LIME:
         self.device = device
         self.mode = mode
         
-        # Get a batch from the training DataLoader and convert it to numpy
-        self.x_train = next(iter(train_loader))[0].cpu().numpy()
-        self.x_test = next(iter(test_loader))[0].cpu().numpy()  # Test data for explanation
+        # Convert tensors to numpy arrays for LIME
+        self.x_train = background_tensor.cpu().numpy()
+        print("Background shape:", self.x_train.shape)
         
-        # Detect the number of features from x_train
+        # Test data for explanation
+        self.x_test = test_tensor.cpu().numpy()
+        print("Test data shape:", self.x_test.shape)
+        
+        # Detect the number of features from training data
         self.num_features = self.x_train.shape[1]
         
         # Configure LimeTabularExplainer with training data
@@ -142,7 +139,7 @@ class LIME:
         with torch.no_grad():
             data_tensor = torch.from_numpy(data).float().to(self.device)
             return self.model(data_tensor).cpu().numpy().flatten()
-
+            
     def local_explanation(self, index, num_features=None):
         """
         Generates a local explanation for a specific instance and displays a DataFrame
@@ -154,11 +151,11 @@ class LIME:
         """
         # Define the number of features for explanation if not specified
         if num_features is None:
-            num_features = self.num_features  # Use all features if `num_features` is not provided
-
+            num_features = self.num_features
+            
         # Select the instance from the test set for explanation
         instance_to_explain = self.x_test[index]
-
+        
         # Generate explanation with LIME
         exp = self.explainer_lime.explain_instance(
             data_row=instance_to_explain,
