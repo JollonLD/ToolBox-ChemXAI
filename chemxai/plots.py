@@ -1,4 +1,6 @@
 import torch
+import numpy as np
+import matplotlib.pyplot as plt
 
 def k_hop_subgraph(node_idx, num_hops, edge_index, relabel_nodes=False,
                    num_nodes=None, flow='source_to_target'):
@@ -67,3 +69,63 @@ def k_hop_subgraph(node_idx, num_hops, edge_index, relabel_nodes=False,
         edge_index = node_idx[edge_index]
 
     return subset, edge_index, inv, edge_mask
+
+def radar_plot(values, feature_names=None, title="Feature Importance Radar Plot"):
+    """
+    Create a radar plot from SHAP values
+    
+    Parameters:
+    -----------
+    values : numpy.ndarray
+        The values given by the explanations methods
+    feature_names : list, optional
+        Names of the features. If None, will use generic names
+    title : str
+        Title of the plot
+    """
+    # If values is for multiple instances, take the mean absolute value
+    if len(values.shape) > 1:
+        values = np.abs(values).mean(axis=0)
+    else:
+        values = np.abs(values)
+    
+    # Generate feature names if not provided
+    if feature_names is None:
+        feature_names = [f"Feature {i}" for i in range(len(values))]
+    
+    # Number of features
+    N = len(values)
+    
+    # Angle for each feature
+    angles = np.linspace(0, 2*np.pi, N, endpoint=False).tolist()
+    
+    # Make the plot circular by appending the first value to the end
+    values = np.append(values, values[0])
+    angles = np.append(angles, angles[0])
+    feature_names = np.append(feature_names, feature_names[0])
+    
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(polar=True))
+    
+    # Plot the values
+    ax.plot(angles, values, 'o-', linewidth=2)
+    ax.fill(angles, values, alpha=0.25)
+    
+    # Set the labels
+    ax.set_thetagrids(np.degrees(angles[:-1]), feature_names[:-1])
+    
+    # Add title
+    plt.title(title, size=15, y=1.1)
+    
+    # Add grid and make it pretty
+    ax.grid(True)
+    
+    return fig, ax
+
+
+def bar_plot(values, feature_names=None, title="Feature Importance Bar Plot"):
+
+    return fig, ax
+
+
+
