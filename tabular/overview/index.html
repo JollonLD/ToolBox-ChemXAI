@@ -188,9 +188,9 @@
 <li>Visualize or analyze the feature importances</li>
 </ol>
 <pre><code class="language-python"># General pattern
-explainer = Explainer(model, train_loader, test_loader, device)
-local_explanation = explainer.local_explanation(index)
-global_explanation = explainer.global_explanation()
+explainer = Explainer(model, background_tensor, test_tensor, device)
+local_explanation = explainer.explain_local(index)
+global_explanation = explainer.explain_global()
 </code></pre>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>

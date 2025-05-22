@@ -151,34 +151,32 @@
 <h4 id="shap-example">SHAP Example<a class="headerlink" href="#shap-example" title="Permanent link">&para;</a></h4>
 <pre><code class="language-python">import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
 from chemxai.explainers import Shap
 
 # Assume you have a trained model and data loaders
 model = YourModel()
-train_loader = DataLoader(train_dataset, batch_size=32)
-test_loader = DataLoader(test_dataset, batch_size=32)
+background_tensor = train_dataset[:100] # 100 exemplos para background 
 device = torch.device(&quot;cuda&quot; if torch.cuda.is_available() else &quot;cpu&quot;)
 
 # Initialize SHAP explainer
-explainer = Shap(model, train_loader, test_loader, device)
+explainer = Shap(model, background_tensor, test_tensor, device)
 
 # Get local explanation for a specific instance
-local_explanation = explainer.local_explanation(index=0)
+local_explanation = explainer.explain_local(index=0)
 print(local_explanation)
 
 # Get global explanation across all instances
-all_local, global_importance = explainer.global_explanation()
+global_importance = explainer.explain_global()
 print(global_importance.head())
 </code></pre>
 <h4 id="lime-example">LIME Example<a class="headerlink" href="#lime-example" title="Permanent link">&para;</a></h4>
 <pre><code class="language-python">from chemxai.explainers import LIME
 
 # Initialize LIME explainer
-explainer = LIME(model, train_loader, test_loader, device, mode='regression')
+explainer = LIME(model, background_tensor, test_tensor, device, mode='regression')
 
 # Get local explanation for a specific instance
-lime_explanation = explainer.local_explanation(index=0, num_features=10)
+lime_explanation = explainer.explain_local(index=0, num_features=10)
 print(lime_explanation)
 </code></pre>
 <h3 id="graph-explainers">Graph Explainers<a class="headerlink" href="#graph-explainers" title="Permanent link">&para;</a></h3>

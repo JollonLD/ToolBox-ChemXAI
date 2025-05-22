@@ -151,7 +151,7 @@ explainer = LIME(model, background_tensor, test_tensor, device, mode='regression
 - <code>mode</code>: Either 'regression' or 'classification' depending on the model type</p>
 <h3 id="local-explanation">Local Explanation<a class="headerlink" href="#local-explanation" title="Permanent link">&para;</a></h3>
 <p>Get feature importance for a specific instance:</p>
-<pre><code class="language-python">lime_explanation = explainer.explain(index=0, num_features=10)
+<pre><code class="language-python">lime_explanation = explainer.explain_local(index=0, num_features=10)
 print(lime_explanation)
 </code></pre>
 <p>Parameters:
@@ -167,7 +167,7 @@ from chemxai.explainers import LIME
 explainer = LIME(model, background_tensor, test_tensor, device, mode='regression')
 
 # Get local explanation for first test instance
-local_exp = explainer.explain(index=0, num_features=10)
+local_exp = explainer.explain_local(index=0, num_features=10)
 
 # Plot the feature importance
 plt.figure(figsize=(10, 6))
@@ -181,7 +181,7 @@ plt.show()
 # Compare explanations for multiple instances
 fig, axes = plt.subplots(3, 1, figsize=(12, 12))
 for i, ax in enumerate(axes):
-    exp = explainer.local_explanation(index=i, num_features=5)
+    exp = explainer.explain_local(index=i, num_features=5)
     ax.barh(exp['Feature'], exp['LIME Value'])
     ax.set_title(f'Explanation for Instance #{i}')
     ax.set_xlabel('LIME Value')
