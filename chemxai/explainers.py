@@ -140,7 +140,7 @@ class LIME:
             data_tensor = torch.from_numpy(data).float().to(self.device)
             return self.model(data_tensor).cpu().numpy().flatten()
             
-    def local_explanation(self, index, num_features=None):
+    def explain(self, index, num_features=None):
         """
         Generates a local explanation for a specific instance and displays a DataFrame
         with feature indices and LIME values for the chosen instance.
