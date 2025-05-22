@@ -141,17 +141,17 @@
 <h3 id="initialization">Initialization<a class="headerlink" href="#initialization" title="Permanent link">&para;</a></h3>
 <pre><code class="language-python">from chemxai.explainers import LIME
 
-explainer = LIME(model, train_loader, test_loader, device, mode='regression')
+explainer = LIME(model, background_tensor, test_tensor, device, mode='regression')
 </code></pre>
 <p>Parameters:
 - <code>model</code>: The model to be explained
-- <code>train_loader</code>: DataLoader for the training set (used to understand feature distributions)
-- <code>test_loader</code>: DataLoader for the test set (contains instances to explain)
+- <code>background_tensor</code>: Tensor containing background data for the explainer
+- <code>test_tensor</code>: Tensor containing test data to be explained
 - <code>device</code>: Device (CPU or GPU) for operations
 - <code>mode</code>: Either 'regression' or 'classification' depending on the model type</p>
 <h3 id="local-explanation">Local Explanation<a class="headerlink" href="#local-explanation" title="Permanent link">&para;</a></h3>
 <p>Get feature importance for a specific instance:</p>
-<pre><code class="language-python">lime_explanation = explainer.local_explanation(index=0, num_features=10)
+<pre><code class="language-python">lime_explanation = explainer.explain(index=0, num_features=10)
 print(lime_explanation)
 </code></pre>
 <p>Parameters:
@@ -164,10 +164,10 @@ import matplotlib.pyplot as plt
 from chemxai.explainers import LIME
 
 # Assume model and data loaders are defined
-explainer = LIME(model, train_loader, test_loader, device, mode='regression')
+explainer = LIME(model, background_tensor, test_tensor, device, mode='regression')
 
 # Get local explanation for first test instance
-local_exp = explainer.local_explanation(index=0, num_features=10)
+local_exp = explainer.explain(index=0, num_features=10)
 
 # Plot the feature importance
 plt.figure(figsize=(10, 6))

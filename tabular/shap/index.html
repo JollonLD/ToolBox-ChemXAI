@@ -141,26 +141,26 @@
 <h3 id="initialization">Initialization<a class="headerlink" href="#initialization" title="Permanent link">&para;</a></h3>
 <pre><code class="language-python">from chemxai.explainers import Shap
 
-explainer = Shap(model, train_loader, test_loader, device)
+explainer = Shap(model, background_tensor, test_tensor, device)
 </code></pre>
 <p>Parameters:
 - <code>model</code>: The model to be explained.
-- <code>train_loader</code>: Training DataLoader to obtain background data.
-- <code>test_loader</code>: Test DataLoader for explanations.
+- <code>background_tensor</code>: Tensor containing background data for the explainer
+- <code>test_tensor</code>: Tensor containing test data to be explained
 - <code>device</code>: Device (CPU or GPU) for operations.</p>
 <h3 id="local-explanation">Local Explanation<a class="headerlink" href="#local-explanation" title="Permanent link">&para;</a></h3>
 <p>Get feature importance for a specific instance:</p>
-<pre><code class="language-python">local_explanation = explainer.local_explanation(index=0)
+<pre><code class="language-python">local_explanation = explainer.explain_local(index=0)
 print(local_explanation)
 </code></pre>
-<p>This returns a DataFrame with feature indices and their SHAP values for the specified instance, sorted by importance.</p>
+<p>This returns:
+- `local_explanation: DataFrame with feature indices and their SHAP values for the specified instance, sorted by importance.</p>
 <h3 id="global-explanation">Global Explanation<a class="headerlink" href="#global-explanation" title="Permanent link">&para;</a></h3>
 <p>Get feature importance across all instances:</p>
-<pre><code class="language-python">all_local_importances, global_feature_importance = explainer.global_explanation()
+<pre><code class="language-python">global_feature_importance = explainer.explain_global()
 print(global_feature_importance.head())
 </code></pre>
 <p>This returns:
-- <code>all_local_importances</code>: DataFrame with SHAP values for each feature across all instances.
 - <code>global_feature_importance</code>: DataFrame with average feature importance across all instances.</p>
 <h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
 <pre><code class="language-python">import torch
@@ -169,10 +169,10 @@ import matplotlib.pyplot as plt
 from chemxai.explainers import Shap
 
 # Assume model and data loaders are defined
-explainer = Shap(model, train_loader, test_loader, device)
+explainer = Shap(model, background_tensor, test_tensor, device)
 
 # Get local explanation for a specific instance
-local_exp = explainer.local_explanation(index=0)
+local_exp = explainer.explain_local(index=0)
 
 # Plot top 10 features for this instance
 plt.figure(figsize=(10, 6))
@@ -184,7 +184,7 @@ plt.tight_layout()
 plt.show()
 
 # Get global explanation
-_, global_exp = explainer.global_explanation()
+global_exp = explainer.explain_global()
 
 # Plot top 10 features globally
 plt.figure(figsize=(10, 6))
@@ -198,7 +198,7 @@ plt.show()
 <h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Computation</strong>: KernelSHAP can be computationally expensive for large datasets or complex models.</li>
-<li><strong>Background Data</strong>: Results depend on the chosen background dataset (from train_loader).</li>
+<li><strong>Background Data</strong>: Results depend on the chosen background dataset (from background_tensor).</li>
 <li><strong>Feature Independence</strong>: KernelSHAP assumes feature independence, which might not hold for all datasets.</li>
 </ul>
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
