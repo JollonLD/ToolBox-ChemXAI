@@ -8,10 +8,10 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
-from .models import GCN, MLP
-from .data import prepare_data_graph, qm9_tubular
+from models import GCN, MLP
+from data import prepare_data_graph, qm9_tubular
 
-def train_mlp_qm9(att_index=10, epochs=100, layers=[128, 64, 32], learning_rate=1e-3, batch_size=32):
+def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, batch_size=32):
     """
     Função para treinar um modelo MLP.
 
@@ -53,9 +53,12 @@ def train_mlp_qm9(att_index=10, epochs=100, layers=[128, 64, 32], learning_rate=
     for epoch in range(epochs):
         model.train()
         train_loss = 0.0
-        for inputs, targets in train_loader:
+        for batch in train_loader:
+            inputs = batch[0] # Xn
+            targets = batch[1] # Yn_scaled
+
             inputs = inputs.to(device)
-            targets = targets.to(device).unsqueeze(1).float()
+            targets = targets.to(device)
 
             model.optimizer.zero_grad()
             outputs = model(inputs)
@@ -69,9 +72,12 @@ def train_mlp_qm9(att_index=10, epochs=100, layers=[128, 64, 32], learning_rate=
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for inputs, targets in val_loader:
+            for batch in val_loader:
+                inputs = batch[0] # Xn
+                targets = batch[1] # Yn_scaled
+
                 inputs = inputs.to(device)
-                targets = targets.to(device).unsqueeze(1).float()
+                targets = targets.to(device)
 
                 outputs = model(inputs)
                 loss = model.criterion(outputs, targets)
@@ -263,4 +269,4 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
 
 
 if __name__ == '__main__':
-    pass
+    train_mlp_qm9()
