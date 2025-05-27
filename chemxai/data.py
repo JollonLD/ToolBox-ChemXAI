@@ -400,10 +400,7 @@ class qm9_tubular:
         coords = []
         prop = []
         natoms = []
-        i = 0
         for file_name in os.listdir(self.directory_path):
-            if i == 10:
-                break
             if file_name.endswith(".xyz"):
                 file_path = os.path.join(self.directory_path, file_name)
                 molecule_data = self.load_qm9_xyz(file_path)
@@ -411,7 +408,6 @@ class qm9_tubular:
                     coords.append([molecule_data['atoms'], molecule_data['coordinates']])
                     prop.append(molecule_data['properties'])
                     natoms.append(molecule_data['natoms'])
-            i += 1
         return coords, prop, natoms
     
     def dataset_to_numpy(dataset):  
@@ -506,8 +502,11 @@ class qm9_tubular:
 
         scaler = StandardScaler()
         Xn = scaler.fit_transform(X)
+        
+        self.target_scaler = StandardScaler() 
+        Ys_scaled = self.target_scaler.fit_transform(Ys)
 
-        dataset = self.Data(Xn, Ys)
+        dataset = self.Data(Xn, Ys_scaled)
         
         # Split
         train_len = int(0.8 * len(dataset))
@@ -591,7 +590,10 @@ class qm9_tubular:
         scaler = StandardScaler()
         Xn = scaler.fit_transform(X_with_noise)
 
-        dataset = self.Data(Xn, Ys)
+        self.target_scaler = StandardScaler() 
+        Ys_scaled = self.target_scaler.fit_transform(Ys)
+
+        dataset = self.Data(Xn, Ys_scaled)
         
         # Split
         train_len = int(0.8 * len(dataset))
@@ -609,12 +611,10 @@ class qm9_tubular:
 
 
 if __name__ == '__main__':
-
+    pass
     # qm9 = qm9_tubular()
 
-    # # 1. Carregar os dados com DataLoaders (para usar com PyTorch)
-    # # O argumento att_index escolhe qual propriedade química você quer prever
-    # # 10 = 'Internal energy at 0 K (U0)'
+    # 10 = 'Internal energy at 0 K (U0)'
     # train_loader, val_loader, test_loader, X_original = qm9.get_dataloader(
     #     att_index=10,           # Índice da propriedade a ser prevista
     #     batch_size=256,         # Tamanho do lote
@@ -632,12 +632,12 @@ if __name__ == '__main__':
     # print(train_loader.dataset[0])
     # print(train_loader_noise.dataset[0])
 
-    data_qm9 = prepare_data_graph('QM9')
+    # data_qm9 = prepare_data_graph('QM9')
 
-    print(data_qm9.data.x.shape)
-    print(data_qm9.data.edge_attr.shape)
+    # print(data_qm9.data.x.shape)
+    # print(data_qm9.data.edge_attr.shape)
 
-    data_pcqm = prepare_data_graph('PCQM4')
+    # data_pcqm = prepare_data_graph('PCQM4')
 
-    print(data_pcqm[0].x.shape)
-    print(data_pcqm[0].edge_attr.shape)
+    # print(data_pcqm[0].x.shape)
+    # print(data_pcqm[0].edge_attr.shape)

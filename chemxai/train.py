@@ -8,8 +8,81 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
-from .models import GCN
-from .data import prepare_data_graph
+from .models import GCN, MLP
+from .data import prepare_data_graph, qm9_tubular
+
+def train_mlp_qm9(att_index=10, epochs=100, layers=[128, 64, 32], learning_rate=1e-3, batch_size=32):
+    """
+    Função para treinar um modelo MLP.
+
+    Args:
+        model (nn.Module): O modelo MLP a ser treinado.
+        train_loader (torch.utils.data.DataLoader): DataLoader para o conjunto de treinamento.
+        val_loader (torch.utils.data.DataLoader): DataLoader para o conjunto de validação.
+        epochs (int): Número de épocas de treinamento.
+        device (torch.device): Dispositivo para o qual os tensores serão movidos ('cuda' ou 'cpu').
+
+    Returns:
+        list: Uma lista de tuplas (epoch, train_loss, val_loss) para cada época.
+    """
+
+    # Carregar os dados
+    qm9 = qm9_tubular()
+
+    train_loader, val_loader, test_loader, X_original = qm9.get_dataloader(
+        att_index=att_index,           # Índice da propriedade a ser prevista
+        batch_size=batch_size,         # Tamanho do lote
+        descriptor_type='CM',   # Usar Coulomb Matrix como descritor
+        list_mols=[]            # Lista vazia = todas as moléculas
+    )
+
+    # Definir o dispositivo
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'Usando dispositivo: {device}')
+
+    # Obter a dimensão da entrada (tamanho do descritor CM)
+    input_dim = next(iter(train_loader))[0].shape[1]
+    output_dim = 1  # Previsão de uma única propriedade
+
+    # Definir a arquitetura da MLP
+    model = MLP(input_dim, output_dim, layers, device, lr=learning_rate)
+
+    history = []
+    model.to(device)
+
+    for epoch in range(epochs):
+        model.train()
+        train_loss = 0.0
+        for inputs, targets in train_loader:
+            inputs = inputs.to(device)
+            targets = targets.to(device).unsqueeze(1).float()
+
+            model.optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = model.criterion(outputs, targets)
+            loss.backward()
+            model.optimizer.step()
+            train_loss += loss.item() * inputs.size(0)
+
+        train_loss = train_loss / len(train_loader.dataset)
+
+        model.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for inputs, targets in val_loader:
+                inputs = inputs.to(device)
+                targets = targets.to(device).unsqueeze(1).float()
+
+                outputs = model(inputs)
+                loss = model.criterion(outputs, targets)
+                val_loss += loss.item() * inputs.size(0)
+
+        val_loss = val_loss / len(val_loader.dataset)
+        history.append((epoch + 1, train_loss, val_loss))
+        print(f'Epoch [{epoch+1}/{epochs}], Train Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}')
+
+    return history
+
 
 def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay=1e-4):
     dirname = os.getcwd()
@@ -190,4 +263,4 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
 
 
 if __name__ == '__main__':
-    train_gcn_qm9()
+    pass

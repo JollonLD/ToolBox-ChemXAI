@@ -6,13 +6,14 @@ from torch.utils.data import random_split
 from chemxai.explainers import Shap, GNNExplain, NodeGraphShap, GraphShap, NodeGrapLIME, GraphLIME
 from chemxai.data import prepare_data_graph, qm9_tubular
 from chemxai.models import GCN, MLP
-from chemxai.train import train_gcn_pcqm4, train_gcn_qm9
+from chemxai.train import train_gcn_pcqm4, train_gcn_qm9, train_mlp_qm9
 
 def main():
 
     # Train_models
     # train_gcn_qm9()
     # train_gcn_pcqm4()
+    train_mlp_qm9()
 
     # Teste MLP com QM9 e Shap -> Funcional -> Explicação para as features da instancia 0 do dataset
     # #  data = qm9_tubular()
@@ -107,14 +108,14 @@ def main():
 
 
     # Teste GCN com PCQM4 e GNNExplainer -> Funcional -> Explicação para as características do grafo 0
-    data = prepare_data_graph('PCQM4')
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = GCN(num_features=data[0].x.size(1))
-    model.load_state_dict(torch.load('models/gcn_pcqm4.pth', map_location=torch.device(device)))
-    model = model.to(device)
-    exp = GNNExplain(model=model, data=data[0], device=device, epochs=20, mode='regression', task_level='graph', return_type='raw')
-    graph_exp, pred = exp.explain(index=0)
-    print(f'Explicação para o Grafo 0 {graph_exp[0]}')
+    # data = prepare_data_graph('PCQM4')
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # model = GCN(num_features=data[0].x.size(1))
+    # model.load_state_dict(torch.load('models/gcn_pcqm4.pth', map_location=torch.device(device)))
+    # model = model.to(device)
+    # exp = GNNExplain(model=model, data=data[0], device=device, epochs=20, mode='regression', task_level='graph', return_type='raw')
+    # graph_exp, pred = exp.explain(index=0)
+    # print(f'Explicação para o Grafo 0 {graph_exp[0]}')
 
 
 
