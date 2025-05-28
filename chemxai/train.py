@@ -118,7 +118,6 @@ def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, 
 
     return history
 
-
 def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay=1e-4):
     
     dirname = os.getcwd()
