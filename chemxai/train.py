@@ -9,14 +9,10 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
-from models import GCN, MLP
-from data import prepare_data_graph, qm9_tubular
+from .models import GCN, MLP
+from .data import prepare_data_graph, qm9_tubular
 
-<<<<<<< HEAD
 def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, batch_size=32):
-=======
-def train_mlp_qm9(att_index=10, epochs=10, layers=[128, 64, 32, 16], learning_rate=1e-3, batch_size=64):
->>>>>>> 93bef2d (Descreva suas alterações aqui)
     """
     Função para treinar um modelo MLP.
 
@@ -35,7 +31,7 @@ def train_mlp_qm9(att_index=10, epochs=10, layers=[128, 64, 32, 16], learning_ra
     models_dir = os.path.join(dirname, 'models')
     os.makedirs(models_dir, exist_ok=True)
     print(f'Diretório criado: {models_dir}')
-    path = dirname + 'models/mlp_qm9.pth'
+    path = dirname + '/models/mlp_qm9.pth'
 
     # Carregar os dados
     qm9 = qm9_tubular()
@@ -102,22 +98,21 @@ def train_mlp_qm9(att_index=10, epochs=10, layers=[128, 64, 32, 16], learning_ra
     
         print(f"[{epoch+1}/{epochs}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
 
-    # 6. Avaliação final
+    # Avaliação final
     model.load_state_dict(torch.load(path))
     model.to(device)
     model.eval()
-    test_loss = 0
+    test_loss = 0.0
 
     with torch.no_grad():
         for batch in test_loader:
             inputs = batch[0].to(device)
             targets = batch[1].to(device)
-            preds = model(inputs)  # Assumindo que seu modelo recebe apenas a entrada (X)
-            preds_true = qm9.target_scaler.inverse_transform(preds)
-            y_true = qm9.target_scaler.inverse_transform(targets)
-            test_loss += F.mse_loss(preds_true, y_true).item() * inputs.size(0)
+            preds = model(inputs)
+            test_loss += F.mse_loss(preds, targets).item() * inputs.size(0)
             
-    test_loss /= len(test_loader.dataset)
+    test_loss = test_loss / len(test_loader.dataset)
+    
     print(f"\nMSE no teste: {test_loss:.4f}")
     print(f"RMSE no teste: {test_loss ** 0.5:.4f}")
 
@@ -292,7 +287,7 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
 
         print(f"[{epoch:02d}/{epochs}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
 
-    # 5. Avaliação final (com drop_last=True, garante mesmo tamanho)
+    # 5. Avaliação final
     model.load_state_dict(torch.load(path))
     model.eval()
     final_val_loss = 0
@@ -310,8 +305,4 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
     return history
 
 if __name__ == '__main__':
-<<<<<<< HEAD
     train_mlp_qm9()
-=======
-    pass
->>>>>>> 93bef2d (Descreva suas alterações aqui)
