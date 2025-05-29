@@ -1,97 +1,88 @@
-from data import prepare_data_graph
 import numpy as np
+from scipy.spatial.distance import cosine
+from scipy.stats import spearmanr
+import matplotlib.pyplot as plt
+import os
+import contextlib
+import io
 
-class Evaluate_Tubular():
-    
-    def generate_pertubation(self, X, noise_levels=[0.01, 0.05, 0.1, 0.2], random_state=42):
-        """
-        Generate perturbed versions of the input data for robustness testing
-        
-        Parameters:
-        -----------
-        X : numpy.ndarray
-            The original descriptors (e.g., Coulomb Matrix)
-        noise_levels : list
-            List of noise standard deviations to apply to features
-        random_state : int
-            Random seed for reproducibility
-            
-        Returns:
-        --------
-        dict : Dictionary containing the original data and perturbed versions
-            Keys are noise levels (with '0' for original data)
-        """
-        np.random.seed(random_state)
-        
-        # Dictionary to store original and perturbed data
-        robust_data = {'0': X}  # '0' key for the original data
-        
-        # Create perturbed versions with different noise levels
-        for noise in noise_levels:
-            # Generate Gaussian noise with specified std dev
-            noise_matrix = np.random.normal(0, noise, size=X.shape)
-            
-            # Scale noise proportionally to the range of each feature
-            feature_ranges = np.max(X, axis=0) - np.min(X, axis=0)
-            scaled_noise = noise_matrix * feature_ranges
-            
-            # Add noise to the original data
-            perturbed_data = X + scaled_noise
-            
-            # Store in dictionary with noise level as key
-            robust_data[str(noise)] = perturbed_data
-        
-        return robust_data
+from chemxai.explainers import Shap, LIME
 
-    def generate_noise_feature(self, X, noise_type='gaussian', noise_scale=1.0, seed=42):
-        """
-        Generate a dataset with an additional noise feature column.
-        This allows testing if explanation methods correctly identify the noise feature as unimportant.
-        
-        Parameters:
-        -----------
-        X : numpy.ndarray
-            Original feature matrix
-        noise_type : str
-            Type of noise to generate ('gaussian', 'uniform', or 'binary')
-        noise_scale : float
-            Scale parameter for the noise distribution
-        seed : int
-            Random seed for reproducibility
-            
-        Returns:
-        --------
-        tuple : (X_with_noise, feature_is_noise)
-            - X_with_noise: Original X with added noise column
-            - feature_is_noise: Boolean mask indicating which features are noise (True) vs real (False)
-        """
-        np.random.seed(seed)
-        n_samples = X.shape[0]
-        
-        # Generate noise column based on specified type
-        if noise_type == 'gaussian':
-            noise_feature = np.random.normal(0, noise_scale, size=(n_samples, 1))
-        elif noise_type == 'uniform':
-            noise_feature = np.random.uniform(-noise_scale, noise_scale, size=(n_samples, 1))
-        elif noise_type == 'binary':
-            noise_feature = np.random.choice([0, 1], size=(n_samples, 1))
-        else:
-            raise ValueError(f"Unknown noise type: {noise_type}")
-        
-        # Add noise feature to original data
-        X_with_noise = np.hstack((X, noise_feature))
-        
-        # Create a mask to track which features are noise
-        # False for real features, True for noise features
-        feature_is_noise = np.zeros(X_with_noise.shape[1], dtype=bool)
-        feature_is_noise[-1] = True  # Last column is the noise feature
-        
-        return X_with_noise, feature_is_noise
+def robustness (model_normal, model_noise, train_loader_normal, test_loader_normal, train_loader_noise, test_loader_noise, device, model_type='tubular', explainer_type='shap'):
+    base_dir = os.getcwd()
+    path = base_dir + '/graphs/'
 
+    similarities = []
+    l1_differences = []
+    l2_differences = []
+    spearman_correlations = []
 
-class Evaluate_Graph():
-    pass
+    for batch_train, batch_test, batch_train_noise, batch_test_noise in zip(train_loader_normal, test_loader_normal, train_loader_noise, test_loader_noise):
+        
+        background = batch_train[0]
+        test_tensor = batch_test[0]
 
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            explainer = Shap(model=model_normal, background_tensor=background, test_tensor=test_tensor, device=device)
+            explanation_without_noise = explainer.explain_global()
+        
+        background_noise = batch_train_noise[0]
+        test_tensor_noise = batch_test_noise[0]
+
+        with contextlib.redirect_stdout(f):
+            explainer_noise = Shap(model=model_noise, background_tensor=background_noise, test_tensor=test_tensor_noise, device=device)
+            explanation_with_noise = explainer_noise.explain_global()
+
+        # Converte 'Feature' para int
+        explanation_without_noise['Feature'] = explanation_without_noise['Feature'].astype(int)
+        explanation_with_noise['Feature'] = explanation_with_noise['Feature'].astype(int)
+
+        # Descobre o maior índice entre as duas explicações
+        max_feature = max(explanation_without_noise['Feature'].max(), explanation_with_noise['Feature'].max())
+
+        # Cria dicionários de importâncias
+        importance_dict = dict(zip(explanation_without_noise['Feature'], explanation_without_noise['Importance']))
+        importance_dict_noise = dict(zip(explanation_with_noise['Feature'], explanation_with_noise['Importance']))
+
+        # Transforma em listas de tamanho igual
+        importance_list = [importance_dict.get(i, 0) for i in range(max_feature + 1)]
+        importance_list_noise = [importance_dict_noise.get(i, 0) for i in range(max_feature + 1)]
+
+        # Transforma em arrays
+        imp = np.array(importance_list)
+        imp_noise = np.array(importance_list_noise)
+
+        # Cosine similarity (1 - distance)
+        sim = 1 - cosine(imp, imp_noise)
+        similarities.append(sim)
+
+        # L1 norm
+        l1_diff = np.sum(np.abs(imp - imp_noise))
+        l1_differences.append(l1_diff)
+
+        # L2 norm
+        l2_diff = np.linalg.norm(imp - imp_noise)
+        l2_differences.append(l2_diff)
+
+        # Spearman rank correlation
+        rho, _ = spearmanr(imp, imp_noise)
+        spearman_correlations.append(rho)
+
+    # Após todos os batches:
+    # print(f"Cosine Similarity: média={np.mean(similarities):.4f}, std={np.std(similarities):.4f}")
+    # print(f"L1 diferença média: {np.mean(l1_differences):.4f}")
+    # print(f"L2 diferença média: {np.mean(l2_differences):.4f}")
+    # print(f"Spearman correlação média: {np.mean(spearman_correlations):.4f}")
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(similarities, bins=20)
+    ax.set_title('Distribuição da Cosine Similarity')
+    ax.set_xlabel('Similarity')
+    ax.set_ylabel('Frequency')
+    fig.savefig(path + 'similarity_cosine.png')
+
+    return similarities, l1_differences, l2_differences, spearman_correlations, fig
 
 if __name__ == '__main__':
     pass

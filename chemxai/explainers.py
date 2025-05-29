@@ -12,6 +12,9 @@ from sklearn.decomposition import PCA
 from torch_geometric.nn import MessagePassing
 from copy import deepcopy
 import torch.nn.functional as F
+import contextlib
+import io
+
 
 from .plots import k_hop_subgraph
 
@@ -45,14 +48,17 @@ class Shap:
                 return self.model(data_tensor).cpu().numpy()
         
         # Initialize KernelExplainer with model and background data
-        self.explainer = shap.KernelExplainer(predict_fn, background)
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            self.explainer = shap.KernelExplainer(predict_fn, background)
         
         # Use test tensor directly
         self.test_data = test_tensor.cpu().numpy()
         print("Test data shape:", self.test_data.shape)
         
         # Compute shap_values for test data
-        self.shap_values = self.explainer.shap_values(self.test_data)
+        with contextlib.redirect_stdout(f):
+            self.shap_values = self.explainer.shap_values(self.test_data)
 
     def explain_local(self, index):
         """
@@ -125,13 +131,15 @@ class LIME:
         self.num_features = self.x_train.shape[1]
         
         # Configure LimeTabularExplainer with training data
-        self.explainer_lime = lime_tabular.LimeTabularExplainer(
-            training_data=self.x_train,
-            mode=self.mode,  # Use "classification" if the model is a classifier
-            feature_names=[f"Feature {i}" for i in range(self.num_features)],
-            discretize_continuous=True,
-            verbose=True
-        )
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            self.explainer_lime = lime_tabular.LimeTabularExplainer(
+                training_data=self.x_train,
+                mode=self.mode,  # Use "classification" if the model is a classifier
+                feature_names=[f"Feature {i}" for i in range(self.num_features)],
+                discretize_continuous=True,
+                verbose=True
+            )
         
     def predict_fn(self, data):
         """Prediction function to adapt the PyTorch model for LIME."""
