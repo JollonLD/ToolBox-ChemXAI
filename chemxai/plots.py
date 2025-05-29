@@ -123,9 +123,5 @@ def radar_plot(values, feature_names=None, title="Feature Importance Radar Plot"
     return fig, ax
 
 
-def bar_plot(values, feature_names=None, title="Feature Importance Bar Plot"):
-
-    return fig, ax
-
 
 

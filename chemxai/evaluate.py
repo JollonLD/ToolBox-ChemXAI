@@ -10,7 +10,6 @@ from chemxai.explainers import Shap, LIME
 
 def robustness (model_normal, model_noise, train_loader_normal, test_loader_normal, train_loader_noise, test_loader_noise, device, model_type='tubular', explainer_type='shap'):
     base_dir = os.getcwd()
-    path = base_dir + '/graphs/'
 
     similarities = []
     l1_differences = []
@@ -75,14 +74,32 @@ def robustness (model_normal, model_noise, train_loader_normal, test_loader_norm
     # print(f"L2 diferença média: {np.mean(l2_differences):.4f}")
     # print(f"Spearman correlação média: {np.mean(spearman_correlations):.4f}")
 
-    fig, ax = plt.subplots(figsize=(6, 4))
+    fig_cos, ax = plt.subplots(figsize=(6, 4))
     ax.hist(similarities, bins=20)
     ax.set_title('Distribuição da Cosine Similarity')
     ax.set_xlabel('Similarity')
     ax.set_ylabel('Frequency')
-    fig.savefig(path + 'similarity_cosine.png')
+    fig_cos.savefig('similarity_cosine.png')
 
-    return similarities, l1_differences, l2_differences, spearman_correlations, fig
+    fig_l1, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(l1_differences, bins=20)
+    ax.set_title('Distribuição das Diferenças')
+    ax.set_xlabel('Difference')
+    ax.set_ylabel('Frequency')
+    fig_l1.savefig('l1_differences.png')
+    
+    fig_spearman, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(spearman_correlations, bins=20)
+    ax.set_title('Distribuição das Correlações Spearman')
+    ax.set_xlabel('Difference')
+    ax.set_ylabel('Frequency')
+    fig_spearman.savefig('spearman_corr.png')
+    
+    figs = [fig_cos, fig_l1, fig_spearman]
+
+    return similarities, l1_differences, l2_differences, spearman_correlations, figs
+
+
 
 if __name__ == '__main__':
     pass
