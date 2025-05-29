@@ -10,11 +10,7 @@ from chemxai.explainers import Shap, LIME
 
 def robustness (model_normal, model_noise, train_loader_normal, test_loader_normal, train_loader_noise, test_loader_noise, device, model_type='tubular', explainer_type='shap'):
     base_dir = os.getcwd()
-<<<<<<< HEAD
     path = base_dir + '/graphs/'
-=======
-    path = base_dir + '/graphs'
->>>>>>> 40cd3c5 (update:Chenge Tubular to Tabular)
 
     similarities = []
     l1_differences = []
@@ -84,11 +80,7 @@ def robustness (model_normal, model_noise, train_loader_normal, test_loader_norm
     ax.set_title('Distribuição da Cosine Similarity')
     ax.set_xlabel('Similarity')
     ax.set_ylabel('Frequency')
-<<<<<<< HEAD
     fig.savefig(path + 'similarity_cosine.png')
-=======
-    fig.savefig(path)
->>>>>>> 40cd3c5 (update:Chenge Tubular to Tabular)
 
     return similarities, l1_differences, l2_differences, spearman_correlations, fig
 
