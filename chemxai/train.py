@@ -10,7 +10,7 @@ from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
 from .models import GCN, MLP
-from .data import prepare_data_graph, qm9_tubular
+from .data import prepare_data_graph, qm9_tabular
 
 def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, batch_size=32):
     """
@@ -34,7 +34,7 @@ def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, 
     path = dirname + '/models/mlp_qm9.pth'
 
     # Carregar os dados
-    qm9 = qm9_tubular()
+    qm9 = qm9_tabular()
 
     train_loader, val_loader, test_loader, X_original = qm9.get_dataloader(
         att_index=att_index,           # Índice da propriedade a ser prevista

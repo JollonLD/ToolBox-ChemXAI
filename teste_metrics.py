@@ -3,14 +3,14 @@
 
 # %%
 from chemxai.models import MLP
-from chemxai.data import qm9_tubular
+from chemxai.data import qm9_tabular
 from chemxai.evaluate import robustness
 
 import torch
 import torch.nn.functional as F
 
 # %%
-qm9 = qm9_tubular()
+qm9 = qm9_tabular()
 
 train_loader, val_loader, test_loader, _ = qm9.get_dataloader(batch_size=32)
 input_dim = next(iter(train_loader))[0].shape[1]

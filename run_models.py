@@ -4,7 +4,7 @@ from torch_geometric.datasets import Planetoid
 from torch_geometric.loader import DataLoader
 from torch.utils.data import random_split
 from chemxai.explainers import Shap, GNNExplain, NodeGraphShap, GraphShap, NodeGrapLIME, GraphLIME
-from chemxai.data import prepare_data_graph, qm9_tubular
+from chemxai.data import prepare_data_graph, qm9_tabular
 from chemxai.models import GCN, MLP
 from chemxai.train import train_gcn_pcqm4, train_gcn_qm9, train_mlp_qm9
 

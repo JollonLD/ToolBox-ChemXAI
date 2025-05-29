@@ -322,12 +322,12 @@ def prepare_data_graph_structural_noise(dataset_name='PCQM4', edge_ratio=0.1, se
 # Tubular Datasets
 #================================================================#
 
-class qm9_tubular:
+class qm9_tabular:
     def __init__(self):
         # Caminho absoluto baseado na localização do script atual
         base_dir = os.getcwd()
         
-        self.directory_path = os.path.join(base_dir, "data", "QM9_tubular_Data")
+        self.directory_path = os.path.join(base_dir, "data", "QM9_tabular_Data")
         self.zip_path = os.path.join(base_dir, "data", "QM9.zip")
         self.qm9_folder = self.directory_path
 
@@ -612,7 +612,7 @@ class qm9_tubular:
 
 if __name__ == '__main__':
     pass
-    # qm9 = qm9_tubular()
+    # qm9 = qm9_tabular()
 
     # 10 = 'Internal energy at 0 K (U0)'
     # train_loader, val_loader, test_loader, X_original = qm9.get_dataloader(
