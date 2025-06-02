@@ -10,9 +10,9 @@ from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
 from .models import GCN, MLP
-from .data import prepare_data_graph, qm9_tabular
+from .data import graph_datasets, qm9_tabular
 
-def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, batch_size=32):
+def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, batch_size=32, n_noise=0):
     """
     Função para treinar um modelo MLP.
 
@@ -31,17 +31,29 @@ def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, 
     models_dir = os.path.join(dirname, 'models')
     os.makedirs(models_dir, exist_ok=True)
     print(f'Diretório criado: {models_dir}')
-    path = dirname + '/models/mlp_qm9.pth'
+    
+    if n_noise > 0:
+        path = models_dir + '/mlp_qm9_noise.pth'
+    else:
+        path = models_dir + '/mlp_qm9.pth'
 
     # Carregar os dados
     qm9 = qm9_tabular()
-
-    train_loader, val_loader, test_loader, X_original = qm9.get_dataloader(
-        att_index=att_index,           # Índice da propriedade a ser prevista
-        batch_size=batch_size,         # Tamanho do lote
-        descriptor_type='CM',   # Usar Coulomb Matrix como descritor
-        list_mols=[]            # Lista vazia = todas as moléculas
-    )
+    if n_noise > 0:
+        train_loader, val_loader, test_loader, X_original, is_noise = qm9.get_dataloader_with_noise(
+            att_index=att_index,           # Índice da propriedade a ser prevista
+            batch_size=batch_size,         # Tamanho do lote
+            descriptor_type='CM',          # Usar Coulomb Matrix como descritor
+            list_mols=[],                  # Lista vazia = todas as moléculas
+            n_noise=n_noise                
+        )
+    else:    
+        train_loader, val_loader, test_loader, X_original = qm9.get_dataloader(
+            att_index=att_index,           # Índice da propriedade a ser prevista
+            batch_size=batch_size,         # Tamanho do lote
+            descriptor_type='CM',          # Usar Coulomb Matrix como descritor
+            list_mols=[]                   # Lista vazia = todas as moléculas
+        )
 
     # Definir o dispositivo
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -118,20 +130,29 @@ def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, 
 
     return history
 
-def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay=1e-4):
+def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay=1e-4, n_noise=0):
     
     dirname = os.getcwd()
     models_dir = os.path.join(dirname, 'models')
     os.makedirs(models_dir, exist_ok=True)
     print(f'Diretório criado: {models_dir}')
-    path = dirname + '/models/gcn_qm9.pth'
+    
+    if n_noise > 0:
+        path = models_dir + '/gcn_qm9_noise.pth'
+    else:
+        path = models_dir + '/gcn_qm9.pth'
 
     # Detectar GPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Usando dispositivo: {device}")
 
+    gd = graph_datasets()
+
     # 1. Carregar e transformar o dataset
-    dataset = prepare_data_graph('QM9')
+    if n_noise > 0:
+        dataset = gd.prepare_data_graph_noise('QM9')
+    else:
+        dataset = gd.prepare_data_graph('QM9')
 
     # 2. Normalizar o alvo
     y = dataset.data.y[:, target_idx]
@@ -139,16 +160,7 @@ def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay
     std = y.std()
     dataset.data.y = (y - mean) / std
 
-    # 3. Dividir dataset
-    total_size = len(dataset)
-    train_size = int(0.8 * total_size)
-    val_size = int(0.1 * total_size)
-    test_size = total_size - train_size - val_size
-    train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
-
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size)
+    train_loader, val_loader, test_loader = gd.get_dataloader(dataset=dataset, batch_size=batch_size)
 
     # 4. Instanciar modelo para regressão
     model = GCN(
@@ -228,8 +240,10 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Usando dispositivo: {device}")
 
+    gd = graph_datasets()
+
     # 1. Carregamento e redução do dataset
-    dataset = prepare_data_graph('PCQM4')
+    dataset = gd.prepare_data_graph('PCQM4')
     dataset = dataset[:100000]  # reduzido para testes rápidos
 
     # 2. Divisão

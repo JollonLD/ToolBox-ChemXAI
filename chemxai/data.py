@@ -9,6 +9,8 @@ import torch_geometric.transforms as T
 import torch
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import shuffle
+from torch_geometric.loader import DataLoader as GraphDataLoader
+from torch_geometric.data import InMemoryDataset
 from torch.utils.data import Dataset, DataLoader, random_split
 from ase import Atoms
 from dscribe.descriptors import CoulombMatrix
@@ -27,296 +29,367 @@ class CastXToFloat:
         data.x = data.x.float()
         return data
 
-def prepare_data_graph(dataset_name='PCQM4'):
-    """Get Data to be used
+class graph_datasets:
 
-    Parameter:
-            dataset_name (str): name of the dataset (default: QM9)
+    def __init__(self):
+        pass
 
-    Return:
-            [torch_geometric.Data]: dataset with the correct format to be used in the explanations
-    """
-    # Get the project path
-    dirname = os.getcwd()
-    # Download the dataset
+    def prepare_data_graph(self, dataset_name='PCQM4'):
+        """Get Data to be used
 
-    if dataset_name == 'PCQM4':
-        path = os.path.join(dirname, 'data', 'PCQM4')
-        print(path)
-        transform = T.Compose([
-            CastXToFloat(),
-            T.NormalizeFeatures()
-        ])
-        data = PCQM4Mv2(root=path, transform=transform)
+        Parameter:
+                dataset_name (str): name of the dataset (default: QM9)
 
-    elif dataset_name == 'QM9':
-        path = os.path.join(dirname, 'data', 'QM9')
-        print(path)
-        data = QM9(root=path, transform=T.NormalizeFeatures())
-
-    return data
-
-def prepare_data_graph_noise(dataset_name='PCQM4', noise_type='gaussian', noise_scale=1.0, seed=42):
-    """
-    Prepare graph data with an additional noise feature for each node.
-    
-    Parameters:
-    -----------
-    dataset_name : str
-        Name of the dataset ('PCQM4' or 'QM9')
-    noise_type : str
-        Type of noise: 'gaussian', 'uniform', 'binary'
-    noise_scale : float
-        Scale of the noise
-    seed : int
-        Random seed
-        
-    Returns:
-    --------
-    tuple : (data, is_noise)
-        - data: PyG dataset with added noise feature
-        - is_noise: Boolean mask indicating which node features are noise
-    """
-    # First get the original data
-    data = prepare_data_graph(dataset_name)
-    
-    # Set random seed
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    
-    # Create a modified dataset with noise feature
-    modified_dataset = []
-    
-    # Create a boolean mask to track which feature is noise
-    # Assuming the first graph has the same node feature dimensions as all others
-    first_graph = data[0]
-    n_features = first_graph.x.shape[1]
-    is_noise = torch.zeros(n_features + 1, dtype=bool)
-    is_noise[-1] = True  # Last feature is noise
-    
-    for graph in data:
-        # Get number of nodes in this graph
-        n_nodes = graph.x.shape[0]
-        
-        # Generate noise for each node based on specified type
-        if noise_type == 'gaussian':
-            noise = torch.randn(n_nodes, 1) * noise_scale
-        elif noise_type == 'uniform':
-            noise = (torch.rand(n_nodes, 1) * 2 - 1) * noise_scale
-        elif noise_type == 'binary':
-            noise = torch.randint(0, 2, (n_nodes, 1)).float()
-        else:
-            raise ValueError(f"Unknown noise type: {noise_type}")
-        
-        # Add noise feature to node features
-        new_x = torch.cat([graph.x, noise], dim=1)
-        
-        # Create new graph with noise feature
-        new_graph = graph.clone()
-        new_graph.x = new_x
-        
-        modified_dataset.append(new_graph)
-    
-    # Return modified dataset
-    return modified_dataset, is_noise
-
-def prepare_data_graph_edge_noise(dataset_name='PCQM4', noise_type='gaussian', noise_scale=1.0, seed=42):
-    """
-    Adiciona uma feature de ruído às arestas do grafo.
-
-    Parameters:
-    -----------
-    dataset_name : str
-        Nome do dataset ('PCQM4' ou 'QM9')
-    noise_type : str
-        Tipo de ruído: 'gaussian', 'uniform', 'binary'
-    noise_scale : float
-        Escala do ruído
-    seed : int
-        Semente aleatória
-        
-    Returns:
-    --------
-    tuple : (data, is_noise)
-        - data: Dataset PyG com feature de ruído nas arestas
-        - is_noise: Máscara booleana indicando qual feature das arestas é ruído
-    """
-    # Obter dados originais
-    data = prepare_data_graph(dataset_name)
-
-    # Configurar semente
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-
-    modified_dataset = []
-
-    # Máscara para indicar qual feature é ruído
-    first_graph = data[0]
-    n_edge_features = first_graph.edge_attr.shape[1]
-    is_noise = torch.zeros(n_edge_features + 1, dtype=bool)
-    is_noise[-1] = True  # Última feature é ruído
-
-    for graph in data:
-        # Número de arestas
-        n_edges = graph.edge_index.shape[1]
-        
-        # Gerar ruído para cada aresta
-        if noise_type == 'gaussian':
-            noise = torch.randn(n_edges, 1) * noise_scale
-        elif noise_type == 'uniform':
-            noise = (torch.rand(n_edges, 1) * 2 - 1) * noise_scale
-        elif noise_type == 'binary':
-            noise = torch.randint(0, 2, (n_edges, 1)).float()
-        else:
-            raise ValueError(f"Tipo de ruído desconhecido: {noise_type}")
-        
-        # Adicionar feature de ruído às arestas
-        new_edge_attr = torch.cat([graph.edge_attr, noise], dim=1)
-        
-        # Criar novo grafo
-        new_graph = graph.clone()
-        new_graph.edge_attr = new_edge_attr
-        
-        modified_dataset.append(new_graph)
-
-    return modified_dataset, is_noise
-
-def prepare_data_subgraph_noise(dataset_name='PCQM4', subgraph_ratio=0.2, 
-                            noise_type='gaussian', noise_scale=1.0, seed=42):
-    """
-    Adiciona ruído apenas a um subgrafo (subconjunto de nós) em cada grafo.
-    
-    Parameters:
-    -----------
-    dataset_name : str
-        Nome do dataset ('PCQM4' ou 'QM9')
-    subgraph_ratio : float
-        Fração de nós a serem incluídos no subgrafo (0-1)
-    noise_type : str
-        Tipo de ruído: 'gaussian', 'uniform', 'binary'
-    noise_scale : float
-        Escala do ruído
-    seed : int
-        Semente aleatória
-        
-    Returns:
-    --------
-    tuple : (data, is_noisy_node)
-        - data: Dataset PyG com feature de ruído em subgrafo
-        - is_noisy_node: Lista de máscaras binárias indicando quais nós têm ruído
-    """
-    # Obter dados originais
-    data = prepare_data_graph(dataset_name)
-    
-    # Configurar semente
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    
-    modified_dataset = []
-    is_noisy_node_list = []
-    
-    for graph in data:
-        # Número de nós
-        n_nodes = graph.x.shape[0]
-        n_features = graph.x.shape[1]
-        
-        # Selecionar aleatoriamente um subconjunto de nós
-        num_noisy_nodes = max(1, int(n_nodes * subgraph_ratio))
-        noisy_node_indices = np.random.choice(n_nodes, num_noisy_nodes, replace=False)
-        
-        # Criar máscara para nós com ruído
-        is_noisy_node = torch.zeros(n_nodes, dtype=bool)
-        is_noisy_node[noisy_node_indices] = True
-        
-        # Adicionar feature de ruído apenas para os nós selecionados
-        new_x = graph.x.clone()
-        
-        if noise_type == 'gaussian':
-            noise = torch.randn(num_noisy_nodes, n_features) * noise_scale
-        elif noise_type == 'uniform':
-            noise = (torch.rand(num_noisy_nodes, n_features) * 2 - 1) * noise_scale
-        elif noise_type == 'binary':
-            noise = torch.randint(0, 2, (num_noisy_nodes, n_features)).float()
-        else:
-            raise ValueError(f"Tipo de ruído desconhecido: {noise_type}")
-        
-        # Aplicar ruído nos nós selecionados
-        new_x[noisy_node_indices] += noise
-        
-        # Criar novo grafo
-        new_graph = graph.clone()
-        new_graph.x = new_x
-        
-        modified_dataset.append(new_graph)
-        is_noisy_node_list.append(is_noisy_node)
-    
-    return modified_dataset, is_noisy_node_list
-
-def prepare_data_graph_structural_noise(dataset_name='PCQM4', edge_ratio=0.1, seed=42):
+        Return:
+                [torch_geometric.Data]: dataset with the correct format to be used in the explanations
         """
-        Adiciona ruído estrutural adicionando arestas aleatórias ao grafo.
+        # Get the project path
+        dirname = os.getcwd()
+        # Download the dataset
+
+        if dataset_name == 'PCQM4':
+            path = os.path.join(dirname, 'data', 'PCQM4')
+            print(path)
+            transform = T.Compose([
+                CastXToFloat(),
+                T.NormalizeFeatures()
+            ])
+            data = PCQM4Mv2(root=path, transform=transform)
+
+        elif dataset_name == 'QM9':
+            path = os.path.join(dirname, 'data', 'QM9')
+            print(path)
+            data = QM9(root=path, transform=T.NormalizeFeatures())
+
+        return data
+
+    def prepare_data_graph_noise(self, dataset_name='PCQM4', noise_type='gaussian', noise_scale=1.0, seed=42):
+        """
+        Prepare graph data with an additional noise feature for each node.
         
         Parameters:
         -----------
         dataset_name : str
+            Name of the dataset ('PCQM4' or 'QM9')
+        noise_type : str
+            Type of noise: 'gaussian', 'uniform', 'binary'
+        noise_scale : float
+            Scale of the noise
+        seed : int
+            Random seed
+            
+        Returns:
+        --------
+        torch_geometric.data.InMemoryDataset: Dataset with added noise feature
+        """
+        # First get the original data
+        original_data = self.prepare_data_graph(dataset_name)
+        
+        # Set random seed
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        
+        # Create a modified dataset with noise feature
+        modified_graphs = []
+        
+        # Create a boolean mask to track which feature is noise
+        # Assuming the first graph has the same node feature dimensions as all others
+        first_graph = original_data[0]
+        n_features = first_graph.x.shape[1]
+        is_noise = torch.zeros(n_features + 1, dtype=bool)
+        is_noise[-1] = True  # Last feature is noise
+        
+        for graph in original_data:
+            # Get number of nodes in this graph
+            n_nodes = graph.x.shape[0]
+            
+            # Generate noise for each node based on specified type
+            if noise_type == 'gaussian':
+                noise = torch.randn(n_nodes, 1) * noise_scale
+            elif noise_type == 'uniform':
+                noise = (torch.rand(n_nodes, 1) * 2 - 1) * noise_scale
+            elif noise_type == 'binary':
+                noise = torch.randint(0, 2, (n_nodes, 1)).float()
+            else:
+                raise ValueError(f"Unknown noise type: {noise_type}")
+            
+            # Add noise feature to node features
+            new_x = torch.cat([graph.x, noise], dim=1)
+            
+            # Create new graph with noise feature
+            new_graph = graph.clone()
+            new_graph.x = new_x
+            
+            modified_graphs.append(new_graph)
+        
+        # Create a custom dataset with the modified graphs
+        class NoisyGraphDataset(InMemoryDataset):
+            def __init__(self, data_list):
+                super().__init__(None)
+                self.data, self.slices = self.collate(data_list)
+                self.is_noise = is_noise
+                
+            @property
+            def num_features(self):
+                return self.data.x.size(1)
+                
+        # Return a dataset with the same interface as the original
+        return NoisyGraphDataset(modified_graphs)
+
+    def prepare_data_graph_edge_noise(self, dataset_name='PCQM4', noise_type='gaussian', noise_scale=1.0, seed=42):
+        """
+        Adiciona uma feature de ruído às arestas do grafo.
+
+        Parameters:
+        -----------
+        dataset_name : str
             Nome do dataset ('PCQM4' ou 'QM9')
-        edge_ratio : float
-            Fração de arestas aleatórias a adicionar em relação ao número original
+        noise_type : str
+            Tipo de ruído: 'gaussian', 'uniform', 'binary'
+        noise_scale : float
+            Escala do ruído
         seed : int
             Semente aleatória
             
         Returns:
         --------
-        tuple : (data, is_noisy_edge)
-            - data: Dataset PyG com arestas de ruído
-            - is_noisy_edge: Lista de máscaras binárias indicando quais arestas são ruído
+        tuple : (data, is_noise)
+            - data: Dataset PyG com feature de ruído nas arestas
+            - is_noise: Máscara booleana indicando qual feature das arestas é ruído
         """
         # Obter dados originais
-        data = prepare_data_graph(dataset_name)
+        data = self.prepare_data_graph(dataset_name)
+
+        # Configurar semente
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+
+        modified_dataset = []
+
+        # Máscara para indicar qual feature é ruído
+        first_graph = data[0]
+        n_edge_features = first_graph.edge_attr.shape[1]
+        is_noise = torch.zeros(n_edge_features + 1, dtype=bool)
+        is_noise[-1] = True  # Última feature é ruído
+
+        for graph in data:
+            # Número de arestas
+            n_edges = graph.edge_index.shape[1]
+            
+            # Gerar ruído para cada aresta
+            if noise_type == 'gaussian':
+                noise = torch.randn(n_edges, 1) * noise_scale
+            elif noise_type == 'uniform':
+                noise = (torch.rand(n_edges, 1) * 2 - 1) * noise_scale
+            elif noise_type == 'binary':
+                noise = torch.randint(0, 2, (n_edges, 1)).float()
+            else:
+                raise ValueError(f"Tipo de ruído desconhecido: {noise_type}")
+            
+            # Adicionar feature de ruído às arestas
+            new_edge_attr = torch.cat([graph.edge_attr, noise], dim=1)
+            
+            # Criar novo grafo
+            new_graph = graph.clone()
+            new_graph.edge_attr = new_edge_attr
+            
+            modified_dataset.append(new_graph)
+
+        return modified_dataset, is_noise
+
+    def prepare_data_subgraph_noise(self, dataset_name='PCQM4', subgraph_ratio=0.2, 
+                                noise_type='gaussian', noise_scale=1.0, seed=42):
+        """
+        Adiciona ruído apenas a um subgrafo (subconjunto de nós) em cada grafo.
+        
+        Parameters:
+        -----------
+        dataset_name : str
+            Nome do dataset ('PCQM4' ou 'QM9')
+        subgraph_ratio : float
+            Fração de nós a serem incluídos no subgrafo (0-1)
+        noise_type : str
+            Tipo de ruído: 'gaussian', 'uniform', 'binary'
+        noise_scale : float
+            Escala do ruído
+        seed : int
+            Semente aleatória
+            
+        Returns:
+        --------
+        tuple : (data, is_noisy_node)
+            - data: Dataset PyG com feature de ruído em subgrafo
+            - is_noisy_node: Lista de máscaras binárias indicando quais nós têm ruído
+        """
+        # Obter dados originais
+        data = self.prepare_data_graph(dataset_name)
         
         # Configurar semente
         np.random.seed(seed)
         torch.manual_seed(seed)
         
         modified_dataset = []
-        is_noisy_edge_list = []
+        is_noisy_node_list = []
         
         for graph in data:
-            # Número de nós e arestas
+            # Número de nós
             n_nodes = graph.x.shape[0]
-            n_edges = graph.edge_index.shape[1]
-            n_edge_features = graph.edge_attr.shape[1] if hasattr(graph, 'edge_attr') else 0
+            n_features = graph.x.shape[1]
             
-            # Número de arestas aleatórias a adicionar
-            num_random_edges = max(1, int(n_edges * edge_ratio))
+            # Selecionar aleatoriamente um subconjunto de nós
+            num_noisy_nodes = max(1, int(n_nodes * subgraph_ratio))
+            noisy_node_indices = np.random.choice(n_nodes, num_noisy_nodes, replace=False)
             
-            # Gerar pares de nós aleatórios para novas arestas
-            random_src = torch.randint(0, n_nodes, (num_random_edges,))
-            random_dst = torch.randint(0, n_nodes, (num_random_edges,))
+            # Criar máscara para nós com ruído
+            is_noisy_node = torch.zeros(n_nodes, dtype=bool)
+            is_noisy_node[noisy_node_indices] = True
             
-            # Criar novos índices de arestas
-            new_edges = torch.stack([random_src, random_dst], dim=0)
-            new_edge_index = torch.cat([graph.edge_index, new_edges], dim=1)
+            # Adicionar feature de ruído apenas para os nós selecionados
+            new_x = graph.x.clone()
             
-            # Criar máscara para arestas de ruído
-            is_noisy_edge = torch.zeros(n_edges + num_random_edges, dtype=bool)
-            is_noisy_edge[n_edges:] = True
+            if noise_type == 'gaussian':
+                noise = torch.randn(num_noisy_nodes, n_features) * noise_scale
+            elif noise_type == 'uniform':
+                noise = (torch.rand(num_noisy_nodes, n_features) * 2 - 1) * noise_scale
+            elif noise_type == 'binary':
+                noise = torch.randint(0, 2, (num_noisy_nodes, n_features)).float()
+            else:
+                raise ValueError(f"Tipo de ruído desconhecido: {noise_type}")
+            
+            # Aplicar ruído nos nós selecionados
+            new_x[noisy_node_indices] += noise
             
             # Criar novo grafo
             new_graph = graph.clone()
-            new_graph.edge_index = new_edge_index
-            
-            # Se o grafo tiver atributos de aresta, também precisamos adicionar para as novas arestas
-            if hasattr(graph, 'edge_attr') and n_edge_features > 0:
-                # Criar atributos aleatórios para as novas arestas
-                random_edge_attr = torch.randn(num_random_edges, n_edge_features)
-                new_edge_attr = torch.cat([graph.edge_attr, random_edge_attr], dim=0)
-                new_graph.edge_attr = new_edge_attr
+            new_graph.x = new_x
             
             modified_dataset.append(new_graph)
-            is_noisy_edge_list.append(is_noisy_edge)
+            is_noisy_node_list.append(is_noisy_node)
         
-        return modified_dataset, is_noisy_edge_list
+        return modified_dataset, is_noisy_node_list
+
+    def prepare_data_graph_structural_noise(self, dataset_name='PCQM4', edge_ratio=0.1, seed=42):
+            """
+            Adiciona ruído estrutural adicionando arestas aleatórias ao grafo.
+            
+            Parameters:
+            -----------
+            dataset_name : str
+                Nome do dataset ('PCQM4' ou 'QM9')
+            edge_ratio : float
+                Fração de arestas aleatórias a adicionar em relação ao número original
+            seed : int
+                Semente aleatória
+                
+            Returns:
+            --------
+            tuple : (data, is_noisy_edge)
+                - data: Dataset PyG com arestas de ruído
+                - is_noisy_edge: Lista de máscaras binárias indicando quais arestas são ruído
+            """
+            # Obter dados originais
+            data = self.prepare_data_graph(dataset_name)
+            
+            # Configurar semente
+            np.random.seed(seed)
+            torch.manual_seed(seed)
+            
+            modified_dataset = []
+            is_noisy_edge_list = []
+            
+            for graph in data:
+                # Número de nós e arestas
+                n_nodes = graph.x.shape[0]
+                n_edges = graph.edge_index.shape[1]
+                n_edge_features = graph.edge_attr.shape[1] if hasattr(graph, 'edge_attr') else 0
+                
+                # Número de arestas aleatórias a adicionar
+                num_random_edges = max(1, int(n_edges * edge_ratio))
+                
+                # Gerar pares de nós aleatórios para novas arestas
+                random_src = torch.randint(0, n_nodes, (num_random_edges,))
+                random_dst = torch.randint(0, n_nodes, (num_random_edges,))
+                
+                # Criar novos índices de arestas
+                new_edges = torch.stack([random_src, random_dst], dim=0)
+                new_edge_index = torch.cat([graph.edge_index, new_edges], dim=1)
+                
+                # Criar máscara para arestas de ruído
+                is_noisy_edge = torch.zeros(n_edges + num_random_edges, dtype=bool)
+                is_noisy_edge[n_edges:] = True
+                
+                # Criar novo grafo
+                new_graph = graph.clone()
+                new_graph.edge_index = new_edge_index
+                
+                # Se o grafo tiver atributos de aresta, também precisamos adicionar para as novas arestas
+                if hasattr(graph, 'edge_attr') and n_edge_features > 0:
+                    # Criar atributos aleatórios para as novas arestas
+                    random_edge_attr = torch.randn(num_random_edges, n_edge_features)
+                    new_edge_attr = torch.cat([graph.edge_attr, random_edge_attr], dim=0)
+                    new_graph.edge_attr = new_edge_attr
+                
+                modified_dataset.append(new_graph)
+                is_noisy_edge_list.append(is_noisy_edge)
+            
+            return modified_dataset, is_noisy_edge_list
+
+    def get_dataloader(self, dataset, batch_size=32, split_ratio=[0.8, 0.1, 0.1], shuffle=True, seed=42):
+        """
+        Converte um dataset PyTorch Geometric em DataLoaders.
+        
+        Parâmetros:
+        -----------
+        dataset : PyTorch Geometric dataset
+            Dataset a ser convertido em DataLoaders
+        batch_size : int
+            Tamanho do lote para os DataLoaders
+        split_ratio : list
+            Proporção de divisão [treino, validação, teste]
+        shuffle : bool
+            Se os dados devem ser embaralhados
+        seed : int
+            Semente aleatória para reprodutibilidade
+        
+        Retorna:
+        --------
+        tuple : (train_loader, val_loader, test_loader)
+            DataLoaders para treino, validação e teste
+        """
+        # Configurar semente para reprodutibilidade
+        torch.manual_seed(seed)
+        
+        # Calcular tamanhos de cada conjunto
+        num_samples = len(dataset)
+        train_size = int(num_samples * split_ratio[0])
+        val_size = int(num_samples * split_ratio[1])
+        test_size = num_samples - train_size - val_size
+        
+        # Dividir o dataset
+        train_dataset, val_dataset, test_dataset = random_split(
+            dataset, [train_size, val_size, test_size]
+        )
+        
+        # Criar DataLoaders
+        train_loader = GraphDataLoader(
+            train_dataset, 
+            batch_size=batch_size, 
+            shuffle=shuffle
+        )
+        
+        val_loader = GraphDataLoader(
+            val_dataset, 
+            batch_size=batch_size, 
+            shuffle=False
+        )
+        
+        test_loader = GraphDataLoader(
+            test_dataset, 
+            batch_size=batch_size, 
+            shuffle=False
+        )
+        
+        return train_loader, val_loader, test_loader
 
 #================================================================#
 # Tubular Datasets
@@ -523,9 +596,10 @@ class qm9_tabular:
         return train_loader, val_loader, test_loader, X
 
     def get_dataloader_with_noise(self, att_index=10, batch_size=256, descriptor_type='CM', 
-                             list_mols=[], noise_type='gaussian', noise_scale=1.0, seed=42):
+                             list_mols=[], noise_type='gaussian', noise_scale=1.0, seed=42,
+                             n_noise=1):
         """
-        Versão modificada de get_dataloader que adiciona uma coluna de ruído
+        Versão modificada de get_dataloader que adiciona 'n_noise' colunas de ruído
         à matriz de Coulomb antes do processamento.
         
         Parameters:
@@ -544,11 +618,13 @@ class qm9_tabular:
             Escala do ruído
         seed : int
             Semente aleatória
+        n_noise : int
+            Número de colunas de ruído a serem adicionadas
             
         Returns:
         --------
-        tuple : (train_loader, val_loader, test_loader, X, is_noise)
-            is_noise é uma máscara booleana indicando qual coluna é ruído
+        tuple : (train_loader, val_loader, test_loader, X_with_noise, is_noise)
+            is_noise é uma máscara booleana indicando quais colunas são ruído
         """
         # Carregar dados normalmente até a matriz de Coulomb
         coords, props, natoms = self.load_qm9_dataset(list_mols=list_mols)
@@ -561,28 +637,28 @@ class qm9_tabular:
         if descriptor_type == 'CM':
             cm = CoulombMatrix(n_atoms_max=n_atoms_max, permutation="eigenspectrum")
             X = cm.create(mols)
-        
+
         # Configurar semente aleatória
         np.random.seed(seed)
-        
-        # Criar coluna de ruído
+
+        # Criar colunas de ruído
         n_samples = X.shape[0]
         if noise_type == 'gaussian':
-            noise_feature = np.random.normal(0, noise_scale, size=(n_samples, 1))
+            noise_features = np.random.normal(0, noise_scale, size=(n_samples, n_noise))
         elif noise_type == 'uniform':
-            noise_feature = np.random.uniform(-noise_scale, noise_scale, size=(n_samples, 1))
+            noise_features = np.random.uniform(-noise_scale, noise_scale, size=(n_samples, n_noise))
         elif noise_type == 'binary':
-            noise_feature = np.random.choice([0, 1], size=(n_samples, 1))
+            noise_features = np.random.choice([0, 1], size=(n_samples, n_noise))
         else:
             raise ValueError(f"Tipo de ruído desconhecido: {noise_type}")
-        
-        # Adicionar coluna de ruído à matriz de Coulomb
-        X_with_noise = np.hstack((X, noise_feature))
-        
-        # Criar máscara para indicar qual coluna é ruído
+
+        # Adicionar colunas de ruído à matriz de Coulomb
+        X_with_noise = np.hstack((X, noise_features))
+
+        # Criar máscara para indicar quais colunas são ruído
         is_noise = np.zeros(X_with_noise.shape[1], dtype=bool)
-        is_noise[-1] = True  # Última coluna é ruído
-        
+        is_noise[-n_noise:] = True  # Últimas n_noise colunas são ruído
+
         # Continuar o processamento normal
         X_with_noise, props = shuffle(X_with_noise, props, random_state=0)
         Ys = props[:, att_index].reshape(-1, 1)
@@ -594,14 +670,14 @@ class qm9_tabular:
         Ys_scaled = self.target_scaler.fit_transform(Ys)
 
         dataset = self.Data(Xn, Ys_scaled)
-        
+
         # Split
         train_len = int(0.8 * len(dataset))
         val_len = int(0.1 * len(dataset))
         test_len = len(dataset) - train_len - val_len
 
         train_dataset, val_dataset, test_dataset = random_split(dataset, [train_len, val_len, test_len])
-        
+
         # Loaders
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
@@ -611,33 +687,31 @@ class qm9_tabular:
 
 
 if __name__ == '__main__':
-    pass
-    # qm9 = qm9_tabular()
+
+    qm9 = qm9_tabular()
 
     # 10 = 'Internal energy at 0 K (U0)'
-    # train_loader, val_loader, test_loader, X_original = qm9.get_dataloader(
-    #     att_index=10,           # Índice da propriedade a ser prevista
-    #     batch_size=256,         # Tamanho do lote
-    #     descriptor_type='CM',   # Usar Coulomb Matrix como descritor
-    #     list_mols=[]            # Lista vazia = todas as moléculas (ou especifique uma lista)
-    # )
+    train_loader, val_loader, test_loader, X_original = qm9.get_dataloader(
+        att_index=10,           # Índice da propriedade a ser prevista
+        batch_size=256,         # Tamanho do lote
+        descriptor_type='CM',   # Usar Coulomb Matrix como descritor
+        list_mols=[]            # Lista vazia = todas as moléculas (ou especifique uma lista)
+    )
 
-    # train_loader_noise, val_loader_noise, test_loader_noise, X_noise, is_noise = qm9.get_dataloader_with_noise(
-    #     att_index=10,           # Índice da propriedade a ser prevista
-    #     batch_size=256,         # Tamanho do lote
-    #     descriptor_type='CM',   # Usar Coulomb Matrix como descritor
-    #     list_mols=[]            # Lista vazia = todas as moléculas (ou especifique uma lista)
-    # )
+    train_loader_noise, val_loader_noise, test_loader_noise, X_noise, is_noise = qm9.get_dataloader_with_noise(
+        att_index=10,           # Índice da propriedade a ser prevista
+        batch_size=256,         # Tamanho do lote
+        descriptor_type='CM',   # Usar Coulomb Matrix como descritor
+        list_mols=[],            # Lista vazia = todas as moléculas (ou especifique uma lista)
+        n_noise = 2
+    )
 
-    # print(train_loader.dataset[0])
-    # print(train_loader_noise.dataset[0])
+    print(train_loader.dataset[0])
+    print(train_loader_noise.dataset[0])
 
     # data_qm9 = prepare_data_graph('QM9')
-
     # print(data_qm9.data.x.shape)
     # print(data_qm9.data.edge_attr.shape)
-
     # data_pcqm = prepare_data_graph('PCQM4')
-
     # print(data_pcqm[0].x.shape)
     # print(data_pcqm[0].edge_attr.shape)

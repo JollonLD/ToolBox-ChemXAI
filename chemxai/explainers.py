@@ -51,6 +51,7 @@ class Shap:
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             self.explainer = shap.KernelExplainer(predict_fn, background)
+            
         
         # Use test tensor directly
         self.test_data = test_tensor.cpu().numpy()
@@ -71,13 +72,7 @@ class Shap:
         # Select SHAP values for the instance and flatten the extra dimension
         local_shap_values = self.shap_values[index].flatten()
         
-        # Create a DataFrame with feature indices and SHAP values
-        feature_importance = pd.DataFrame({
-            'Feature Index': range(len(local_shap_values)),
-            'SHAP Value': local_shap_values
-        }).sort_values(by='SHAP Value', ascending=False).reset_index(drop=True)
-        
-        return feature_importance
+        return local_shap_values.tolist()
 
     def explain_global(self):
         """
@@ -92,16 +87,7 @@ class Shap:
         # Compute global importance as the mean of absolute SHAP values across all instances
         mean_absolute_shap_values = np.mean(np.abs(shap_values_2d), axis=0)
         
-        # Additional check on the shape of the mean SHAP values
-        print("Global SHAP values shape:", mean_absolute_shap_values.shape)
-        
-        # DataFrame with mean absolute feature importance across all instances
-        feature_importance = pd.DataFrame({
-            'Feature': [f'{i}' for i in range(len(mean_absolute_shap_values))],
-            'Importance': mean_absolute_shap_values
-        }).sort_values(by='Importance', ascending=False).reset_index(drop=True)
-        
-        return feature_importance
+        return mean_absolute_shap_values.tolist()
 
 class LIME:
     def __init__(self, model, background_tensor, test_tensor, device, mode='regression'):
@@ -148,7 +134,7 @@ class LIME:
             data_tensor = torch.from_numpy(data).float().to(self.device)
             return self.model(data_tensor).cpu().numpy().flatten()
             
-    def explain(self, index, num_features=None):
+    def explain_local(self, index, num_features=None):
         """
         Generates a local explanation for a specific instance and displays a DataFrame
         with feature indices and LIME values for the chosen instance.
@@ -173,9 +159,9 @@ class LIME:
         
         # Extract the explanation as a list of tuples and convert to DataFrame
         explanation_list = exp.as_list()
-        lime_df = pd.DataFrame(explanation_list, columns=["Feature", "LIME Value"]).sort_values(by="LIME Value", ascending=False)
+        lime_values = [item[1] for item in explanation_list]
         
-        return lime_df
+        return lime_values
 
 #================================================================#
 # Graph Based Explainers
@@ -244,7 +230,7 @@ class GNNExplain:
 
         explanation = self.explainer(self.data.x, self.data.edge_index, index=index)
 
-        return explanation.node_mask.squeeze().tolist(), explanation.prediction.item()
+        return explanation.node_mask.squeeze().tolist()
 
 class NodeGrapLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
     """
@@ -464,16 +450,12 @@ class NodeGrapLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.g
         coef_original = np.dot(pca.components_.T, coef_pca)  # shape: (n_features_original, n_classes)
 
         # Top features por classe
-        top_features = {}
-        for c in range(coef_original.shape[1]):
-            indices = np.argsort(coef_original[:, c])[::-1][:5]
-            top_features[c] = indices
+        # top_features = {}
+        # for c in range(coef_original.shape[1]):
+        #     indices = np.argsort(coef_original[:, c])[::-1][:5]
+        #     top_features[c] = indices
 
-        return {
-            "coef_pca": coef_pca,                  # shape: (n_components, n_classes)
-            "coef_original": coef_original,        # shape: (1433, n_classes)
-            "top_features": top_features           # dict: classe -> top 5 features
-        }
+        return coef_original.tolist()
 
 class NodeGraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
     """
@@ -584,11 +566,8 @@ class NodeGraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.
             top_features[c] = top_idx
             top_values[c] = phi[top_idx, c] if multiclass else phi[top_idx]
 
-        return {
-            "shap_values": phi,         
-            "top_features": top_features,
-            "top_values": top_values,
-        }
+        return phi.tolist()
+           
 
     def shapley_kernel(self, s):
         """
@@ -776,12 +755,8 @@ class GraphLIME: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
 
         top_features = np.argsort(feature_importance)[::-1]
 
-        return {
-            "feature_importance": feature_importance,
-            "top_features": top_features,
-            "coef_matrix": coef
-        }
-
+        return feature_importance.tolist()
+    
 class GraphShap: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
     """
     GraphShap (KernelSHAP for Graph-Level Prediction)
@@ -859,13 +834,7 @@ class GraphShap: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
         phi = np.array(phi)
         top_idx = np.argsort(np.abs(phi))[::-1]
 
-        return {
-            "shap_values": phi,
-            "top_features": top_idx,
-            "top_values": phi[top_idx],
-            "true_prediction": true_output.item(),
-            "base_value": base_value
-        }
+        return phi.tolist()
 
     def shapley_kernel(self, s):
         shap_kernel = []
