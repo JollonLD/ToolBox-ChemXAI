@@ -334,62 +334,55 @@ class graph_datasets:
             
             return modified_dataset, is_noisy_edge_list
 
-    def get_dataloader(self, dataset, batch_size=32, split_ratio=[0.8, 0.1, 0.1], shuffle=True, seed=42):
+    def get_paired_dataloaders(self, dataset_name='QM9', batch_size=32, 
+                      split_ratio=[0.8, 0.1, 0.1], shuffle=True, 
+                      seed=42, noise_type='gaussian', noise_scale=1.0, n_noise=1):
         """
-        Converte um dataset PyTorch Geometric em DataLoaders.
-        
-        Parâmetros:
-        -----------
-        dataset : PyTorch Geometric dataset
-            Dataset a ser convertido em DataLoaders
-        batch_size : int
-            Tamanho do lote para os DataLoaders
-        split_ratio : list
-            Proporção de divisão [treino, validação, teste]
-        shuffle : bool
-            Se os dados devem ser embaralhados
-        seed : int
-            Semente aleatória para reprodutibilidade
-        
-        Retorna:
-        --------
-        tuple : (train_loader, val_loader, test_loader)
-            DataLoaders para treino, validação e teste
+        Prepara dois datasets (normal e com ruído) e garante que os mesmos índices 
+        sejam usados para divisão de treino/validação/teste.
         """
         # Configurar semente para reprodutibilidade
         torch.manual_seed(seed)
+        np.random.seed(seed)
+        
+        # Preparar ambos os datasets
+        dataset_normal = self.prepare_data_graph(dataset_name)
+        dataset_noise = self.prepare_data_graph_noise(dataset_name, noise_type, noise_scale, seed)
         
         # Calcular tamanhos de cada conjunto
-        num_samples = len(dataset)
+        num_samples = len(dataset_normal)
         train_size = int(num_samples * split_ratio[0])
         val_size = int(num_samples * split_ratio[1])
         test_size = num_samples - train_size - val_size
         
-        # Dividir o dataset
-        train_dataset, val_dataset, test_dataset = random_split(
-            dataset, [train_size, val_size, test_size]
-        )
+        # Criar uma única divisão aleatória
+        indices = torch.randperm(num_samples)
+        
+        # Converter tensores para listas Python (aqui está a correção)
+        train_indices = indices[:train_size].tolist()
+        val_indices = indices[train_size:train_size+val_size].tolist()
+        test_indices = indices[train_size+val_size:].tolist()
+        
+        # Criar subconjuntos com os mesmos índices para ambos os datasets
+        train_dataset_normal = torch.utils.data.Subset(dataset_normal, train_indices)
+        val_dataset_normal = torch.utils.data.Subset(dataset_normal, val_indices)
+        test_dataset_normal = torch.utils.data.Subset(dataset_normal, test_indices)
+        
+        train_dataset_noise = torch.utils.data.Subset(dataset_noise, train_indices)
+        val_dataset_noise = torch.utils.data.Subset(dataset_noise, val_indices)
+        test_dataset_noise = torch.utils.data.Subset(dataset_noise, test_indices)
         
         # Criar DataLoaders
-        train_loader = GraphDataLoader(
-            train_dataset, 
-            batch_size=batch_size, 
-            shuffle=shuffle
-        )
+        train_loader_normal = GraphDataLoader(train_dataset_normal, batch_size=batch_size, shuffle=shuffle)
+        val_loader_normal = GraphDataLoader(val_dataset_normal, batch_size=batch_size, shuffle=False)
+        test_loader_normal = GraphDataLoader(test_dataset_normal, batch_size=batch_size, shuffle=False)
         
-        val_loader = GraphDataLoader(
-            val_dataset, 
-            batch_size=batch_size, 
-            shuffle=False
-        )
+        train_loader_noise = GraphDataLoader(train_dataset_noise, batch_size=batch_size, shuffle=shuffle)
+        val_loader_noise = GraphDataLoader(val_dataset_noise, batch_size=batch_size, shuffle=False)
+        test_loader_noise = GraphDataLoader(test_dataset_noise, batch_size=batch_size, shuffle=False)
         
-        test_loader = GraphDataLoader(
-            test_dataset, 
-            batch_size=batch_size, 
-            shuffle=False
-        )
-        
-        return train_loader, val_loader, test_loader
+        return (train_loader_normal, val_loader_normal, test_loader_normal,
+                train_loader_noise, val_loader_noise, test_loader_noise)
 
 #================================================================#
 # Tubular Datasets

@@ -78,93 +78,42 @@ import torch.nn.functional as F
 
 # similarities, l1_differences, l2_differences, spearman_correlations, fig = evaluator.robustness()
 
-# # %% [markdown]
-# # # GCN e QM9 com GraphShap
-
-# # %%
-# from chemxai.data import prepare_data_graph
-# from chemxai.models import GCN
-# from chemxai.explainers import GraphShap
-# from chemxai.plots import radar_plot
-
-# # %%
-# # Teste GCN com QM9 e GraphShap -> Funcional -> Explicação para as features do grafo 0
-# data = prepare_data_graph('QM9')
-# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-# model = GCN(num_features=data.num_features).to(device)
-# model.load_state_dict(torch.load('models/gcn_qm9.pth', map_location=torch.device(device)))
-# model = model.to(device)
-# explainer = GraphShap(data[0], model, device, gpu=torch.cuda.is_available())
-# explanation = explainer.explain()
-# print("Shapley Values for Node Features:")
-# print(explanation['shap_values'])
-# print("\nTop Features (if applicable):")
-# print(explanation['top_features'])
-# print("\nTop Shapley Values (if applicable):")
-# print(explanation['top_values'])
-
-# # %%
-# # Example usage with your data
-# # Assuming 'explanation' contains your SHAP explanation
-# feature_names = explanation.get('feature_names', None)  # Replace with your actual feature names if available
-# shap_values = explanation['shap_values']
-
-# fig, ax = radar_plot(shap_values, feature_names)
-
-# fig.show()
-
-# # %% [markdown]
-# # ## Avaliações
-
-# # %% [markdown]
-# # Teste 1: [ 5 10  1  4  3  0  2  7  8  6  9]\
-# # Teste 2: [ 5 10  1  9  7  2  3  4  0  6  8]\
-# # Teste 3: [ 5 10  1  6  7  8  4  0  2  9  3]\
-# # Teste 4: [ 5 10  1  9  6  7  8  0  4  2  3]\
-# # Teste 5: [ 5 10  2  8  9  7  0  1  4  3  6]\
-# # Teste 6: [ 5 10  0  6  1  2  9  7  4  8  3]\
-# # Teste 7: [ 5 10  9  8  1  4  2  7  3  6  0]\
-# # Teste 8: [ 5 10  4  0  3  9  1  6  8  2  7]
-# # 
-
-# # %% [markdown]
-# # # GCN e QM9 com GraphLIME
-
-# # %%
-from chemxai.explainers import GraphLIME
 from chemxai.models import GCN
 from chemxai.data import graph_datasets
-from chemxai.train import train_gcn_qm9
+from chemxai.train import train_gcn_qm9, train_gcn_pcqm4
 
 # %%
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 gd = graph_datasets()
-data_normal = gd.prepare_data_graph(dataset_name='QM9')
-data_noise = gd.prepare_data_graph_noise(dataset_name='QM9')
 
-# print(data_normal.num_features)
-# print(data_noise.num_features)
+train_loader_normal, val_loader_normal, test_loader_normal, train_loader_noise, val_loader_noise, test_loader_noise = gd.get_paired_dataloaders(
+    dataset_name='PCQM4', 
+    batch_size=32,
+    seed=42,
+    noise_type='gaussian',
+    noise_scale=1.0
+)
 
+data_normal = next(iter(train_loader_normal))
+data_noise = next(iter(train_loader_noise))
 
 # train_gcn_qm9()
+# train_gcn_pcqm4()
+# train_gcn_pcqm4(n_noise=1)
+# train_gcn_qm9(n_noise=1)
 
-# train_gcn_qm9(n_noise=2)
-
-model_normal = GCN(num_features=data_normal.num_features).to(device)
-model_normal.load_state_dict(torch.load('models/gcn_qm9.pth', map_location=torch.device(device)))
+model_normal = GCN(num_features=data_normal.x.size(1)).to(device)
+model_normal.load_state_dict(torch.load('models/gcn_pcqm4.pth', map_location=torch.device(device)))
 model_normal = model_normal.to(device)
 print(f'Model without noise:\n{model_normal}')
 
-model_noise = GCN(num_features=data_noise.num_features).to(device)
-model_noise.load_state_dict(torch.load('models/gcn_qm9_noise.pth', map_location=torch.device(device)))
+model_noise = GCN(num_features=data_noise.x.size(1)).to(device)
+model_noise.load_state_dict(torch.load('models/gcn_pcqm4_noise.pth', map_location=torch.device(device)))
 model_noise = model_noise.to(device)
 print(f'Model with noise:\n{model_noise}')
 
-train_loader_graph_normal, val_loader_graph_normal, test_loader_graph_normal = gd.get_dataloader(dataset=data_normal)
-train_loader_graph_noise, val_loader_graph_noise, test_loader_graph_noise = gd.get_dataloader(dataset=data_noise)
-
-evaluator = Evaluator(model_normal, model_noise, train_loader_graph_normal, test_loader_graph_normal, train_loader_graph_noise, test_loader_graph_noise, device, model_type='graph', explainer_type='gnn_explainer', mol_index=0, atom_index=0)
+evaluator = Evaluator(model_normal, model_noise, train_loader_normal, test_loader_normal, train_loader_noise, test_loader_noise, device, model_type='graph', explainer_type='gnn_explainer', mol_index=0, atom_index=0)
 
 evaluator.robustness()
 

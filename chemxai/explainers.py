@@ -191,10 +191,10 @@ class GNNExplain:
         The format of the returned explanation ('raw' or 'probabilities').
     """
 
-    def __init__(self, model, device, data, epochs, mode='regression', task_level='node', return_type='raw'):
+    def __init__(self, model, device, data, epochs, mode='regression', task_level='graph', return_type='raw'):
         self.model = model
         self.data = data.to(device)
-    
+        self.device = device
         self.explainer = Explainer(
             model=model,
             algorithm=GNNExplainer(epochs=epochs),
@@ -228,9 +228,159 @@ class GNNExplain:
             >>> node_mask, prediction = explainer.explain(node_index)
         """
 
-        explanation = self.explainer(self.data.x, self.data.edge_index, index=index)
+        # Para explicação do grafo inteiro
+        batch = torch.zeros(self.data.x.size(0), dtype=torch.long, device=self.device)
+        
+        # Gerar explicação para o grafo inteiro
+        explanation = self.explainer(
+            self.data.x, 
+            self.data.edge_index,
+            batch=batch,  # Importante para indicar que todos os nós pertencem ao mesmo grafo
+            index=0 if index is None else index  # Índice 0 no batch
+        )
 
         return explanation.node_mask.squeeze().tolist()
+    
+    # class GNNExplain:
+    # """
+    # GNNExplainer (Model Explainability for Graph Neural Networks)
+
+    # This class implements an explainer for Graph Neural Networks (GNNs). It is designed to explain the predictions of a GNN model by identifying the important nodes and edges that contribute to the prediction of a specific node. The method uses a masking strategy, where it iteratively removes or perturbs nodes and edges in the graph to measure their impact on the model's output.
+
+    # Parameters
+    # ----------
+    # model : torch.nn.Module
+    #     The trained GNN model to be explained.
+    # device : torch.device
+    #     The device to run the model (CPU or GPU).
+    # data : torch_geometric.data.Data
+    #     The graph data containing node features and edge indices.
+    # epochs : int
+    #     Number of epochs for training the explainer.
+    # mode : str, optional (default='regression')
+    #     The type of prediction task ('regression' or 'classification').
+    # task_level : str, optional (default='node')
+    #     Whether the explanation is at the node level or graph level.
+    # return_type : str, optional (default='raw')
+    #     The format of the returned explanation ('raw' or 'probabilities').
+    # """
+
+    # def __init__(self, model, device, data=None, epochs=20, mode='regression', task_level='graph', return_type='raw'):
+    #     self.model = model
+    #     self.device = device
+    #     self.data = data.to(device) if data is not None else None
+    #     self.explainer = Explainer(
+    #         model=model,
+    #         algorithm=GNNExplainer(epochs=epochs),
+    #         explanation_type='model',
+    #         node_mask_type='attributes',
+    #         edge_mask_type='object',
+    #         model_config=dict(
+    #             mode=mode,
+    #             task_level=task_level,
+    #             return_type=return_type,
+    #         ),
+    #     )
+        
+    # def explain(self, index=None, data=None):
+    #     """
+    #     Explains the prediction of a graph neural network (GNN) model for a specific node or graph.
+
+    #     Args:
+    #         index (int, optional): The index of the node for which the explanation is generated.
+    #                               If None and task_level='graph', explains the entire graph.
+    #         data (torch_geometric.data.Data, optional): The graph data to explain.
+    #                                                    If None, uses the data provided in __init__.
+
+    #     Returns:
+    #         list: A list of feature importances for each node in the graph.
+    #     """
+    #     # Usar o dado fornecido ou o dado do inicializador
+    #     data_to_use = data if data is not None else self.data
+    #     if data_to_use is None:
+    #         raise ValueError("No graph data provided. Either pass it to __init__ or to explain()")
+            
+    #     data_to_use = data_to_use.to(self.device)
+        
+    #     # Para explicação do grafo inteiro
+    #     batch = torch.zeros(data_to_use.x.size(0), dtype=torch.long, device=self.device)
+        
+    #     # Gerar explicação para o grafo inteiro
+    #     explanation = self.explainer(
+    #         data_to_use.x, 
+    #         data_to_use.edge_index,
+    #         batch=batch,  # Importante para indicar que todos os nós pertencem ao mesmo grafo
+    #         index=0 if index is None else index  # Índice 0 no batch
+    #     )
+
+    #     return explanation.node_mask.squeeze().tolist()
+        
+    # def explain_batch(self, data_loader):
+    #     """
+    #     Gera explicações para um conjunto de dados (batch).
+        
+    #     Args:
+    #         data_loader: DataLoader contendo os grafos a serem explicados
+            
+    #     Returns:
+    #         list: Lista contendo as explicações para cada grafo no batch
+    #     """
+    #     explanations = []
+    #     for batch in data_loader:
+    #         batch = batch.to(self.device)
+    #         # Para cada grafo no batch
+    #         for i in range(batch.num_graphs):
+    #             # Extrair o grafo individual usando máscaras de batch
+    #             mask = batch.batch == i
+    #             sub_x = batch.x[mask]
+    #             sub_edge_index = torch.zeros((2, 0), dtype=torch.long, device=self.device)
+                
+    #             # Criar um objeto de dados temporário para o grafo individual
+    #             from torch_geometric.data import Data
+    #             single_graph = Data(x=sub_x, edge_index=sub_edge_index)
+                
+    #             # Explicar este grafo
+    #             explanation = self.explain(data=single_graph)
+    #             explanations.append(explanation)
+                
+    #     return explanations
+
+    # def global_explanation(self):
+    #     """
+    #     Gera uma explicação global para o modelo GNN, agregando importâncias de features.
+        
+    #     Returns:
+    #         tuple: (feature_indices, feature_importance) onde:
+    #               feature_indices são os índices das features (ordenados por importância)
+    #               feature_importance são os valores de importância correspondentes
+    #     """
+    #     # Explicar o grafo inteiro
+    #     node_importance = self.explain()
+        
+    #     # Converter para array numpy
+    #     import numpy as np
+    #     import pandas as pd
+    #     feature_importance = np.array(node_importance)
+        
+    #     # Criar array de índices de features
+    #     feature_indices = np.arange(len(feature_importance))
+        
+    #     # Ordenar por importância (valor absoluto)
+    #     sorted_idx = np.argsort(np.abs(feature_importance))[::-1]
+    #     feature_indices = feature_indices[sorted_idx]
+    #     feature_importance = feature_importance[sorted_idx]
+        
+    #     # Criar DataFrame para visualização mais fácil
+    #     result_df = pd.DataFrame({
+    #         'Feature': feature_indices,
+    #         'Importance': feature_importance
+    #     })
+        
+    #     # Se quiser ver o resultado durante o desenvolvimento
+    #     print("Global SHAP values shape:", feature_importance.shape)
+    #     print(result_df)
+        
+    #     return feature_indices, feature_importance
 
 class NodeGrapLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
     """

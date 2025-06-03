@@ -153,6 +153,7 @@ def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay
         dataset = gd.prepare_data_graph_noise('QM9')
     else:
         dataset = gd.prepare_data_graph('QM9')
+    
 
     # 2. Normalizar o alvo
     y = dataset.data.y[:, target_idx]
@@ -229,32 +230,33 @@ def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay
 
     return history
 
-def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
+def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4, n_noise=0):
 
     dirname = os.getcwd()
     models_dir = os.path.join(dirname, 'models')
     os.makedirs(models_dir, exist_ok=True)
     print(f'Diretório criado: {models_dir}')
-    path = dirname + '/models/gcn_pcqm4.pth'
+    
+    if n_noise > 0:
+        path = models_dir + '/gcn_pcqm4_noise.pth'
+    else:
+        path = models_dir + '/gcn_pcqm4.pth'
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Usando dispositivo: {device}")
 
     gd = graph_datasets()
 
-    # 1. Carregamento e redução do dataset
-    dataset = gd.prepare_data_graph('PCQM4')
-    dataset = dataset[:100000]  # reduzido para testes rápidos
+    # 1. Carregar e transformar o dataset
+    if n_noise > 0:
+        dataset = gd.prepare_data_graph_noise('PCQM4')
+    else:
+        dataset = gd.prepare_data_graph('PCQM4')
 
-    # 2. Divisão
-    total_size = len(dataset)
-    train_size = int(0.8 * total_size)
-    val_size = total_size - train_size
-    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+    dataset = dataset[:100000]
 
     # 3. Loaders com drop_last para evitar batches incompletos
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, drop_last=True)
+    train_loader, val_loader, test_loader = gd.get_dataloader(dataset=dataset, batch_size=batch_size)
 
     model = GCN(num_features=dataset[0].x.shape[1]).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -272,6 +274,10 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
             optimizer.zero_grad()
             pred = model(data.x, data.edge_index, data.batch).view(-1)
             target = data.y.view(-1)
+            min_size = min(pred.size(0), target.size(0))
+            if pred.size(0) != target.size(0):
+                pred = pred[:min_size]
+                target = target[:min_size]
             loss = criterion(pred, target)
             loss.backward()
             optimizer.step()
@@ -287,6 +293,11 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
                 data = data.to(device)
                 pred = model(data.x, data.edge_index, data.batch).view(-1)
                 target = data.y.view(-1)
+                # Garantir que pred e target tenham o mesmo tamanho
+                min_size = min(pred.size(0), target.size(0))
+                if pred.size(0) != target.size(0):
+                    pred = pred[:min_size]
+                    target = target[:min_size]
                 loss = criterion(pred, target)
                 val_loss += loss.item() * data.num_graphs
 
@@ -305,13 +316,13 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4):
     model.eval()
     final_val_loss = 0
     with torch.no_grad():
-        for data in val_loader:
+        for data in test_loader:
             data = data.to(device)
             pred = model(data.x, data.edge_index, data.batch).view(-1)
             target = data.y.view(-1)
             final_val_loss += criterion(pred, target).item() * data.num_graphs
 
-    final_val_loss /= len(val_loader.dataset)
+    final_val_loss /= len(test_loader.dataset)
     print(f"\nMSE final na validação: {final_val_loss:.4f}")
     print(f"RMSE final na validação: {final_val_loss ** 0.5:.4f}")
 
