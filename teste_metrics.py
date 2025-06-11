@@ -9,15 +9,18 @@ from chemxai.train import train_mlp_qm9
 
 import torch
 import torch.nn.functional as F
+from torch_geometric.loader import DataLoader as GraphDataLoader
 
 # %%
 # qm9 = qm9_tabular()
 # learning_rate = 1e-3
 # layers = [64, 32]
 
-# # train_mlp_qm9()
+train_mlp_qm9(epochs=50, n_noise=0)
+train_mlp_qm9(epochs=50, n_noise=3)
 
-# train_loader, val_loader, test_loader, _ = qm9.get_dataloader(batch_size=32)
+# train_loader, val_loader, test_loader, train_loader_noise, val_loader_noise, test_loader_noise, is_noise = qm9.get_paired_dataloaders_tabular(batch_size=32, n_noise=3)
+
 # input_dim = next(iter(train_loader))[0].shape[1]
 # output_dim = 1
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -27,9 +30,7 @@ import torch.nn.functional as F
 # print(f'Model without noise:\n{model_without_noise}')
 
 # # %%
-# # train_mlp_qm9(n_noise=3)
 
-# train_loader_noise, val_loader_noise, test_loader_noise, _, is_noise = qm9.get_dataloader_with_noise(batch_size=32, n_noise=3)
 # input_dim_noise = next(iter(train_loader_noise))[0].shape[1]
 # output_dim_noise = 1
 # model_with_noise = MLP(input_dim_noise, output_dim_noise, layers, device, lr=learning_rate)
@@ -74,60 +75,64 @@ import torch.nn.functional as F
 
 # # %%
 
-# evaluator = Evaluator(model_without_noise, model_with_noise, train_loader, test_loader, train_loader_noise, test_loader_noise, device)
+# evaluator = Evaluator(model_without_noise, model_with_noise, train_loader, 
+#                       test_loader, train_loader_noise, test_loader_noise, device, model_type='tabular', explainer_type='lime')
 
 # similarities, l1_differences, l2_differences, spearman_correlations, fig = evaluator.robustness()
 
-from chemxai.models import GCN
-from chemxai.data import graph_datasets
-from chemxai.train import train_gcn_qm9, train_gcn_pcqm4
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # %%
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-gd = graph_datasets()
-
-train_loader_normal, val_loader_normal, test_loader_normal, train_loader_noise, val_loader_noise, test_loader_noise = gd.get_paired_dataloaders(
-    dataset_name='PCQM4', 
-    batch_size=32,
-    seed=42,
-    noise_type='gaussian',
-    noise_scale=1.0
-)
-
-data_normal = next(iter(train_loader_normal))
-data_noise = next(iter(train_loader_noise))
+# from chemxai.models import GCN
+# from chemxai.data import graph_datasets
+# from chemxai.train import train_gcn_qm9, train_gcn_pcqm4
 
 # train_gcn_qm9()
 # train_gcn_pcqm4()
 # train_gcn_pcqm4(n_noise=1)
 # train_gcn_qm9(n_noise=1)
 
-model_normal = GCN(num_features=data_normal.x.size(1)).to(device)
-model_normal.load_state_dict(torch.load('models/gcn_pcqm4.pth', map_location=torch.device(device)))
-model_normal = model_normal.to(device)
-print(f'Model without noise:\n{model_normal}')
+# gd = graph_datasets()
 
-model_noise = GCN(num_features=data_noise.x.size(1)).to(device)
-model_noise.load_state_dict(torch.load('models/gcn_pcqm4_noise.pth', map_location=torch.device(device)))
-model_noise = model_noise.to(device)
-print(f'Model with noise:\n{model_noise}')
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-evaluator = Evaluator(model_normal, model_noise, train_loader_normal, test_loader_normal, train_loader_noise, test_loader_noise, device, model_type='graph', explainer_type='gnn_explainer', mol_index=0, atom_index=0)
+# # Primeiro carregamos os dataloaders completos
+# loaders = gd.get_paired_dataloaders(
+#     dataset_name='QM9', 
+#     batch_size=32,
+#     seed=42,
+#     noise_type='gaussian',
+#     noise_scale=1.0
+# )
 
-evaluator.robustness()
+# train_loader_normal, val_loader_normal, test_loader_normal, train_loader_noise, val_loader_noise, test_loader_noise = loaders
 
-# # %%
-# # Example usage with your data
-# # Assuming 'explanation' contains your SHAP explanation
-# feature_names = explanation.get('feature_names', None)  # Replace with your actual feature names if available
-# lime_values = explanation['feature_importance']
+# data_normal = next(iter(train_loader_normal))
+# data_noise = next(iter(train_loader_noise))
 
-# fig, ax = radar_plot(lime_values, feature_names)
+# model_normal = GCN(num_features=data_normal.x.size(1)).to(device)
+# model_normal.load_state_dict(torch.load('models/gcn_qm9.pth', map_location=torch.device(device)))
+# model_normal = model_normal.to(device)
+# print(f'Model without noise:\n{model_normal}')
 
-# fig.show()
+# model_noise = GCN(num_features=data_noise.x.size(1)).to(device)
+# model_noise.load_state_dict(torch.load('models/gcn_qm9_noise.pth', map_location=torch.device(device)))
+# model_noise = model_noise.to(device)
+# print(f'Model with noise:\n{model_noise}')
 
-# # %%
+# evaluator = Evaluator(model_normal, model_noise, train_loader_normal, test_loader_normal, train_loader_noise, test_loader_noise, device, model_type='graph', explainer_type='gnn_explainer')
 
-
-
+# evaluator.robustness()
+    

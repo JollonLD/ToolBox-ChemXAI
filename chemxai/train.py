@@ -12,7 +12,7 @@ from torch_geometric.loader import DataLoader
 from .models import GCN, MLP
 from .data import graph_datasets, qm9_tabular
 
-def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, batch_size=32, n_noise=0):
+def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, batch_size=32, n_noise=3, descriptor_type='Morgan'):
     """
     Função para treinar um modelo MLP.
 
@@ -33,26 +33,29 @@ def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, 
     print(f'Diretório criado: {models_dir}')
     
     if n_noise > 0:
-        path = models_dir + '/mlp_qm9_noise.pth'
+        path = models_dir + '/mlp_qm9_noise_' + descriptor_type + '.pth'
     else:
-        path = models_dir + '/mlp_qm9.pth'
+        path = models_dir + '/mlp_qm9_' + descriptor_type + '.pth'
 
     # Carregar os dados
     qm9 = qm9_tabular()
     if n_noise > 0:
-        train_loader, val_loader, test_loader, X_original, is_noise = qm9.get_dataloader_with_noise(
+        _, _, _, train_loader, val_loader, test_loader, _ = qm9.get_paired_dataloaders_tabular(
             att_index=att_index,           # Índice da propriedade a ser prevista
             batch_size=batch_size,         # Tamanho do lote
-            descriptor_type='CM',          # Usar Coulomb Matrix como descritor
+            descriptor_type=descriptor_type,          
             list_mols=[],                  # Lista vazia = todas as moléculas
-            n_noise=n_noise                
+            n_noise=n_noise,
+            morgan_radius=3, morgan_nBits=512             
         )
     else:    
-        train_loader, val_loader, test_loader, X_original = qm9.get_dataloader(
+        train_loader, val_loader, test_loader = qm9.get_paired_dataloaders_tabular(
             att_index=att_index,           # Índice da propriedade a ser prevista
             batch_size=batch_size,         # Tamanho do lote
-            descriptor_type='CM',          # Usar Coulomb Matrix como descritor
-            list_mols=[]                   # Lista vazia = todas as moléculas
+            descriptor_type=descriptor_type,          # Usar Coulomb Matrix como descritor
+            list_mols=[],                   # Lista vazia = todas as moléculas
+            n_noise=n_noise,
+            morgan_radius=3, morgan_nBits=512
         )
 
     # Definir o dispositivo
