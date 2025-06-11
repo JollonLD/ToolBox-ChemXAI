@@ -372,9 +372,9 @@ class FingerprintAnalyzer:
     
     def show_bits_summary(self):
         """
-        Exibe o resumo dos bits importantes do SHAP.
+        Exibe o resumo dos bits importantes da Explicação.
         """
-        display(HTML("<h2 style='background-color:#f0f0f0; padding:10px; border-radius:5px;'>Resumo dos bits importantes do SHAP</h2>"))
+        display(HTML("<h2 style='background-color:#f0f0f0; padding:10px; border-radius:5px;'>Resumo dos bits importantes da Explicação</h2>"))
         
         with redirect_stdout(self.output):
             print("Os bits destacados em VERMELHO estão ATIVOS (presentes) na molécula.")
@@ -416,7 +416,7 @@ class FingerprintAnalyzer:
         value = self.importance_values[orig_idx]
         
         # Cabeçalho para cada fragmento
-        display(HTML(f"<h3 style='background-color:#ffeeee; padding:5px; border-radius:5px;'>Fragmento {fragment_idx+1}: Bit {bit} (SHAP: {value:.4f})</h3>"))
+        display(HTML(f"<h3 style='background-color:#ffeeee; padding:5px; border-radius:5px;'>Fragmento {fragment_idx+1}: Bit {bit} (Value: {value:.4f})</h3>"))
         
         # Coletar todos os átomos envolvidos neste bit
         atoms_to_highlight = []
