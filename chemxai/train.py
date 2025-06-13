@@ -40,22 +40,22 @@ def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, 
     # Carregar os dados
     qm9 = qm9_tabular()
     if n_noise > 0:
-        _, _, _, train_loader, val_loader, test_loader, _ = qm9.get_paired_dataloaders_tabular(
+        _, _, _, train_loader, val_loader, test_loader, _ = qm9.get_paired_dataloaders(
             att_index=att_index,           # Índice da propriedade a ser prevista
             batch_size=batch_size,         # Tamanho do lote
             descriptor_type=descriptor_type,          
             list_mols=[],                  # Lista vazia = todas as moléculas
             n_noise=n_noise,
-            morgan_radius=3, morgan_nBits=512             
+            morgan_radius=2, morgan_nBits=512             
         )
     else:    
-        train_loader, val_loader, test_loader = qm9.get_paired_dataloaders_tabular(
+        train_loader, val_loader, test_loader = qm9.get_paired_dataloaders(
             att_index=att_index,           # Índice da propriedade a ser prevista
             batch_size=batch_size,         # Tamanho do lote
             descriptor_type=descriptor_type,          # Usar Coulomb Matrix como descritor
             list_mols=[],                   # Lista vazia = todas as moléculas
             n_noise=n_noise,
-            morgan_radius=3, morgan_nBits=512
+            morgan_radius=2, morgan_nBits=512
         )
 
     # Definir o dispositivo

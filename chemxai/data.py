@@ -18,7 +18,7 @@ from sklearn.preprocessing import StandardScaler
 from ase import Atoms
 from rdkit import Chem
 from rdkit import RDLogger
-from rdkit.Chem import AllChem
+from rdkit.Chem import AllChem, Descriptors, Descriptors3D
 RDLogger.DisableLog('rdApp.warning')
 from dscribe.descriptors import CoulombMatrix
 
@@ -31,6 +31,7 @@ import requests
 #================================================================#
 # Graph Based Datasets
 #================================================================#
+
 class CastXToFloat:
     def __call__(self, data):
         data.x = data.x.float()
@@ -391,10 +392,8 @@ class graph_datasets:
                 train_loader_noise, val_loader_noise, test_loader_noise)
 
 
-
-
 #================================================================#
-# Tubular Datasets
+# Tabular Datasets
 #================================================================#
 
 class qm9_tabular:
@@ -407,21 +406,13 @@ class qm9_tabular:
         self.qm9_folder = self.directory_path
 
         self.properties = [
-            'Rotational constant A: GHz',
-            'Rotational constant B: GHz',
-            'Rotational constant C: GHz',
-            'Dipole moment (μ): Debye (D)',
-            'Isotropic polarizability (α): atomic units (a.u.)',
-            'Energy of HOMO (ϵHOMO): Hartree (Ha)',
-            'Energy of LUMO (ϵLUMO): Hartree (Ha)',
-            'Gap (ϵgap): Hartree (Ha)',
-            'Electronic spatial extent: atomic units (a.u.)',
-            'Zero point vibrational energy (zpve): Hartree (Ha)',
-            'Internal energy at 0 K (U0): Hartree (Ha)',
-            'Internal energy at 298.15 K (U): Hartree (Ha)',
-            'Enthalpy at 298.15 K (H): Hartree (Ha)',
-            'Free energy at 298.15 K (G): Hartree (Ha)',
-            'Heat capacity at 298.15 K (Cv): cal/mol·K'
+            'Rotational constant A: GHz', 'Rotational constant B: GHz', 'Rotational constant C: GHz',
+            'Dipole moment (μ): Debye (D)', 'Isotropic polarizability (α): atomic units (a.u.)',
+            'Energy of HOMO (ϵHOMO): Hartree (Ha)', 'Energy of LUMO (ϵLUMO): Hartree (Ha)',
+            'Gap (ϵgap): Hartree (Ha)', 'Electronic spatial extent: atomic units (a.u.)',
+            'Zero point vibrational energy (zpve): Hartree (Ha)', 'Internal energy at 0 K (U0): Hartree (Ha)',
+            'Internal energy at 298.15 K (U): Hartree (Ha)', 'Enthalpy at 298.15 K (H): Hartree (Ha)',
+            'Free energy at 298.15 K (G): Hartree (Ha)', 'Heat capacity at 298.15 K (Cv): cal/mol·K'
         ]
 
         self.url = "https://www.dropbox.com/scl/fi/lbs52lc0av3eqi9zws3wp/QM9.zip?rlkey=925vtuebvf7kf9ifq9143d6az&dl=1"
@@ -440,35 +431,32 @@ class qm9_tabular:
             os.makedirs(self.qm9_folder)
 
         # Extrair o conteúdo do arquivo zip
-        with zipfile.ZipFile(self.zip_path, 'r') as zip_ref:
-            zip_ref.extractall(self.qm9_folder)
+        if not os.listdir(self.qm9_folder):
+            print(f"Extraindo dados para: {self.qm9_folder}")
+            with zipfile.ZipFile(self.zip_path, 'r') as zip_ref:
+                zip_ref.extractall(self.qm9_folder)
+            print("Extração concluída.")
+        else:
+            print(f"Dados já existem em: {self.qm9_folder}")
 
-        print(f"Dados salvos em: {self.qm9_folder}")
-
-    # E adicione um método para desnormalizar
     def inverse_transform_features(self, normalized_features, is_noise=False):
         """Desnormaliza features usando o scaler armazenado."""
         if is_noise:
             if hasattr(self, 'scaler_noise'):
                 return self.scaler_noise.inverse_transform(normalized_features)
             else:
-                raise AttributeError("O scaler de ruído não foi armazenado. Execute get_paired_dataloaders_tabular primeiro.")
+                raise AttributeError("O scaler de ruído não foi armazenado. Execute get_paired_dataloaders primeiro.")
         else: 
             if hasattr(self, 'scaler_normal'):
                 return self.scaler_normal.inverse_transform(normalized_features)
             else:
-                raise AttributeError("O scaler normal não foi armazenado. Execute get_paired_dataloaders_tabular primeiro.")
-
+                raise AttributeError("O scaler normal não foi armazenado. Execute get_paired_dataloaders primeiro.")
 
     def load_qm9_xyz(self, file_path):
         """Load a single QM9.xyz file."""
-        
         with open(file_path, 'r') as f:
-            # Number of atoms
             natoms = int(f.readline())
-            # Properties are in the second line
             properties = list(map(float, f.readline().split()[2:]))
-            # Read atomic coordinates and types
             atoms = []
             coordinates = []
             for num_line, line in enumerate(f):
@@ -476,179 +464,259 @@ class qm9_tabular:
                     info = line.replace("*^","e").split()
                     atoms.append(info[0])
                     coordinates.append(list(map(float, info[1:-1])))
-
-        return {
-            "natoms": natoms,
-            "atoms": atoms,
-            "coordinates": np.array(coordinates),
-            "properties": properties
-        }
+        return {"natoms": natoms, "atoms": atoms, "coordinates": np.array(coordinates), "properties": properties}
 
     def load_qm9_dataset(self, list_mols=[]):
         """Load the entire QM9 dataset from a directory containing .xyz files."""
-        
-        coords = []
-        prop = []
-        natoms = []
-        for file_name in os.listdir(self.directory_path):
+        coords, prop, natoms = [], [], []
+        for file_name in sorted(os.listdir(self.directory_path)):
             if file_name.endswith(".xyz"):
                 file_path = os.path.join(self.directory_path, file_name)
                 molecule_data = self.load_qm9_xyz(file_path)
-                if molecule_data['natoms'] in list_mols or len(list_mols) == 0:
-                    coords.append([molecule_data['atoms'], molecule_data['coordinates']])
+                if not list_mols or molecule_data['natoms'] in list_mols:
+                    coords.append((molecule_data['atoms'], molecule_data['coordinates']))
                     prop.append(molecule_data['properties'])
                     natoms.append(molecule_data['natoms'])
         return coords, prop, natoms
     
-    def dataset_to_numpy(dataset):  
+    def dataset_to_numpy(dataset):
         """Convert a dataset to NumPy arrays."""
-        
-        all_data = []
-        all_targets = []
-
+        all_data, all_targets = [], []
         for data, target in dataset:
             all_data.append(data.numpy())
             all_targets.append(target.numpy())
-            
-        data_numpy = np.array(all_data)
-        targets_numpy = np.array(all_targets)
-        
-        return data_numpy, targets_numpy
+        return np.array(all_data), np.array(all_targets)
 
     def get_smiles(self):
         """Get the SMILES representation of a molecule."""
-        
         smiles = []
-        for file_name in os.listdir(self.directory_path):
+        for file_name in sorted(os.listdir(self.directory_path)):
             if file_name.endswith(".xyz"):
                 file_path = os.path.join(self.directory_path, file_name)
                 with open(file_path, 'r') as f:
-                    # Read number of atoms
                     natoms = int(f.readline())
-                    # Skip the second line
                     f.readline()
-                    for i in range(natoms+1):  # Skip to the SMILES line
-                        f.readline()
-                    smiles_tuple = tuple(f.readline().strip().split('\t'))[0]
-                    smiles.append(smiles_tuple)
-
+                    for i in range(natoms+1): f.readline()
+                    smiles.append(tuple(f.readline().strip().split('\t'))[0])
         return smiles
         
     def load_smiles(self):
         """Load all SMILES representations in the QM9 dataset."""    
-    
         list_smiles = []
         i = 0
-        for file_name in os.listdir(self.directory_path):
-            if i == 100:
-                break
+        for file_name in sorted(os.listdir(self.directory_path)):
+            if i == 100: break
             if file_name.endswith(".xyz"):
                 file_path = os.path.join(self.directory_path, file_name)
                 list_smiles.append(self.get_smiles(file_path))
             i += 1
-        
         return list_smiles    
     
     def df_props(self):
         """Create a DataFrame with the properties of the QM9 dataset."""
-        
-        coords, props, natoms = self.load_qm9_dataset()
-        
-        # Create the DataFrame with properties
+        _, props, _ = self.load_qm9_dataset()
         df = pd.DataFrame(props)
-        
-        # Reset the DataFrame indices
         df.reset_index(drop=True, inplace=True)
-        
-        # Rename the DataFrame columns
         df.columns = self.properties
-        
         return df  
+    
+    def get_physicochemical_descriptors(self):
+        """Calcula um conjunto de descritores 2D e retorna features e índices válidos."""
+        smiles_list = self.get_smiles()
+        mols = [Chem.MolFromSmiles(s) for s in smiles_list]
+        
+        descriptors = []
+        valid_indices = []
+        descriptor_names = ["MolWt", "MolLogP", "TPSA", "NumHDonors", "NumHAcceptors",
+                            "NumRotatableBonds", "NumAromaticRings", "BalabanJ", "qed"]
+        
+        funcs = {name: getattr(Descriptors, name) for name in descriptor_names}
+
+        for i, mol in enumerate(mols):
+            if mol:
+                desc_values = {name: func(mol) for name, func in funcs.items()}
+                descriptors.append(desc_values)
+                valid_indices.append(i)
+        
+        return pd.DataFrame(descriptors), valid_indices
+
+    def get_3d_descriptors(self):
+        """Calcula descritores 3D e retorna features e índices válidos."""
+        smiles_list = self.get_smiles()
+        mols = [Chem.MolFromSmiles(s) for s in smiles_list]
+        
+        descriptors_3d = []
+        valid_indices = []
+        descriptor_names = ["NPR1", "NPR2", "RadiusOfGyration", "Asphericity", "SpherocityIndex"]
+        funcs = {name: getattr(Descriptors3D, name) for name in descriptor_names}
+        
+        for i, mol in enumerate(mols):
+            if not mol: continue
+            
+            mol_with_hs = Chem.AddHs(mol)
+            conf_id = AllChem.EmbedMolecule(mol_with_hs, randomSeed=42)
+            
+            if conf_id >= 0:
+                AllChem.UFFOptimizeMolecule(mol_with_hs, confId=conf_id)
+                desc_values = {name: func(mol_with_hs, confId=conf_id) for name, func in funcs.items()}
+                descriptors_3d.append(desc_values)
+                valid_indices.append(i)
+
+        return pd.DataFrame(descriptors_3d), valid_indices
+
+    def get_morgan_fingerprints(self, radius=3, n_bits=512):
+        """Calcula os Morgan Fingerprints (ECFP) e retorna features e índices válidos."""
+        smiles_list = self.get_smiles()
+        mols = [Chem.MolFromSmiles(s) for s in smiles_list]
+
+        fps = []
+        valid_indices = []
+        for i, mol in enumerate(mols):
+            if mol:
+                fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits=n_bits)
+                fps.append(np.array(list(fp)))
+                valid_indices.append(i)
+        return np.array(fps), valid_indices
+        
+    def get_coulomb_matrix(self, n_atoms_max=29, list_mols=[]):
+        """Calcula a Matriz de Coulomb para as moléculas."""
+        coords, _, natoms = self.load_qm9_dataset(list_mols=list_mols)
+        mols_ase = [Atoms(positions=xyz, symbols=symbols) for symbols, xyz in coords]
+        cm_generator = CoulombMatrix(n_atoms_max=n_atoms_max, permutation="eigenspectrum")
+        X = cm_generator.create(mols_ase)
+        return X
     
     class Data(Dataset):
         def __init__(self, data, targets):
             self.data = data
             self.targets = targets
-
         def __len__(self):
             return len(self.data)
-
         def __getitem__(self, idx):
             return torch.from_numpy(self.data[idx]).float(), torch.from_numpy(self.targets[idx]).float()
 
-    def get_paired_dataloaders_tabular(self, att_index=10, batch_size=256, descriptor_type='CM', 
-                          list_mols=[], split_ratio=[0.8, 0.1, 0.1], seed=42, noise_type='gaussian', 
-                          noise_scale=1.0, n_noise=1, morgan_radius=3, morgan_nBits=512):
+    def compute_descriptors(self, descriptor_type='CM', morgan_radius=3, morgan_nBits=512, att_index=10, list_mols=[]):
         """
-        Prepara dois conjuntos de DataLoaders (normal e com ruído) e garante que os mesmos índices 
-        sejam usados para divisão de treino/validação/teste.
+        Calcula os descritores para as moléculas e retorna as features (X) e os alvos (Y) alinhados.
         
         Parameters:
         -----------
+        descriptor_type : str
+            Tipo de descritor ('CM', 'Morgan', 'Physicochemical', '3D')
+        morgan_radius : int
+            Raio para o cálculo dos fingerprints Morgan
+        morgan_nBits : int
+            Número de bits para os fingerprints Morgan
         att_index : int
             Índice da propriedade a ser predita
-        batch_size : int
-            Tamanho do lote
-        descriptor_type : str
-            Tipo de descritor (atualmente só suporta 'CM')
         list_mols : list
             Lista de moléculas a considerar
-        split_ratio : list
-            Proporção da divisão [treino, validação, teste]
-        shuffle : bool
-            Se os dados devem ser embaralhados nos loaders de treino
-        seed : int
-            Semente aleatória para reprodutibilidade
-        noise_type : str
-            Tipo de ruído: 'gaussian', 'uniform', 'binary'
-        noise_scale : float
-            Escala do ruído
-        n_noise : int
-            Número de colunas de ruído a serem adicionadas
             
         Returns:
         --------
-        tuple : (train_loader_normal, val_loader_normal, test_loader_normal, 
-                train_loader_noise, val_loader_noise, test_loader_noise, is_noise)
+        tuple : (X, Y, props)
+            - X: Array NumPy com os descritores
+            - Y: Array NumPy com os valores alvo para a propriedade selecionada
+            - props: Array NumPy com todas as propriedades (alinhado com X e Y)
         """
-        # Configurar semente aleatória
+        # Carregar dados 
+        coords, props_list, natoms = self.load_qm9_dataset(list_mols=list_mols)
+        props = np.array(props_list)
+        
+        if descriptor_type == 'CM':
+            X = self.get_coulomb_matrix(n_atoms_max=max(natoms) if natoms else 29, list_mols=list_mols)
+            # Assume que get_coulomb_matrix retorna features para todas as moléculas carregadas
+        
+        elif descriptor_type == 'Morgan':
+            X_morgan, valid_indices = self.get_morgan_fingerprints(radius=morgan_radius, n_bits=morgan_nBits)
+            X = X_morgan
+            props = props[valid_indices]
+
+        elif descriptor_type == 'Physicochemical':
+            X_df, valid_indices = self.get_physicochemical_descriptors()
+            X = X_df.values
+            props = props[valid_indices]
+            
+        elif descriptor_type == '3D':
+            X_df, valid_indices = self.get_3d_descriptors()
+            X = X_df.values
+            props = props[valid_indices]
+
+        else:
+            raise ValueError(f"Tipo de descritor desconhecido: {descriptor_type}")
+        
+        # Garante que X e props tenham o mesmo número de amostras
+        if X.shape[0] != props.shape[0]:
+            raise ValueError(f"Inconsistência no número de amostras entre X ({X.shape[0]}) e props ({props.shape[0]})")
+            
+        # Extrair o valor alvo selecionado
+        Y = props[:, att_index].reshape(-1, 1)
+        
+        return X, Y, props
+
+    def normalize_data(self, X_normal, X_with_noise, Ys):
+        """Normaliza os dados usando StandardScaler."""
+        scaler_normal = StandardScaler()
+        self.scaler_normal = scaler_normal
+        X_normal_scaled = scaler_normal.fit_transform(X_normal)
+        
+        scaler_noise = StandardScaler()
+        self.scaler_noise = scaler_noise
+        X_noise_scaled = scaler_noise.fit_transform(X_with_noise)
+        
+        target_scaler = StandardScaler()
+        self.target_scaler = target_scaler
+        Ys_scaled = target_scaler.fit_transform(Ys)
+        
+        return X_normal_scaled, X_noise_scaled, Ys_scaled
+
+    def create_dataloaders(self, X_normal_scaled, X_noise_scaled, Ys_scaled, 
+                        split_ratio=[0.8, 0.1, 0.1], batch_size=256):
+        """Cria os dataloaders a partir dos dados normalizados."""
+        dataset_normal = self.Data(X_normal_scaled, Ys_scaled)
+        dataset_noise = self.Data(X_noise_scaled, Ys_scaled)
+        
+        dataset_size = len(dataset_normal)
+        train_size = int(dataset_size * split_ratio[0])
+        val_size = int(dataset_size * split_ratio[1])
+        
+        all_indices = list(range(dataset_size))
+        train_indices = all_indices[:train_size]
+        val_indices = all_indices[train_size:train_size+val_size]
+        test_indices = all_indices[train_size+val_size:]
+        
+        train_dataset_normal = torch.utils.data.Subset(dataset_normal, train_indices)
+        val_dataset_normal = torch.utils.data.Subset(dataset_normal, val_indices)
+        test_dataset_normal = torch.utils.data.Subset(dataset_normal, test_indices)
+        
+        train_dataset_noise = torch.utils.data.Subset(dataset_noise, train_indices)
+        val_dataset_noise = torch.utils.data.Subset(dataset_noise, val_indices)
+        test_dataset_noise = torch.utils.data.Subset(dataset_noise, test_indices)
+        
+        train_loader_normal = DataLoader(train_dataset_normal, batch_size=batch_size, shuffle=False)
+        val_loader_normal = DataLoader(val_dataset_normal, batch_size=batch_size, shuffle=False)
+        test_loader_normal = DataLoader(test_dataset_normal, batch_size=batch_size, shuffle=False)
+        
+        train_loader_noise = DataLoader(train_dataset_noise, batch_size=batch_size, shuffle=False)
+        val_loader_noise = DataLoader(val_dataset_noise, batch_size=batch_size, shuffle=False)
+        test_loader_noise = DataLoader(test_dataset_noise, batch_size=batch_size, shuffle=False)
+        
+        return (train_loader_normal, val_loader_normal, test_loader_normal,
+                train_loader_noise, val_loader_noise, test_loader_noise)
+
+    def get_paired_dataloaders(self, att_index=10, batch_size=256, descriptor_type='CM', 
+                    list_mols=[], split_ratio=[0.8, 0.1, 0.1], seed=42, noise_type='gaussian', 
+                    noise_scale=1.0, n_noise=1, morgan_radius=3, morgan_nBits=512):
+        """Prepara dois conjuntos de DataLoaders (normal e com ruído) usando os descritores calculados."""
         torch.manual_seed(seed)
         np.random.seed(seed)
         
-        # Carregar dados 
-        coords, props, natoms = self.load_qm9_dataset(list_mols=list_mols)
-        props = np.array(props)
-        mols = [Atoms(positions=xyz, symbols=symbols) for symbols, xyz in coords]
-        n_atoms_max = max(natoms)
-
-        smiles_list = self.get_smiles()
+        X_normal, Ys, props = self.compute_descriptors(
+            descriptor_type=descriptor_type, morgan_radius=morgan_radius,
+            morgan_nBits=morgan_nBits, att_index=att_index, list_mols=list_mols
+        )
         
-        if descriptor_type == 'CM':
-            cm = CoulombMatrix(n_atoms_max=n_atoms_max, permutation="eigenspectrum")
-            X_normal = cm.create(mols)
-
-        if descriptor_type == 'Morgan':
-            # Obter SMILES e índices válidos
-            smiles_list = self.get_smiles()
-            X_normal = []
-            valid_props = []
-            for i, smiles in enumerate(smiles_list):
-                mol = Chem.MolFromSmiles(smiles)
-                if mol:
-                    # Gerar fingerprint Morgan (também conhecido como ECFP)
-                    fp = AllChem.GetMorganFingerprintAsBitVect(mol, morgan_radius, nBits=morgan_nBits)
-                    X_normal.append(np.array(list(fp)))
-                    # Adicionar as propriedades correspondentes
-                    if i < len(props):
-                        valid_props.append(props[i])
-            X_normal = np.array(X_normal)  # Converter lista para array NumPy
-            props = np.array(valid_props)
-
-        
-        # Criar cópia para o dataset com ruído
         X_with_noise = X_normal.copy()
-        
-        # Adicionar ruído ao segundo dataset
         n_samples = X_with_noise.shape[0]
         
         if noise_type == 'gaussian':
@@ -660,134 +728,58 @@ class qm9_tabular:
         else:
             raise ValueError(f"Tipo de ruído desconhecido: {noise_type}")
         
-        # Adicionar colunas de ruído à matriz
         X_with_noise = np.hstack((X_with_noise, noise_features))
-        
-        # Criar máscara para indicar quais colunas são ruído
         is_noise = np.zeros(X_with_noise.shape[1], dtype=bool)
-        is_noise[-n_noise:] = True  # Últimas n_noise colunas são ruído
+        is_noise[-n_noise:] = True
         
-        # Shuffling consistente para ambos os datasets (usar o mesmo random_state)
         indices = np.arange(len(props))
         np.random.shuffle(indices)
-    
-        # Armazenar os índices embaralhados para rastrear SMILES posteriormente
         self.shuffled_indices = indices
 
         X_normal = X_normal[indices]
         X_with_noise = X_with_noise[indices]
-        props_shuffled = props[indices]
-        Ys = props_shuffled[:, att_index].reshape(-1, 1)
+        Ys = Ys[indices]
         
-        # Normalização
-        scaler_normal = StandardScaler()
-        self.scaler_normal = scaler_normal
-
-        X_normal_scaled = scaler_normal.fit_transform(X_normal)
+        X_normal_scaled, X_noise_scaled, Ys_scaled = self.normalize_data(X_normal, X_with_noise, Ys)
         
-        scaler_noise = StandardScaler()
-        self.scaler_noise = scaler_noise
-
-        X_noise_scaled = scaler_noise.fit_transform(X_with_noise)
+        dataloaders = self.create_dataloaders(
+            X_normal_scaled, X_noise_scaled, Ys_scaled, 
+            split_ratio=split_ratio, batch_size=batch_size)
         
-        target_scaler = StandardScaler()
-        self.target_scaler = target_scaler
-        
-        Ys_scaled = target_scaler.fit_transform(Ys)
-        
-        # Criar datasets
-        dataset_normal = self.Data(X_normal_scaled, Ys_scaled)
-        dataset_noise = self.Data(X_noise_scaled, Ys_scaled)
-        
-        # Calcular tamanhos para divisão
-        dataset_size = len(dataset_normal)
-        train_size = int(dataset_size * split_ratio[0])
-        val_size = int(dataset_size * split_ratio[1])
-        test_size = dataset_size - train_size - val_size
-        
-        # Usar os mesmos índices para ambos os datasets
-        all_indices = list(range(dataset_size))
-        train_indices = all_indices[:train_size]
-        val_indices = all_indices[train_size:train_size+val_size]
-        test_indices = all_indices[train_size+val_size:]
-        
-        # Criar subsets com os mesmos índices
-        train_dataset_normal = torch.utils.data.Subset(dataset_normal, train_indices)
-        val_dataset_normal = torch.utils.data.Subset(dataset_normal, val_indices)
-        test_dataset_normal = torch.utils.data.Subset(dataset_normal, test_indices)
-        
-        train_dataset_noise = torch.utils.data.Subset(dataset_noise, train_indices)
-        val_dataset_noise = torch.utils.data.Subset(dataset_noise, val_indices)
-        test_dataset_noise = torch.utils.data.Subset(dataset_noise, test_indices)
-        
-        # Criar DataLoaders
-        train_loader_normal = DataLoader(train_dataset_normal, batch_size=batch_size, shuffle=False)
-        val_loader_normal = DataLoader(val_dataset_normal, batch_size=batch_size, shuffle=False)
-        test_loader_normal = DataLoader(test_dataset_normal, batch_size=batch_size, shuffle=False)
-        
-        train_loader_noise = DataLoader(train_dataset_noise, batch_size=batch_size, shuffle=False)
-        val_loader_noise = DataLoader(val_dataset_noise, batch_size=batch_size, shuffle=False)
-        test_loader_noise = DataLoader(test_dataset_noise, batch_size=batch_size, shuffle=False)
-        
-
         if n_noise > 0:
-            return train_loader_normal, val_loader_normal, test_loader_normal, train_loader_noise, val_loader_noise, test_loader_noise, is_noise
+            return (*dataloaders, is_noise)
         else:
-            return train_loader_normal, val_loader_normal, test_loader_normal
+            return dataloaders[:3]
 
     def get_smiles_by_dataloader_idx(self, idx, dataset_type='test'):
-        """Recupera o SMILES correspondente a um índice em um dataloader específico.
-        
-        Args:
-            idx: Índice no dataloader
-            dataset_type: 'train', 'val' ou 'test'
-        
-        Returns:
-            str: Representação SMILES da molécula
-        """
+        """Recupera o SMILES correspondente a um índice em um dataloader específico."""
         if not hasattr(self, 'shuffled_indices'):
-            raise AttributeError("Índices embaralhados não disponíveis. Execute get_paired_dataloaders_tabular primeiro.")
+            raise AttributeError("Índices embaralhados não disponíveis. Execute get_paired_dataloaders primeiro.")
         
-        # Calcular tamanhos para divisão
         dataset_size = len(self.shuffled_indices)
-        train_size = int(dataset_size * 0.8)  # Use os mesmos split_ratio do método original
+        train_size = int(dataset_size * 0.8)
         val_size = int(dataset_size * 0.1)
         
-        # Obter o índice original baseado no tipo de dataset
         if dataset_type == 'train':
-            if idx >= train_size:
-                raise IndexError(f"Índice {idx} fora do alcance do conjunto de treino")
+            if idx >= train_size: raise IndexError(f"Índice {idx} fora do alcance do conjunto de treino")
             original_idx = self.shuffled_indices[idx]
         elif dataset_type == 'val':
-            if idx >= val_size:
-                raise IndexError(f"Índice {idx} fora do alcance do conjunto de validação")
+            if idx >= val_size: raise IndexError(f"Índice {idx} fora do alcance do conjunto de validação")
             original_idx = self.shuffled_indices[train_size + idx]
         elif dataset_type == 'test':
             test_size = dataset_size - train_size - val_size
-            if idx >= test_size:
-                raise IndexError(f"Índice {idx} fora do alcance do conjunto de teste")
+            if idx >= test_size: raise IndexError(f"Índice {idx} fora do alcance do conjunto de teste")
             original_idx = self.shuffled_indices[train_size + val_size + idx]
         else:
             raise ValueError("dataset_type deve ser 'train', 'val' ou 'test'")
         
-        # Obter o SMILES usando o índice original
         all_smiles = self.get_smiles()
         return all_smiles[original_idx]
 
 
 if __name__ == '__main__':
-
     qm9 = qm9_tabular()
-
     # 10 = 'Internal energy at 0 K (U0)'
-    train_loader, val_loader, test_loader, train_loader_noise, val_loader_noise, test_loader_noise = qm9.get_paired_dataloaders_tabular(descriptor_type='Morgan')
-
+    train_loader, val_loader, test_loader, train_loader_noise, val_loader_noise, test_loader_noise, is_noise = qm9.get_paired_dataloaders(descriptor_type='Morgan')
     print(train_loader.dataset[0])
     print(train_loader_noise.dataset[0])
-
-    # data_qm9 = prepare_data_graph('QM9')
-    # print(data_qm9.data.x.shape)
-    # print(data_qm9.data.edge_attr.shape)
-    # data_pcqm = prepare_data_graph('PCQM4')
-    # print(data_pcqm[0].x.shape)
-    # print(data_pcqm[0].edge_attr.shape)

@@ -136,12 +136,7 @@ class LIME:
             
     def explain_local(self, index, num_features=None):
         """
-        Generates a local explanation for a specific instance and displays a DataFrame
-        with feature indices and LIME values for the chosen instance.
-        
-        Parameters:
-        - index: index of the instance in the test set to be explained.
-        - num_features: number of features to display in the explanation. If None, use all features.
+        Gera explicação local para uma instância específica.
         """
         # Define the number of features for explanation if not specified
         if num_features is None:
@@ -157,11 +152,25 @@ class LIME:
             num_features=num_features
         )
         
-        # Extract the explanation as a list of tuples and convert to DataFrame
+        # Extract the explanation as a list of tuples
         explanation_list = exp.as_list()
-        lime_values = [item[1] for item in explanation_list]
         
-        return lime_values
+        # Inicializar array de zeros com o tamanho total de features
+        lime_values = np.zeros(self.num_features)
+        
+        # Preencher o array com os valores de importância nas posições corretas
+        import re
+        for feature_name, importance in explanation_list:
+            # Extrair o índice usando expressão regular 
+            # Procura por "Feature X" onde X é um número
+            match = re.search(r'Feature\s+(\d+)', feature_name)
+            if match:
+                feature_idx = int(match.group(1))
+                lime_values[feature_idx] = importance
+            else:
+                print(f"Aviso: Não foi possível extrair o índice da feature '{feature_name}'")
+        
+        return lime_values.tolist()
 
 #================================================================#
 # Graph Based Explainers
