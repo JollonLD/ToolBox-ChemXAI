@@ -216,6 +216,7 @@ class GNNExplain:
                 return_type=return_type,
             ),
         )
+        
     def explain(self, index=None):
         """
         Explains the prediction of a graph neural network (GNN) model for a specific node by calculating

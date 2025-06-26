@@ -24,11 +24,31 @@ def run_train():
         descriptor_type='Physicochemical'
     )
 
+    # MLP com descritor Physicochemical com noise
+    print("\n" + "="*50)
+    print("Treinando MLP com descritor Physicochemical com noise")
+    print("="*50)
+    train_mlp_qm9(
+        att_index=0,
+        epochs=epochs,
+        layers=layers,
+        learning_rate=learning_rate,
+        batch_size=batch_size,
+        n_noise=2,
+        descriptor_type='Physicochemical'
+    )
+
     # GCN com QM9 e sem noise
     print("\n" + "="*50)
     print("Treinando GCN sem noise")
     print("="*50)
     train_gcn_qm9(target_idx=0)
+
+    # GCN com QM9 e sem noise
+    print("\n" + "="*50)
+    print("Treinando GCN sem noise")
+    print("="*50)
+    train_gcn_qm9(target_idx=0, n_noise=2)
 
     print("\n" + "="*50)
     print("Treinamento de todos os modelos concluído!")

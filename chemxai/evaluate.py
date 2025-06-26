@@ -12,7 +12,7 @@ from rdkit.Chem import AllChem, Draw
 from contextlib import redirect_stdout
 from IPython.display import display, HTML
 
-from chemxai.explainers import Shap, LIME, GNNExplain
+from chemxai.explainers import Shap, LIME, GNNExplain, GraphShap, GraphLIME, NodeGraphShap, NodeGrapLIME
 from chemxai.data import qm9_tabular
 
 
@@ -110,9 +110,101 @@ class Evaluator:
                                                         device=self.device, epochs=100, mode='regression', 
                                                         task_level='graph', return_type='raw')
                             
-                            # Explicar a molécula inteira (sem índice específico)
-                            explanation_without_noise = explainer.explain()
-                            explanation_with_noise = explainer_noise.explain()
+                            # Explicar a molécula inteira
+                            explanation_without_noise, _ = explainer.explain()
+                            explanation_with_noise, _ = explainer_noise.explain()
+                            
+                            # Calcular métricas para esta molécula
+                            self._calculate_metrics(explanation_without_noise, explanation_with_noise,
+                                                similarities, l1_differences, l2_differences, 
+                                                spearman_correlations)
+                    
+                    elif self.explainer_type == 'graph_shap':
+                        # GraphShap para explainer de grafo inteiro
+                        batch_size = len(batch_test)
+                        for idx in range(batch_size):
+                            data_normal = batch_test[idx]
+                            data_noise = batch_test_noise[idx]
+                            
+                            # Criar explainers GraphShap
+                            explainer = GraphShap(data=data_normal, model=self.model_normal, 
+                                                device=self.device)
+                            explainer_noise = GraphShap(data=data_noise, model=self.model_noise, 
+                                                    device=self.device)
+                            
+                            # Obter explicações
+                            explanation_without_noise = explainer.explain(num_samples=30)
+                            explanation_with_noise = explainer_noise.explain(num_samples=30)
+                            
+                            # Calcular métricas para esta molécula
+                            self._calculate_metrics(explanation_without_noise, explanation_with_noise,
+                                                similarities, l1_differences, l2_differences, 
+                                                spearman_correlations)
+                    
+                    elif self.explainer_type == 'graph_lime':
+                        # GraphLIME para explainer de grafo inteiro
+                        batch_size = len(batch_test)
+                        for idx in range(batch_size):
+                            data_normal = batch_test[idx]
+                            data_noise = batch_test_noise[idx]
+                            
+                            # Criar explainers GraphLIME
+                            explainer = GraphLIME(model=self.model_normal, device=self.device)
+                            explainer_noise = GraphLIME(model=self.model_noise, device=self.device)
+                            
+                            # Obter explicações
+                            explanation_without_noise = explainer.explain(data=data_normal)
+                            explanation_with_noise = explainer_noise.explain(data=data_noise)
+                            
+                            # Calcular métricas para esta molécula
+                            self._calculate_metrics(explanation_without_noise, explanation_with_noise,
+                                                similarities, l1_differences, l2_differences, 
+                                                spearman_correlations)
+                    
+                    elif self.explainer_type == 'node_graph_shap':
+                        # NodeGraphShap para explicar nós específicos
+                        batch_size = len(batch_test)
+                        for idx in range(batch_size):
+                            data_normal = batch_test[idx]
+                            data_noise = batch_test_noise[idx]
+                            
+                            # Criar explainers NodeGraphShap
+                            explainer = NodeGraphShap(data=data_normal, model=self.model_normal, 
+                                                    device=self.device)
+                            explainer_noise = NodeGraphShap(data=data_noise, model=self.model_noise, 
+                                                        device=self.device)
+                            
+                            # Explicar nó específico (se self.atom_index estiver definido, caso contrário usa 0)
+                            node_idx = getattr(self, 'atom_index', 0)
+                            
+                            # Obter explicações
+                            explanation_without_noise = explainer.explain(node_index=node_idx, hops=2, num_samples=30)
+                            explanation_with_noise = explainer_noise.explain(node_index=node_idx, hops=2, num_samples=30)
+                            
+                            # Calcular métricas para esta molécula
+                            self._calculate_metrics(explanation_without_noise, explanation_with_noise,
+                                                similarities, l1_differences, l2_differences, 
+                                                spearman_correlations)
+                    
+                    elif self.explainer_type == 'node_graph_lime':
+                        # NodeGraphLIME para explicar nós específicos
+                        batch_size = len(batch_test)
+                        for idx in range(batch_size):
+                            data_normal = batch_test[idx]
+                            data_noise = batch_test_noise[idx]
+                            
+                            # Criar explainers NodeGraphLIME
+                            explainer = NodeGrapLIME(data=data_normal, model=self.model_normal, 
+                                                    device=self.device)
+                            explainer_noise = NodeGrapLIME(data=data_noise, model=self.model_noise, 
+                                                        device=self.device)
+                            
+                            # Explicar nó específico (se self.atom_index estiver definido, caso contrário usa 0)
+                            node_idx = getattr(self, 'atom_index', 0)
+                            
+                            # Obter explicações
+                            explanation_without_noise = explainer.explain(node_index=node_idx, hops=2, num_samples=30)
+                            explanation_with_noise = explainer_noise.explain(node_index=node_idx, hops=2, num_samples=30)
                             
                             # Calcular métricas para esta molécula
                             self._calculate_metrics(explanation_without_noise, explanation_with_noise,
@@ -148,55 +240,173 @@ class Evaluator:
 
     def _calculate_metrics(self, explanation_without_noise, explanation_with_noise, 
                       similarities, l1_differences, l2_differences, spearman_correlations):
-        """Método auxiliar para calcular métricas entre explicações"""
+        """
+        Calcula métricas comparativas entre explicações de modelos com e sem ruído.
         
-        # Descobre o maior índice entre as duas explicações
-        max_feature = max(len(explanation_without_noise), len(explanation_with_noise))
-
-        is_2d = isinstance(explanation_without_noise[0], (list, np.ndarray))
+        Esta função compara as explicações geradas por explainers para modelos com e sem ruído, 
+        calculando várias métricas de similaridade. A função lida com diferentes formatos de 
+        explicações, incluindo tuplas, arrays 1D/2D e explicações com diferentes dimensões.
         
-        if is_2d:
-            # Achatar as explicações para comparação
-            explanation_without_noise_flat = np.array([item for sublist in explanation_without_noise for item in sublist])
-            explanation_with_noise_flat = np.array([item for sublist in explanation_with_noise for item in sublist])
+        Parameters:
+        -----------
+        explanation_without_noise : list, ndarray, tuple
+            Explicação gerada pelo modelo sem ruído
+        explanation_with_noise : list, ndarray, tuple
+            Explicação gerada pelo modelo com ruído
+        similarities : list
+            Lista onde as similaridades de cosseno serão armazenadas
+        l1_differences : list
+            Lista onde as diferenças L1 serão armazenadas
+        l2_differences : list
+            Lista onde as diferenças L2 serão armazenadas
+        spearman_correlations : list
+            Lista onde as correlações de Spearman serão armazenadas
+        """
+        # 1. Verificações preliminares e tratamento de tipos
+        try:
+            # Verificar se as explicações são tuplas (caso do GNNExplainer)
+            if isinstance(explanation_without_noise, tuple):
+                # GNNExplainer retorna (node_mask, edge_mask)
+                explanation_without_noise = explanation_without_noise[0]
+                
+            if isinstance(explanation_with_noise, tuple):
+                explanation_with_noise = explanation_with_noise[0]
+                
+            # Garantir que temos arrays ou listas
+            if not isinstance(explanation_without_noise, (list, np.ndarray)):
+                explanation_without_noise = [explanation_without_noise]
+                
+            if not isinstance(explanation_with_noise, (list, np.ndarray)):
+                explanation_with_noise = [explanation_with_noise]
+                
+            # Verificar dimensões das explicações
+            is_2d_without_noise = any(isinstance(item, (list, np.ndarray)) 
+                                    for item in explanation_without_noise)
+            is_2d_with_noise = any(isinstance(item, (list, np.ndarray))
+                                for item in explanation_with_noise)
             
-            # Usar as versões achatadas
-            max_feature = max(len(explanation_without_noise_flat), len(explanation_with_noise_flat))
-            
-            # Cria dicionários de importâncias
-            importance_dict = dict(zip(range(len(explanation_without_noise_flat)), explanation_without_noise_flat))
-            importance_dict_noise = dict(zip(range(len(explanation_with_noise_flat)), explanation_with_noise_flat))
-        else:
-            # Código original para explicações 1D
-            max_feature = max(len(explanation_without_noise), len(explanation_with_noise))
-            
-            # Cria dicionários de importâncias
-            importance_dict = dict(zip(range(len(explanation_without_noise)), explanation_without_noise))
-            importance_dict_noise = dict(zip(range(len(explanation_with_noise)), explanation_with_noise))
-        
-        # Transforma em listas de tamanho igual
-        importance_list = [importance_dict.get(i, 0) for i in range(max_feature)]
-        importance_list_noise = [importance_dict_noise.get(i, 0) for i in range(max_feature)]
-
-        # Transforma em arrays
-        imp = np.array(importance_list)
-        imp_noise = np.array(importance_list_noise)
-
-        # Cosine similarity (1 - distance)
-        sim = 1 - cosine(imp, imp_noise)
-        similarities.append(sim)
-
-        # L1 norm
-        l1_diff = np.sum(np.abs(imp - imp_noise))
-        l1_differences.append(l1_diff)
-
-        # L2 norm
-        l2_diff = np.linalg.norm(imp - imp_noise)
-        l2_differences.append(l2_diff)
-
-        # Spearman rank correlation
-        rho, _ = spearmanr(imp, imp_noise)
-        spearman_correlations.append(rho)
+            # 2. Processamento específico baseado na estrutura dos dados
+            try:
+                # Caso as explicações tenham estruturas diferentes
+                if is_2d_without_noise != is_2d_with_noise:
+                    print("Aviso: Estruturas de explicação inconsistentes. Tentando conversão segura.")
+                
+                if is_2d_without_noise or is_2d_with_noise:
+                    # Tentativa de achatar arrays 2D de forma segura
+                    try:
+                        if is_2d_without_noise:
+                            flattened_without_noise = []
+                            for item in explanation_without_noise:
+                                if isinstance(item, (list, np.ndarray)):
+                                    flattened_without_noise.extend(item)
+                                else:
+                                    flattened_without_noise.append(item)
+                            explanation_without_noise_flat = np.array(flattened_without_noise, dtype=float)
+                        else:
+                            explanation_without_noise_flat = np.array(explanation_without_noise, dtype=float)
+                            
+                        if is_2d_with_noise:
+                            flattened_with_noise = []
+                            for item in explanation_with_noise:
+                                if isinstance(item, (list, np.ndarray)):
+                                    flattened_with_noise.extend(item)
+                                else:
+                                    flattened_with_noise.append(item)
+                            explanation_with_noise_flat = np.array(flattened_with_noise, dtype=float)
+                        else:
+                            explanation_with_noise_flat = np.array(explanation_with_noise, dtype=float)
+                            
+                    except Exception as e:
+                        # Fallback para caso de erro na conversão
+                        print(f"Erro ao achatar arrays: {e}. Usando método alternativo.")
+                        explanation_without_noise_flat = np.array([float(x) for x in np.array(explanation_without_noise).flatten() 
+                                                                if str(x).replace('.','',1).isdigit()])
+                        explanation_with_noise_flat = np.array([float(x) for x in np.array(explanation_with_noise).flatten() 
+                                                            if str(x).replace('.','',1).isdigit()])
+                else:
+                    # Caso simples: explicações 1D
+                    explanation_without_noise_flat = np.array(explanation_without_noise, dtype=float)
+                    explanation_with_noise_flat = np.array(explanation_with_noise, dtype=float)
+                    
+                # 3. Verificar se temos dados válidos após conversão
+                if len(explanation_without_noise_flat) == 0 or len(explanation_with_noise_flat) == 0:
+                    print("Aviso: Explicação vazia após conversão. Pulando métricas.")
+                    similarities.append(0.5)  # valor neutro
+                    l1_differences.append(0)
+                    l2_differences.append(0)
+                    spearman_correlations.append(0)
+                    return
+                    
+                # 4. Criar vetores de importância alinhados
+                max_feature = max(len(explanation_without_noise_flat), len(explanation_with_noise_flat))
+                
+                # Converter para dicionários para fazer alinhamento quando dimensões são diferentes
+                importance_dict = dict(zip(range(len(explanation_without_noise_flat)), explanation_without_noise_flat))
+                importance_dict_noise = dict(zip(range(len(explanation_with_noise_flat)), explanation_with_noise_flat))
+                
+                # Criar listas alinhadas (preenchendo com zeros quando necessário)
+                importance_list = [importance_dict.get(i, 0) for i in range(max_feature)]
+                importance_list_noise = [importance_dict_noise.get(i, 0) for i in range(max_feature)]
+                
+                # 5. Calcular métricas
+                imp = np.array(importance_list)
+                imp_noise = np.array(importance_list_noise)
+                
+                # Verificar dados inválidos antes do cálculo de métricas
+                if np.isnan(imp).any() or np.isnan(imp_noise).any():
+                    print("Aviso: Detectados valores NaN nas explicações.")
+                    imp = np.nan_to_num(imp)
+                    imp_noise = np.nan_to_num(imp_noise)
+                    
+                # Verificar se os vetores estão com valores iguais (evitar divisão por zero)
+                if np.array_equal(imp, imp_noise) or (np.sum(np.abs(imp)) < 1e-10 and np.sum(np.abs(imp_noise)) < 1e-10):
+                    similarities.append(1.0)  # Vetores idênticos ou próximos de zero
+                    l1_differences.append(0.0)
+                    l2_differences.append(0.0)
+                    spearman_correlations.append(1.0)
+                    return
+                    
+                # Calcular similaridade de cosseno
+                try:
+                    sim = 1 - cosine(imp, imp_noise)
+                    if np.isnan(sim):
+                        sim = 0.5  # Valor neutro se cosseno não puder ser calculado
+                except Exception:
+                    sim = 0.5
+                similarities.append(sim)
+                
+                # Calcular diferença L1 (soma dos valores absolutos das diferenças)
+                l1_diff = np.sum(np.abs(imp - imp_noise))
+                l1_differences.append(l1_diff)
+                
+                # Calcular diferença L2 (norma euclidiana da diferença)
+                l2_diff = np.linalg.norm(imp - imp_noise)
+                l2_differences.append(l2_diff)
+                
+                # Calcular correlação de Spearman
+                try:
+                    rho, _ = spearmanr(imp, imp_noise)
+                    if np.isnan(rho):
+                        rho = 0  # Valor neutro se correlação não puder ser calculada
+                except Exception:
+                    rho = 0
+                spearman_correlations.append(rho)
+                
+            except Exception as e:
+                print(f"Erro ao processar explicações: {e}")
+                # Valores neutros em caso de erro
+                similarities.append(0.5)
+                l1_differences.append(0)
+                l2_differences.append(0)
+                spearman_correlations.append(0)
+                
+        except Exception as global_e:
+            print(f"Erro global ao calcular métricas: {global_e}")
+            # Valores neutros em caso de erro
+            similarities.append(0.5)
+            l1_differences.append(0)
+            l2_differences.append(0)
+            spearman_correlations.append(0)
 
 
 class FingerprintAnalyzer:

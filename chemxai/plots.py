@@ -122,6 +122,103 @@ def radar_plot(values, feature_names=None, title="Feature Importance Radar Plot"
     
     return fig, ax
 
-
-
+def horizontal_bar_plot(values, feature_names=None, title="Feature Importance", sort=True, 
+                       max_features=None, color_positive='blue', color_negative='red',
+                       figsize=(12, 8), save_path='graphs', filename='feature_importance.png'):
+    """
+    Creates a horizontal bar plot to visualize feature importance.
+    
+    Parameters:
+    -----------
+    values : array-like
+        Importance values for each feature
+    feature_names : list, optional
+        Names of the features. If None, will use generic names
+    title : str
+        Title of the plot
+    sort : bool
+        Whether to sort features by absolute importance value
+    max_features : int, optional
+        Maximum number of features to display. If None, shows all features
+    color_positive : str
+        Color for positive values
+    color_negative : str
+        Color for negative values
+    figsize : tuple
+        Figure size (width, height)
+    save_path : str
+        Directory to save the plot (default: 'graphs')
+    filename : str
+        Filename for the saved plot (default: 'feature_importance.png')
+        
+    Returns:
+    --------
+    fig : matplotlib.figure.Figure
+        The figure object
+    ax : matplotlib.axes.Axes
+        The axes object
+    """
+    values = np.asarray(values)
+    
+    # Generate feature names if not provided
+    if feature_names is None:
+        feature_names = [f"Feature {i}" for i in range(len(values))]
+        
+    # Ensure we have enough names
+    while len(feature_names) < len(values):
+        feature_names.append(f"Feature {len(feature_names)}")
+    
+    # Sort features by absolute importance if requested
+    if sort:
+        # Get indices sorted by absolute value
+        indices = np.argsort(np.abs(values))
+        
+        # Limit number of features if specified
+        if max_features is not None and max_features < len(values):
+            indices = indices[-max_features:]
+            
+        # Reorder values and names
+        sorted_values = [values[i] for i in indices]
+        sorted_names = [feature_names[i] for i in indices]
+    else:
+        # Use original order
+        sorted_values = values
+        sorted_names = feature_names
+        
+        # Limit number of features if specified
+        if max_features is not None and max_features < len(values):
+            sorted_values = sorted_values[-max_features:]
+            sorted_names = sorted_names[-max_features:]
+    
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # Set colors based on value sign
+    colors = [color_positive if v >= 0 else color_negative for v in sorted_values]
+    
+    # Create horizontal bar plot
+    ax.barh(range(len(sorted_values)), sorted_values, color=colors)
+    
+    # Set y-ticks to feature names
+    ax.set_yticks(range(len(sorted_values)))
+    ax.set_yticklabels(sorted_names)
+    
+    # Set labels and title
+    ax.set_title(title, fontsize=14)
+    ax.set_xlabel("Importance Value", fontsize=12)
+    
+    # Add grid lines for better readability
+    ax.grid(axis='x', linestyle='--', alpha=0.6)
+    
+    # Adjusted layout to ensure everything fits
+    plt.tight_layout()
+    
+    # Create directory if it doesn't exist
+    import os
+    os.makedirs(save_path, exist_ok=True)
+    
+    # Save the figure
+    fig.savefig(os.path.join(save_path, filename), dpi=300, bbox_inches='tight')
+    
+    return fig, ax
 
