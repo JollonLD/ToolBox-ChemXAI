@@ -151,24 +151,27 @@ def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay
 
     gd = graph_datasets()
 
-    # 1. Carregar e transformar o dataset
-    if n_noise > 0:
-        dataset = gd.prepare_data_graph_noise('QM9')
-    else:
-        dataset = gd.prepare_data_graph('QM9')
+    # Usar get_paired_dataloaders para obter dados alinhados
+    loaders = gd.get_paired_dataloaders(
+        dataset_name='QM9', 
+        batch_size=batch_size,
+        seed=42,
+        noise_type='gaussian',
+        noise_scale=1.0
+    )
     
+    # Decidir quais loaders usar com base na presença de ruído
+    if n_noise > 0:
+        _, _, _, train_loader, val_loader, test_loader = loaders
+    else:
+        train_loader, val_loader, test_loader, _, _, _ = loaders
 
-    # 2. Normalizar o alvo
-    y = dataset.data.y[:, target_idx]
-    mean = y.mean()
-    std = y.std()
-    dataset.data.y = (y - mean) / std
-
-    train_loader, val_loader, test_loader = gd.get_dataloader(dataset=dataset, batch_size=batch_size)
-
+    # Obter exemplo do primeiro batch para inicializar o modelo
+    data_sample = next(iter(train_loader))
+    
     # 4. Instanciar modelo para regressão
     model = GCN(
-        num_features=dataset.data.x.size(1)
+        num_features=data_sample.x.size(1)
     ).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -181,30 +184,58 @@ def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay
     for epoch in range(epochs):
         model.train()
         total_loss = 0
+        num_samples = 0
+        
         for batch in train_loader:
             batch = batch.to(device)
             optimizer.zero_grad()
-            pred = model(batch.x, batch.edge_index, batch.batch).view(-1)
-            target = batch.y.view(-1)
-            loss = criterion(pred, target)
+            
+            # Selecionar apenas a propriedade específica que queremos prever
+            target = batch.y[:, target_idx].view(-1, 1)
+            
+            # Forward pass
+            out = model(batch.x, batch.edge_index, batch=batch.batch)
+            
+            # Garantir que as dimensões correspondam
+            if out.shape[0] != target.shape[0]:
+                min_size = min(out.shape[0], target.shape[0])
+                out = out[:min_size]
+                target = target[:min_size]
+            
+            loss = criterion(out, target)
             loss.backward()
             optimizer.step()
-            total_loss += loss.item() * batch.num_graphs
+            
+            total_loss += loss.item() * out.size(0)
+            num_samples += out.size(0)
 
-        avg_train_loss = total_loss / len(train_loader.dataset)
+        avg_train_loss = total_loss / num_samples
 
         # Validação
         model.eval()
         val_loss = 0
+        val_samples = 0
+        
         with torch.no_grad():
             for batch in val_loader:
                 batch = batch.to(device)
-                pred = model(batch.x, batch.edge_index, batch.batch).view(-1)
-                target = batch.y.view(-1)
-                loss = criterion(pred, target)
-                val_loss += loss.item() * batch.num_graphs
+                
+                # Selecionar a propriedade alvo específica
+                target = batch.y[:, target_idx].view(-1, 1)
+                
+                out = model(batch.x, batch.edge_index, batch=batch.batch)
+                
+                # Garantir que as dimensões correspondam
+                if out.shape[0] != target.shape[0]:
+                    min_size = min(out.shape[0], target.shape[0])
+                    out = out[:min_size]
+                    target = target[:min_size]
+                
+                loss = criterion(out, target)
+                val_loss += loss.item() * out.size(0)
+                val_samples += out.size(0)
 
-        avg_val_loss = val_loss / len(val_loader.dataset)
+        avg_val_loss = val_loss / val_samples
 
         history.append((epoch + 1, avg_train_loss, avg_val_loss))
 
@@ -216,18 +247,30 @@ def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay
 
     # 6. Avaliação final
     model.load_state_dict(torch.load(path))
-    model.to(device)
     model.eval()
     test_loss = 0
+    test_samples = 0
+    
     with torch.no_grad():
         for batch in test_loader:
             batch = batch.to(device)
-            pred = model(batch.x, batch.edge_index, batch.batch).view(-1)
-            pred = pred * std + mean
-            y_true = batch.y * std + mean
-            test_loss += F.mse_loss(pred, y_true).item() * batch.num_graphs
+            
+            # Selecionar a propriedade alvo específica
+            target = batch.y[:, target_idx].view(-1, 1)
+            
+            out = model(batch.x, batch.edge_index, batch=batch.batch)
+            
+            # Garantir que as dimensões correspondam
+            if out.shape[0] != target.shape[0]:
+                min_size = min(out.shape[0], target.shape[0])
+                out = out[:min_size]
+                target = target[:min_size]
+            
+            loss = F.mse_loss(out, target).item()
+            test_loss += loss * out.size(0)
+            test_samples += out.size(0)
 
-    test_loss /= len(test_loader.dataset)
+    test_loss /= test_samples
     print(f"\nMSE no teste: {test_loss:.4f}")
     print(f"RMSE no teste: {test_loss ** 0.5:.4f}")
 
