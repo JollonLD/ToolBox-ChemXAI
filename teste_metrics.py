@@ -101,7 +101,7 @@ train_mlp_qm9(epochs=50, n_noise=3)
 
 # train_gcn_qm9()
 # train_gcn_pcqm4()
-# train_gcn_pcqm4(n_noise=1)
+train_gcn_pcqm4(n_noise=1)
 # train_gcn_qm9(n_noise=1)
 
 # gd = graph_datasets()

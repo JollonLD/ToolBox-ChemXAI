@@ -249,7 +249,7 @@ class GNNExplain:
             index=0 if index is None else index  # Índice 0 no batch
         )
 
-        return explanation.node_mask.squeeze().tolist(), explanation.edge_mask.squeeze().tolist()
+        return explanation.node_mask.squeeze().tolist(), explanation.edge_mask.squeeze().tolist(), explanation
 
 class NodeGrapLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
     """

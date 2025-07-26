@@ -1,4 +1,4 @@
-from chemxai.train import train_mlp_qm9, train_gcn_qm9
+from chemxai.train import train_mlp_qm9, train_gcn_qm9, train_gcn_pcqm4
 import time
 
 def run_train():
@@ -55,5 +55,4 @@ def run_train():
     print("="*50)
 
 if __name__ == '__main__':
-
-    run_train()
+    train_gcn_pcqm4()
