@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>SHAP - XAI Toolbox</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "SHAP";
+        var mkdocs_page_input_path = "explainers/shap_explainer_docs.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> XAI Toolbox
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../overview_docs/">Overview</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Explainers</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">SHAP</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#class-shap">Class: Shap</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#initialization">Initialization</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#parameters">Parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#methods">Methods</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#explain_localindex">explain_local(index)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#explain_global">explain_global()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage-example">Usage Example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#technical-details">Technical Details</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#shap-values-calculation">SHAP Values Calculation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#model-compatibility">Model Compatibility</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#performance-considerations">Performance Considerations</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../lime_explainer_docs/">LIME</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../gnn_explainer_docs/">GNN Explainer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../graph_explainers_docs/">Graph SHAP and LIME</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../evaluator/evaluator_docs/">Evaluators</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../plots/plots_docs/">Plots</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">XAI Toolbox</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Explainers</li>
+      <li class="breadcrumb-item active">SHAP</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="shap-explainer">SHAP Explainer<a class="headerlink" href="#shap-explainer" title="Permanent link">&para;</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>The SHAP (SHapley Additive exPlanations) explainer provides model-agnostic explanations for tabular molecular data by calculating Shapley values for each feature. SHAP values represent the contribution of each feature to the model's prediction.</p>
+<h2 id="class-shap">Class: <code>Shap</code><a class="headerlink" href="#class-shap" title="Permanent link">&para;</a></h2>
+<h3 id="initialization">Initialization<a class="headerlink" href="#initialization" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">from chemxai.explainers import Shap
+
+explainer = Shap(
+    model=model,
+    background_tensor=background_data,
+    test_tensor=test_data,
+    device=device
+)
+</code></pre>
+<h3 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>model</strong> (<code>torch.nn.Module</code>): The trained model to be explained</li>
+<li><strong>background_tensor</strong> (<code>torch.Tensor</code>): Background data used to establish baseline for SHAP calculations</li>
+<li><strong>test_tensor</strong> (<code>torch.Tensor</code>): Test data to be explained</li>
+<li><strong>device</strong> (<code>torch.device</code>): Device for computations (CPU or GPU)</li>
+</ul>
+<h3 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link">&para;</a></h3>
+<h4 id="explain_localindex"><code>explain_local(index)</code><a class="headerlink" href="#explain_localindex" title="Permanent link">&para;</a></h4>
+<p>Generates local explanations for a specific instance by calculating SHAP values.</p>
+<p><strong>Parameters:</strong>
+- <strong>index</strong> (<code>int</code>): Index of the instance in the test set to be explained</p>
+<p><strong>Returns:</strong>
+- <strong>list</strong>: SHAP values for each feature of the specified instance</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-python"># Explain the first instance
+explanation = explainer.explain_local(index=0)
+print(f&quot;SHAP values: {explanation}&quot;)
+</code></pre>
+<h4 id="explain_global"><code>explain_global()</code><a class="headerlink" href="#explain_global" title="Permanent link">&para;</a></h4>
+<p>Generates global explanations by calculating the mean absolute SHAP values across all instances.</p>
+<p><strong>Returns:</strong>
+- <strong>list</strong>: Mean absolute SHAP values for each feature across all instances</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-python"># Get global feature importance
+global_explanation = explainer.explain_global()
+print(f&quot;Global feature importance: {global_explanation}&quot;)
+</code></pre>
+<h2 id="usage-example">Usage Example<a class="headerlink" href="#usage-example" title="Permanent link">&para;</a></h2>
+<pre><code class="language-python">import torch
+from chemxai.explainers import Shap
+from chemxai.data import qm9_tabular
+
+# Load data
+qm9 = qm9_tabular()
+train_loader, _, test_loader, _, _, _, _ = qm9.get_paired_dataloaders_tabular(
+    batch_size=32, 
+    descriptor_type='Morgan', 
+    morgan_radius=3, 
+    morgan_nBits=512
+)
+
+# Get background and test data
+background_batch = next(iter(train_loader))
+test_batch = next(iter(test_loader))
+
+# Initialize explainer
+explainer = Shap(
+    model=your_model,
+    background_tensor=background_batch[0],
+    test_tensor=test_batch[0],
+    device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+)
+
+# Generate local explanation
+local_explanation = explainer.explain_local(index=0)
+
+# Generate global explanation
+global_explanation = explainer.explain_global()
+</code></pre>
+<h2 id="technical-details">Technical Details<a class="headerlink" href="#technical-details" title="Permanent link">&para;</a></h2>
+<h3 id="shap-values-calculation">SHAP Values Calculation<a class="headerlink" href="#shap-values-calculation" title="Permanent link">&para;</a></h3>
+<p>The explainer uses KernelExplainer from the SHAP library, which:</p>
+<ol>
+<li>Takes the background data to establish a baseline</li>
+<li>Calculates Shapley values by evaluating the model on coalitions of features</li>
+<li>Returns values that sum to the difference between the prediction and the baseline</li>
+</ol>
+<h3 id="model-compatibility">Model Compatibility<a class="headerlink" href="#model-compatibility" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Works with any PyTorch model that accepts tabular input</li>
+<li>Automatically handles tensor conversion between PyTorch and NumPy</li>
+<li>Supports both regression and classification tasks</li>
+</ul>
+<h3 id="performance-considerations">Performance Considerations<a class="headerlink" href="#performance-considerations" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Background data size affects computation time</li>
+<li>Larger test sets will take longer to process</li>
+<li>GPU acceleration is supported for model inference</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../overview_docs/" class="btn btn-neutral float-left" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../lime_explainer_docs/" class="btn btn-neutral float-right" title="LIME">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/JollonLD/ToolBox-ChemXAI.git" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../../overview_docs/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../lime_explainer_docs/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

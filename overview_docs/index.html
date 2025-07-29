@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Overview - XAI Toolbox</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Overview";
+        var mkdocs_page_input_path = "overview_docs.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> XAI Toolbox
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Overview</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick Start</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#documentation-structure">Documentation Structure</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#explainers">Explainers</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#tabular-explainers">Tabular Explainers</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#graph-based-explainers">Graph-based Explainers</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#visualization-and-analysis">Visualization and Analysis</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#supported-model-types">Supported Model Types</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#tabular-models">Tabular Models</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#graph-models">Graph Models</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#supported-data-types">Supported Data Types</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#molecular-representations">Molecular Representations</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#tasks">Tasks</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#core-features">Core Features</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#explanation-methods">Explanation Methods</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#robustness-evaluation">Robustness Evaluation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#molecular-analysis">Molecular Analysis</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#dependencies">Dependencies</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#api-reference">API Reference</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#quick-reference">Quick Reference</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#common-patterns">Common Patterns</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#explaining-tabular-models">Explaining Tabular Models</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#explaining-graph-models">Explaining Graph Models</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#evaluating-robustness">Evaluating Robustness</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#best-practices">Best Practices</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#model-preparation">Model Preparation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#data-preparation">Data Preparation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#explanation-generation">Explanation Generation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#evaluation-and-analysis">Evaluation and Analysis</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#examples-and-tutorials">Examples and Tutorials</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#complete-workflow-example">Complete Workflow Example</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#contributing">Contributing</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#support">Support</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#license">License</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Explainers</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../explainers/shap_explainer_docs/">SHAP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../explainers/lime_explainer_docs/">LIME</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../explainers/gnn_explainer_docs/">GNN Explainer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../explainers/graph_explainers_docs/">Graph SHAP and LIME</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../evaluator/evaluator_docs/">Evaluators</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../plots/plots_docs/">Plots</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">XAI Toolbox</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Overview</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="chemxai-documentation">ChemXAI Documentation<a class="headerlink" href="#chemxai-documentation" title="Permanent link">&para;</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>ChemXAI is a comprehensive library for explainable AI in chemical machine learning. It provides a unified interface for explaining predictions from both tabular and graph-based molecular models using various explanation methods.</p>
+<h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
+<pre><code class="language-python"># Install ChemXAI
+pip install chemxai
+
+# Basic usage example
+from chemxai.explainers import Shap
+from chemxai.data import qm9_tabular
+
+# Load data
+qm9 = qm9_tabular()
+train_loader, _, test_loader, _, _, _, _ = qm9.get_paired_dataloaders_tabular(
+    batch_size=32, descriptor_type='Morgan'
+)
+
+# Create explainer
+explainer = Shap(
+    model=your_model,
+    background_tensor=next(iter(train_loader))[0],
+    test_tensor=next(iter(test_loader))[0],
+    device=device
+)
+
+# Generate explanation
+explanation = explainer.explain_local(index=0)
+</code></pre>
+<h2 id="documentation-structure">Documentation Structure<a class="headerlink" href="#documentation-structure" title="Permanent link">&para;</a></h2>
+<h3 id="explainers">Explainers<a class="headerlink" href="#explainers" title="Permanent link">&para;</a></h3>
+<h4 id="tabular-explainers">Tabular Explainers<a class="headerlink" href="#tabular-explainers" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong><a href="shap-explainer.md">SHAP</a></strong>: SHapley Additive exPlanations for tabular molecular data</li>
+<li><strong><a href="lime-explainer.md">LIME</a></strong>: Local Interpretable Model-agnostic Explanations for tabular data</li>
+</ul>
+<h4 id="graph-based-explainers">Graph-based Explainers<a class="headerlink" href="#graph-based-explainers" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong><a href="gnn-explainer.md">GNN Explainer</a></strong>: Native GNN explanation method using masking</li>
+<li><strong><a href="graph-explainers.md">Graph Explainers</a></strong>: Collection of graph-specific explanation methods:</li>
+<li>GraphShap: SHAP for graph-level predictions</li>
+<li>GraphLIME: LIME for graph-level predictions</li>
+<li>NodeGraphShap: SHAP for node-level predictions</li>
+<li>NodeGrapLIME: LIME for node-level predictions</li>
+</ul>
+<h3 id="visualization-and-analysis">Visualization and Analysis<a class="headerlink" href="#visualization-and-analysis" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><a href="plots.md">Plots</a></strong>: Visualization functions for explanation results</li>
+<li><strong><a href="evaluator.md">Evaluator</a></strong>: Robustness evaluation and fingerprint analysis</li>
+</ul>
+<h2 id="supported-model-types">Supported Model Types<a class="headerlink" href="#supported-model-types" title="Permanent link">&para;</a></h2>
+<h3 id="tabular-models">Tabular Models<a class="headerlink" href="#tabular-models" title="Permanent link">&para;</a></h3>
+<ul>
+<li>PyTorch neural networks</li>
+<li>Models accepting molecular fingerprints</li>
+<li>Regression and classification tasks</li>
+</ul>
+<h3 id="graph-models">Graph Models<a class="headerlink" href="#graph-models" title="Permanent link">&para;</a></h3>
+<ul>
+<li>PyTorch Geometric compatible models</li>
+<li>Message Passing Neural Networks (MPNNs)</li>
+<li>Graph Convolutional Networks (GCNs)</li>
+<li>Graph Attention Networks (GATs)</li>
+</ul>
+<h2 id="supported-data-types">Supported Data Types<a class="headerlink" href="#supported-data-types" title="Permanent link">&para;</a></h2>
+<h3 id="molecular-representations">Molecular Representations<a class="headerlink" href="#molecular-representations" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Morgan Fingerprints</strong>: Circular fingerprints for molecular structure</li>
+<li><strong>Graph Data</strong>: Node features and edge connectivity</li>
+<li><strong>SMILES</strong>: Molecular string representations</li>
+<li><strong>Custom Descriptors</strong>: User-defined molecular features</li>
+</ul>
+<h3 id="tasks">Tasks<a class="headerlink" href="#tasks" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Molecular Property Prediction</strong>: Regression tasks for chemical properties</li>
+<li><strong>Molecular Classification</strong>: Classification of molecular types</li>
+<li><strong>Node-level Prediction</strong>: Atom-specific property prediction</li>
+<li><strong>Graph-level Prediction</strong>: Whole-molecule property prediction</li>
+</ul>
+<h2 id="core-features">Core Features<a class="headerlink" href="#core-features" title="Permanent link">&para;</a></h2>
+<h3 id="explanation-methods">Explanation Methods<a class="headerlink" href="#explanation-methods" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Local Explanations</strong>: Instance-specific feature importance</li>
+<li><strong>Global Explanations</strong>: Dataset-wide feature importance patterns</li>
+<li><strong>Graph Explanations</strong>: Node and edge importance in molecular graphs</li>
+<li><strong>Substructure Analysis</strong>: Important molecular fragments identification</li>
+</ul>
+<h3 id="robustness-evaluation">Robustness Evaluation<a class="headerlink" href="#robustness-evaluation" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Noise Sensitivity</strong>: Compare explanations under data perturbations</li>
+<li><strong>Multiple Metrics</strong>: Cosine similarity, L1/L2 distances, rank correlation</li>
+<li><strong>Statistical Analysis</strong>: Distribution analysis and significance testing</li>
+<li><strong>Visualization</strong>: Automatic generation of robustness plots</li>
+</ul>
+<h3 id="molecular-analysis">Molecular Analysis<a class="headerlink" href="#molecular-analysis" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Fragment Identification</strong>: Map important bits to molecular substructures</li>
+<li><strong>Chemical Interpretation</strong>: Visualize important molecular regions</li>
+<li><strong>Interactive Analysis</strong>: Detailed molecular fragment exploration</li>
+</ul>
+<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash"># Install from PyPI
+pip install chemxai
+
+# Install development version
+git clone https://github.com/your-repo/chemxai.git
+cd chemxai
+pip install -e .
+</code></pre>
+<h3 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h3>
+<p>Core dependencies:
+- PyTorch &gt;= 1.9.0
+- torch-geometric &gt;= 2.0.0
+- RDKit &gt;= 2021.09.1
+- scikit-learn &gt;= 1.0.0
+- SHAP &gt;= 0.40.0
+- LIME &gt;= 0.2.0
+- matplotlib &gt;= 3.3.0
+- numpy &gt;= 1.20.0</p>
+<h2 id="api-reference">API Reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h2>
+<h3 id="quick-reference">Quick Reference<a class="headerlink" href="#quick-reference" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python"># Tabular explainers
+from chemxai.explainers import Shap, LIME
+
+# Graph explainers  
+from chemxai.explainers import (
+    GNNExplain, GraphShap, GraphLIME, 
+    NodeGraphShap, NodeGrapLIME
+)
+
+# Visualization
+from chemxai.plots import radar_plot, horizontal_bar_plot
+
+# Evaluation
+from chemxai.evaluate import Evaluator, FingerprintAnalyzer
+</code></pre>
+<h3 id="common-patterns">Common Patterns<a class="headerlink" href="#common-patterns" title="Permanent link">&para;</a></h3>
+<h4 id="explaining-tabular-models">Explaining Tabular Models<a class="headerlink" href="#explaining-tabular-models" title="Permanent link">&para;</a></h4>
+<pre><code class="language-python"># 1. Prepare data
+background = train_data[0]  # Background for SHAP
+test_data = test_batch[0]   # Data to explain
+
+# 2. Create explainer
+explainer = Shap(model, background, test_data, device)
+
+# 3. Generate explanations
+local_exp = explainer.explain_local(index=0)
+global_exp = explainer.explain_global()
+
+# 4. Visualize
+from chemxai.plots import horizontal_bar_plot
+fig, ax = horizontal_bar_plot(local_exp, title=&quot;Feature Importance&quot;)
+</code></pre>
+<h4 id="explaining-graph-models">Explaining Graph Models<a class="headerlink" href="#explaining-graph-models" title="Permanent link">&para;</a></h4>
+<pre><code class="language-python"># 1. Prepare graph data
+graph_data = Data(x=node_features, edge_index=edge_indices)
+
+# 2. Create explainer
+explainer = GNNExplain(model, device, graph_data, epochs=100)
+
+# 3. Generate explanation
+node_mask, edge_mask, explanation = explainer.explain()
+
+# 4. Analyze results
+important_nodes = torch.argsort(node_mask, descending=True)[:5]
+</code></pre>
+<h4 id="evaluating-robustness">Evaluating Robustness<a class="headerlink" href="#evaluating-robustness" title="Permanent link">&para;</a></h4>
+<pre><code class="language-python"># 1. Setup evaluator
+evaluator = Evaluator(
+    model_normal=clean_model,
+    model_noise=noisy_model,
+    train_loader_normal=clean_train,
+    test_loader_normal=clean_test,
+    train_loader_noise=noisy_train,
+    test_loader_noise=noisy_test,
+    device=device,
+    explainer_type='shap_local'
+)
+
+# 2. Run evaluation
+results = evaluator.robustness()
+similarities, l1_diffs, l2_diffs, spearman_corrs, figs = results
+
+# 3. Analyze results
+mean_similarity = np.mean(similarities)
+print(f&quot;Mean cosine similarity: {mean_similarity:.3f}&quot;)
+</code></pre>
+<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
+<h3 id="model-preparation">Model Preparation<a class="headerlink" href="#model-preparation" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Ensure Reproducibility</strong>: Set random seeds for consistent results</li>
+<li><strong>Model State</strong>: Use <code>model.eval()</code> during explanation generation</li>
+<li><strong>Device Consistency</strong>: Keep model and data on the same device</li>
+</ol>
+<h3 id="data-preparation">Data Preparation<a class="headerlink" href="#data-preparation" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Background Selection</strong>: Choose representative background data for SHAP</li>
+<li><strong>Batch Sizes</strong>: Use appropriate batch sizes for memory constraints</li>
+<li><strong>Data Quality</strong>: Ensure clean data for baseline comparisons</li>
+</ol>
+<h3 id="explanation-generation">Explanation Generation<a class="headerlink" href="#explanation-generation" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Method Selection</strong>: Choose appropriate explainer for your model type</li>
+<li><strong>Parameter Tuning</strong>: Adjust explainer parameters for your use case</li>
+<li><strong>Validation</strong>: Cross-validate explanations across multiple instances</li>
+</ol>
+<h3 id="evaluation-and-analysis">Evaluation and Analysis<a class="headerlink" href="#evaluation-and-analysis" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Multiple Metrics</strong>: Use multiple robustness metrics for comprehensive evaluation</li>
+<li><strong>Statistical Significance</strong>: Ensure sufficient samples for reliable statistics</li>
+<li><strong>Domain Knowledge</strong>: Validate explanations against chemical knowledge</li>
+</ol>
+<h2 id="examples-and-tutorials">Examples and Tutorials<a class="headerlink" href="#examples-and-tutorials" title="Permanent link">&para;</a></h2>
+<h3 id="complete-workflow-example">Complete Workflow Example<a class="headerlink" href="#complete-workflow-example" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">import torch
+from chemxai.explainers import Shap
+from chemxai.evaluate import Evaluator, FingerprintAnalyzer
+from chemxai.plots import horizontal_bar_plot
+
+# 1. Load your trained model and data
+model = torch.load('your_model.pt')
+# ... load data loaders ...
+
+# 2. Generate explanations
+explainer = Shap(model, background_data, test_data, device)
+explanation = explainer.explain_local(index=0)
+
+# 3. Visualize explanations
+fig, ax = horizontal_bar_plot(
+    explanation, 
+    title=&quot;Molecular Feature Importance&quot;,
+    max_features=20
+)
+
+# 4. Analyze molecular fragments (for fingerprint data)
+analyzer = FingerprintAnalyzer(explanation, batch_idx=0, mol_idx=0)
+summary = analyzer.analyze()
+
+# 5. Evaluate robustness
+evaluator = Evaluator(
+    model_normal=clean_model,
+    model_noise=noisy_model,
+    # ... data loaders ...
+    explainer_type='shap_local'
+)
+robustness_results = evaluator.robustness()
+</code></pre>
+<h2 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h2>
+<p>We welcome contributions! Please see our <a href="contributing.md">Contributing Guide</a> for details on:
+- Code style and standards
+- Testing requirements
+- Documentation guidelines
+- Submission process</p>
+<h2 id="support">Support<a class="headerlink" href="#support" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Documentation</strong>: This comprehensive documentation</li>
+<li><strong>Issues</strong>: GitHub issues for bug reports and feature requests</li>
+<li><strong>Discussions</strong>: GitHub discussions for questions and community support</li>
+<li><strong>Examples</strong>: Jupyter notebooks with detailed examples</li>
+</ul>
+<h2 id="license">License<a class="headerlink" href="#license" title="Permanent link">&para;</a></h2>
+<p>ChemXAI is released under the MIT License. See <a href="LICENSE">LICENSE</a> for details.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../explainers/shap_explainer_docs/" class="btn btn-neutral float-right" title="SHAP">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/JollonLD/ToolBox-ChemXAI.git" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+    
+      <span><a href="../explainers/shap_explainer_docs/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
