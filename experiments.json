@@ -1,0 +1,15 @@
+{
+  "explanation_experiments": [
+    {
+      "id": "shap_mlp_no_noise",
+      "type": "shap",
+      "description": "Explicando modelo MLP (sem ruído) com SHAP",
+      "params": {
+        "model_name": "mlp_qm9",
+        "descriptor_type": "CM",
+        "explanation_type": "global",
+        "batch_size": 32
+        }
+    }
+  ]
+}

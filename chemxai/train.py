@@ -9,8 +9,6 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
-from .AugChem.augchem.core import Augmentator
-
 from .models import GCN, MLP
 from .data import graph_datasets, qm9_tabular
 
