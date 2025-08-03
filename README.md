@@ -1,6 +1,6 @@
 # ToolBox-ChemXAI
 
-A comprehensive toolkit for explaining AI models based on graphs and neural networks for chemical applications.
+A comprehensive toolkit for explaining AI models based on graphs and neural networks for chemical applications. See ToolBox Documentation [here](https://jollonld.github.io/ToolBox-ChemXAI/)
 
 ## 📋 Description
 
