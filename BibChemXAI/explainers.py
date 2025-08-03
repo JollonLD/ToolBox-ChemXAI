@@ -12,30 +12,33 @@ from sklearn.decomposition import PCA
 from torch_geometric.nn import MessagePassing
 from copy import deepcopy
 import torch.nn.functional as F
+import contextlib
+import io
 
-from plots import k_hop_subgraph
+
+from .plots import k_hop_subgraph
 
 #================================================================#
 # Tabular Explainers
 #================================================================#
 
 class Shap:
-    def __init__(self, model, train_loader, test_loader, device):
+    def __init__(self, model, background_tensor, test_tensor, device):
         """
-        Initializes the Shap class with the model, training, and test data.
+        Initializes the Shap class with the model and tensor data.
         
         Parameters:
         - model: model to be explained.
-        - train_loader: training DataLoader to obtain the background data.
-        - test_loader: test DataLoader for explanations.
+        - background_tensor: tensor containing background data for the explainer
+        - test_tensor: tensor containing test data to be explained
         - device: device (CPU or GPU) for operations.
         """
         self.model = model
         self.device = device
 
-        # Get a batch from the training DataLoader as background data
-        background = next(iter(train_loader))[0].cpu().numpy()  # Convert to numpy for KernelExplainer
-        print("Background shape:", background.shape)  # Check background shape
+        # Convert tensors to numpy arrays for KernelExplainer
+        background = background_tensor.cpu().numpy()
+        print("Background shape:", background.shape)
         
         # Define prediction function for KernelExplainer compatibility with PyTorch model
         def predict_fn(data):
@@ -45,17 +48,20 @@ class Shap:
                 return self.model(data_tensor).cpu().numpy()
         
         # Initialize KernelExplainer with model and background data
-        self.explainer = shap.KernelExplainer(predict_fn, background)
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            self.explainer = shap.KernelExplainer(predict_fn, background)
+            
         
-        # Load test data for explanations
-        self.test_data, _ = next(iter(test_loader))
-        self.test_data = self.test_data.cpu().numpy()  # Convert to numpy for KernelExplainer
-        print("Test data shape:", self.test_data.shape)  # Check test data shape
+        # Use test tensor directly
+        self.test_data = test_tensor.cpu().numpy()
+        print("Test data shape:", self.test_data.shape)
         
         # Compute shap_values for test data
-        self.shap_values = self.explainer.shap_values(self.test_data)
+        with contextlib.redirect_stdout(f):
+            self.shap_values = self.explainer.shap_values(self.test_data)
 
-    def local_explanation(self, index):
+    def explain_local(self, index):
         """
         Generates a local explanation for a specific instance and displays a DataFrame
         with feature indices and SHAP values for the chosen instance.
@@ -66,53 +72,32 @@ class Shap:
         # Select SHAP values for the instance and flatten the extra dimension
         local_shap_values = self.shap_values[index].flatten()
         
-        # Create a DataFrame with feature indices and SHAP values
-        feature_importance = pd.DataFrame({
-            'Feature Index': range(len(local_shap_values)),
-            'SHAP Value': local_shap_values
-        }).sort_values(by='SHAP Value', ascending=False).reset_index(drop=True)
-        
-        return feature_importance
+        return local_shap_values.tolist()
 
-    def global_explanation(self):
+    def explain_global(self):
         """
-        Generates global explanations by calculating the average feature importance for each instance
-        in the test data and the overall mean importance across all instances.
+        Generates global explanations by calculating the overall mean importance across all instances.
         
         Returns:
-        - all_local_importances: DataFrame where each row represents an instance and each column represents a feature.
-        - global_feature_importance: DataFrame with average feature importance across all instances.
+        - feature_importance: DataFrame with average feature importance across all instances.
         """
         # Squeeze shap_values to remove any extra dimension if present
         shap_values_2d = np.squeeze(self.shap_values)  # Converts to Matrix
         
-        # Compute local explanations for each instance and collect them in a DataFrame
-        all_local_importances = pd.DataFrame(shap_values_2d)
-        all_local_importances.columns = [f'Feature {i}' for i in range(shap_values_2d.shape[1])]
-        
         # Compute global importance as the mean of absolute SHAP values across all instances
         mean_absolute_shap_values = np.mean(np.abs(shap_values_2d), axis=0)
         
-        # Additional check on the shape of the mean SHAP values
-        print("Global SHAP values shape:", mean_absolute_shap_values.shape)
-        
-        # DataFrame with mean absolute feature importance across all instances
-        global_feature_importance = pd.DataFrame({
-            'Feature': [f'{i}' for i in range(len(mean_absolute_shap_values))],
-            'Importance': mean_absolute_shap_values
-        }).sort_values(by='Importance', ascending=False).reset_index(drop=True)
-        
-        return all_local_importances, global_feature_importance
+        return mean_absolute_shap_values.tolist()
 
 class LIME:
-    def __init__(self, model, train_loader, test_loader, device, mode='regression'):
+    def __init__(self, model, background_tensor, test_tensor, device, mode='regression'):
         """
-        Initializes the LIME class with the model and DataLoaders.
+        Initializes the LIME class with the model and tensor data.
         
         Parameters:
         - model: model to be explained.
-        - train_loader: DataLoader for the training set.
-        - test_loader: DataLoader for the test set.
+        - background_tensor: tensor containing background data for the explainer
+        - test_tensor: tensor containing test data to be explained
         - device: device (CPU or GPU) for operations.
         - mode: select whether it is a regression or classification model.
         """
@@ -120,21 +105,27 @@ class LIME:
         self.device = device
         self.mode = mode
         
-        # Get a batch from the training DataLoader and convert it to numpy
-        self.x_train = next(iter(train_loader))[0].cpu().numpy()
-        self.x_test = next(iter(test_loader))[0].cpu().numpy()  # Test data for explanation
+        # Convert tensors to numpy arrays for LIME
+        self.x_train = background_tensor.cpu().numpy()
+        print("Background shape:", self.x_train.shape)
         
-        # Detect the number of features from x_train
+        # Test data for explanation
+        self.x_test = test_tensor.cpu().numpy()
+        print("Test data shape:", self.x_test.shape)
+        
+        # Detect the number of features from training data
         self.num_features = self.x_train.shape[1]
         
         # Configure LimeTabularExplainer with training data
-        self.explainer_lime = lime_tabular.LimeTabularExplainer(
-            training_data=self.x_train,
-            mode=self.mode,  # Use "classification" if the model is a classifier
-            feature_names=[f"Feature {i}" for i in range(self.num_features)],
-            discretize_continuous=True,
-            verbose=True
-        )
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            self.explainer_lime = lime_tabular.LimeTabularExplainer(
+                training_data=self.x_train,
+                mode=self.mode,  # Use "classification" if the model is a classifier
+                feature_names=[f"Feature {i}" for i in range(self.num_features)],
+                discretize_continuous=True,
+                verbose=True
+            )
         
     def predict_fn(self, data):
         """Prediction function to adapt the PyTorch model for LIME."""
@@ -142,23 +133,18 @@ class LIME:
         with torch.no_grad():
             data_tensor = torch.from_numpy(data).float().to(self.device)
             return self.model(data_tensor).cpu().numpy().flatten()
-
-    def local_explanation(self, index, num_features=None):
+            
+    def explain_local(self, index, num_features=None):
         """
-        Generates a local explanation for a specific instance and displays a DataFrame
-        with feature indices and LIME values for the chosen instance.
-        
-        Parameters:
-        - index: index of the instance in the test set to be explained.
-        - num_features: number of features to display in the explanation. If None, use all features.
+        Gera explicação local para uma instância específica.
         """
         # Define the number of features for explanation if not specified
         if num_features is None:
-            num_features = self.num_features  # Use all features if `num_features` is not provided
-
+            num_features = self.num_features
+            
         # Select the instance from the test set for explanation
         instance_to_explain = self.x_test[index]
-
+        
         # Generate explanation with LIME
         exp = self.explainer_lime.explain_instance(
             data_row=instance_to_explain,
@@ -166,11 +152,25 @@ class LIME:
             num_features=num_features
         )
         
-        # Extract the explanation as a list of tuples and convert to DataFrame
+        # Extract the explanation as a list of tuples
         explanation_list = exp.as_list()
-        lime_df = pd.DataFrame(explanation_list, columns=["Feature", "LIME Value"]).sort_values(by="LIME Value", ascending=False)
         
-        return lime_df
+        # Inicializar array de zeros com o tamanho total de features
+        lime_values = np.zeros(self.num_features)
+        
+        # Preencher o array com os valores de importância nas posições corretas
+        import re
+        for feature_name, importance in explanation_list:
+            # Extrair o índice usando expressão regular 
+            # Procura por "Feature X" onde X é um número
+            match = re.search(r'Feature\s+(\d+)', feature_name)
+            if match:
+                feature_idx = int(match.group(1))
+                lime_values[feature_idx] = importance
+            else:
+                print(f"Aviso: Não foi possível extrair o índice da feature '{feature_name}'")
+        
+        return lime_values.tolist()
 
 #================================================================#
 # Graph Based Explainers
@@ -200,10 +200,10 @@ class GNNExplain:
         The format of the returned explanation ('raw' or 'probabilities').
     """
 
-    def __init__(self, model, device, data, epochs, mode='regression', task_level='node', return_type='raw'):
+    def __init__(self, model, device, data, epochs, mode='regression', task_level='graph', return_type='raw'):
         self.model = model
         self.data = data.to(device)
-    
+        self.device = device
         self.explainer = Explainer(
             model=model,
             algorithm=GNNExplainer(epochs=epochs),
@@ -216,7 +216,8 @@ class GNNExplain:
                 return_type=return_type,
             ),
         )
-    def explain(self, index):
+        
+    def explain(self, index=None):
         """
         Explains the prediction of a graph neural network (GNN) model for a specific node by calculating
         a mask of important features using the GNNExplainer method.
@@ -237,9 +238,18 @@ class GNNExplain:
             >>> node_mask, prediction = explainer.explain(node_index)
         """
 
-        explanation = self.explainer(self.data.x, self.data.edge_index, index=index)
+        # Para explicação do grafo inteiro
+        batch = torch.zeros(self.data.x.size(0), dtype=torch.long, device=self.device)
+        
+        # Gerar explicação para o grafo inteiro
+        explanation = self.explainer(
+            self.data.x, 
+            self.data.edge_index,
+            batch=batch,  # Importante para indicar que todos os nós pertencem ao mesmo grafo
+            index=0 if index is None else index  # Índice 0 no batch
+        )
 
-        return explanation.node_mask.squeeze().tolist(), explanation.prediction.item()
+        return explanation.node_mask.squeeze().tolist(), explanation.edge_mask.squeeze().tolist(), explanation
 
 class NodeGrapLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
     """
@@ -459,16 +469,12 @@ class NodeGrapLIME: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.g
         coef_original = np.dot(pca.components_.T, coef_pca)  # shape: (n_features_original, n_classes)
 
         # Top features por classe
-        top_features = {}
-        for c in range(coef_original.shape[1]):
-            indices = np.argsort(coef_original[:, c])[::-1][:5]
-            top_features[c] = indices
+        # top_features = {}
+        # for c in range(coef_original.shape[1]):
+        #     indices = np.argsort(coef_original[:, c])[::-1][:5]
+        #     top_features[c] = indices
 
-        return {
-            "coef_pca": coef_pca,                  # shape: (n_components, n_classes)
-            "coef_original": coef_original,        # shape: (1433, n_classes)
-            "top_features": top_features           # dict: classe -> top 5 features
-        }
+        return coef_original.tolist()
 
 class NodeGraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.git
     """
@@ -579,11 +585,8 @@ class NodeGraphShap: # Extracted from https://github.com/AlexDuvalinho/GraphSVX.
             top_features[c] = top_idx
             top_values[c] = phi[top_idx, c] if multiclass else phi[top_idx]
 
-        return {
-            "shap_values": phi,         
-            "top_features": top_features,
-            "top_values": top_values,
-        }
+        return phi.tolist()
+           
 
     def shapley_kernel(self, s):
         """
@@ -771,12 +774,8 @@ class GraphLIME: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
 
         top_features = np.argsort(feature_importance)[::-1]
 
-        return {
-            "feature_importance": feature_importance,
-            "top_features": top_features,
-            "coef_matrix": coef
-        }
-
+        return feature_importance.tolist()
+    
 class GraphShap: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
     """
     GraphShap (KernelSHAP for Graph-Level Prediction)
@@ -854,13 +853,7 @@ class GraphShap: # Adapted from https://github.com/AlexDuvalinho/GraphSVX.git
         phi = np.array(phi)
         top_idx = np.argsort(np.abs(phi))[::-1]
 
-        return {
-            "shap_values": phi,
-            "top_features": top_idx,
-            "top_values": phi[top_idx],
-            "true_prediction": true_output.item(),
-            "base_value": base_value
-        }
+        return phi.tolist()
 
     def shapley_kernel(self, s):
         shap_kernel = []
