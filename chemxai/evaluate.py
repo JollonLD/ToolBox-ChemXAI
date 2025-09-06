@@ -11,20 +11,24 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
 from contextlib import redirect_stdout
 from IPython.display import display, HTML
+import torch
+from torch_geometric.explain.metrics import groundtruth_metrics, fidelity, unfaithfulness
 
 from chemxai.explainers import Shap, LIME, GNNExplain, GraphShap, GraphLIME, NodeGraphShap, NodeGrapLIME
 from chemxai.data import qm9_tabular
 
 
+# Metrics for GNNs: https://pytorch-geometric.readthedocs.io/en/latest/modules/explain.html#explanation-metrics
+
 class Evaluator:
-    def __init__(self, model_normal, model_noise, train_loader_normal, test_loader_normal, train_loader_noise, 
-                 test_loader_noise, device, model_type='graph', explainer_type='shap_local', mol_index=0, atom_index=0):
-        self.model_normal = model_normal
-        self.model_noise = model_noise
-        self.train_loader_normal = train_loader_normal
-        self.test_loader_normal = test_loader_normal
-        self.train_loader_noise = train_loader_noise
-        self.test_loader_noise = test_loader_noise
+    def __init__(self, first_model, second_model, first_train_loader, first_test_loader, second_train_loader, 
+                 second_test_loader, device, model_type='graph', explainer_type='shap_local', mol_index=0, atom_index=0):
+        self.first_model = first_model
+        self.second_model = second_model
+        self.first_train_loader = first_train_loader
+        self.first_test_loader = first_test_loader
+        self.second_train_loader = second_train_loader
+        self.second_test_loader = second_test_loader
         self.device = device
         self.model_type = model_type
         self.explainer_type = explainer_type
@@ -41,8 +45,8 @@ class Evaluator:
         spearman_correlations = []
 
         for batch_idx, (batch_train, batch_test, batch_train_noise, batch_test_noise) in enumerate(
-            zip(self.train_loader_normal, self.test_loader_normal, 
-                self.train_loader_noise, self.test_loader_noise)):
+            zip(self.first_train_loader, self.first_test_loader, 
+                self.second_train_loader, self.second_test_loader)):
             
             f = io.StringIO()
             with contextlib.redirect_stdout(f):
@@ -58,9 +62,9 @@ class Evaluator:
                         
                         if self.explainer_type == 'shap_local' or self.explainer_type == 'shap_global':
 
-                            explainer = Shap(model=self.model_normal, background_tensor=background, 
+                            explainer = Shap(model=self.first_model, background_tensor=background, 
                                             test_tensor=test_tensor, device=self.device)
-                            explainer_noise = Shap(model=self.model_noise, background_tensor=background_noise, 
+                            explainer_noise = Shap(model=self.second_model, background_tensor=background_noise, 
                                                 test_tensor=test_tensor_noise, device=self.device)
                         
                         # Analisar cada molécula do batch
@@ -69,9 +73,9 @@ class Evaluator:
                                 explanation_without_noise = explainer.explain_local(index=idx)
                                 explanation_with_noise = explainer_noise.explain_local(index=idx)
                             elif self.explainer_type == 'lime':
-                                explainer_lime = LIME(model=self.model_normal, background_tensor=background, 
+                                explainer_lime = LIME(model=self.first_model, background_tensor=background, 
                                                 test_tensor=test_tensor, device=self.device)
-                                explainer_lime_noise = LIME(model=self.model_noise, background_tensor=background_noise, 
+                                explainer_lime_noise = LIME(model=self.second_model, background_tensor=background_noise, 
                                                         test_tensor=test_tensor_noise, device=self.device)
                                 explanation_without_noise = explainer_lime.explain_local(index=idx)
                                 explanation_with_noise = explainer_lime_noise.explain_local(index=idx)
@@ -82,9 +86,9 @@ class Evaluator:
                     
                     # Para análise global, uma explicação por batch
                     elif self.explainer_type == 'shap_global':
-                        explainer = Shap(model=self.model_normal, background_tensor=background, 
+                        explainer = Shap(model=self.first_model, background_tensor=background, 
                                         test_tensor=test_tensor, device=self.device)
-                        explainer_noise = Shap(model=self.model_noise, background_tensor=background_noise, 
+                        explainer_noise = Shap(model=self.second_model, background_tensor=background_noise, 
                                             test_tensor=test_tensor_noise, device=self.device)
                         explanation_without_noise = explainer.explain_global()
                         explanation_with_noise = explainer_noise.explain_global()
@@ -103,10 +107,10 @@ class Evaluator:
                             data_noise = batch_test_noise[idx]
                             
                             # Criar explainers uma vez por molécula para explicar a molécula inteira
-                            explainer = GNNExplain(model=self.model_normal, data=data_normal, 
+                            explainer = GNNExplain(model=self.first_model, data=data_normal, 
                                                 device=self.device, epochs=100, mode='regression', 
                                                 task_level='graph', return_type='raw')
-                            explainer_noise = GNNExplain(model=self.model_noise, data=data_noise, 
+                            explainer_noise = GNNExplain(model=self.second_model, data=data_noise, 
                                                         device=self.device, epochs=100, mode='regression', 
                                                         task_level='graph', return_type='raw')
                             
@@ -127,9 +131,9 @@ class Evaluator:
                             data_noise = batch_test_noise[idx]
                             
                             # Criar explainers GraphShap
-                            explainer = GraphShap(data=data_normal, model=self.model_normal, 
+                            explainer = GraphShap(data=data_normal, model=self.first_model, 
                                                 device=self.device)
-                            explainer_noise = GraphShap(data=data_noise, model=self.model_noise, 
+                            explainer_noise = GraphShap(data=data_noise, model=self.second_model, 
                                                     device=self.device)
                             
                             # Obter explicações
@@ -149,8 +153,8 @@ class Evaluator:
                             data_noise = batch_test_noise[idx]
                             
                             # Criar explainers GraphLIME
-                            explainer = GraphLIME(model=self.model_normal, device=self.device)
-                            explainer_noise = GraphLIME(model=self.model_noise, device=self.device)
+                            explainer = GraphLIME(model=self.first_model, device=self.device)
+                            explainer_noise = GraphLIME(model=self.second_model, device=self.device)
                             
                             # Obter explicações
                             explanation_without_noise = explainer.explain(data=data_normal)
@@ -169,9 +173,9 @@ class Evaluator:
                             data_noise = batch_test_noise[idx]
                             
                             # Criar explainers NodeGraphShap
-                            explainer = NodeGraphShap(data=data_normal, model=self.model_normal, 
+                            explainer = NodeGraphShap(data=data_normal, model=self.first_model, 
                                                     device=self.device)
-                            explainer_noise = NodeGraphShap(data=data_noise, model=self.model_noise, 
+                            explainer_noise = NodeGraphShap(data=data_noise, model=self.second_model, 
                                                         device=self.device)
                             
                             # Explicar nó específico (se self.atom_index estiver definido, caso contrário usa 0)
@@ -194,9 +198,9 @@ class Evaluator:
                             data_noise = batch_test_noise[idx]
                             
                             # Criar explainers NodeGraphLIME
-                            explainer = NodeGrapLIME(data=data_normal, model=self.model_normal, 
+                            explainer = NodeGrapLIME(data=data_normal, model=self.first_model, 
                                                     device=self.device)
-                            explainer_noise = NodeGrapLIME(data=data_noise, model=self.model_noise, 
+                            explainer_noise = NodeGrapLIME(data=data_noise, model=self.second_model, 
                                                         device=self.device)
                             
                             # Explicar nó específico (se self.atom_index estiver definido, caso contrário usa 0)
@@ -407,7 +411,6 @@ class Evaluator:
             l1_differences.append(0)
             l2_differences.append(0)
             spearman_correlations.append(0)
-
 
 class FingerprintAnalyzer:
     """
@@ -773,36 +776,62 @@ class FingerprintAnalyzer:
         # Retornar o texto compilado
         return self.output.getvalue()
 
-# Pensar na Corretividade fazendo a incerteza do modelo, usar mais modelos diferentes e fazer a variancia do erro obtido por
-# esses modelos diferentes
+class TabularAnalyzer:
+    def __init__(self, model, explainer, explanation, data_mask, metrics = ["accuracy", "recall", "precision", "f1_score", "auroc"]):
+        self.model = model
+        self.explainer = explainer
+        self.explanation = explanation
+        self.data_mask = data_mask
+        self.metric = metrics
+
+    def _rank_explanation(explanation):
+        return np.argsort(explanation)[::-1].copy()
+
+    def _create_masked_dataset(self, data, explanation, n_features=5):
+        
+        mask = torch.zeros(data.shape, dtype=torch.float64)
+
+        important_features = self._rank_explanation(explanation=explanation)
+        important_features = important_features[:n_features]
+
+        mask[:, important_features] = data[:, important_features]
+
+        return mask
+
+    def _calculate_fidelity(self, model, explanation, data):
+        
+        data_mask = self._create_masked_dataset(data=data, explanation=explanation, n_features=5)
+        
+        for data in data_mask:
+
+        return pos_fidel, neg_fidel
+
+    def get_metrics(self):
+        
+        fidelity = self._calculate_fidelity(model=self.model, explanation=self.explanation, data=self.data_mask)
+
+        return metrics, fidelity
+
+class GraphAnalyzer:
+    def __init__(self, explainer, explanation, pred_mask, target_mask, metrics = ["accuracy", "recall", "precision", "f1_score", "auroc"]):
+        self.pred_mask = pred_mask
+        self.target_mask = target_mask
+        self.metrics = metrics
+        self.explainer = explainer
+        self.explanation = explanation
+    
+    def get_metrics(self):
+
+        metrics = groundtruth_metrics(pred_mask=self.pred_mask, target_mask=self.target_mask, metrics=self.metrics)
+
+        fidelity = fidelity(explainer=self.explainer, explanation=self.explanation)
+
+        unfaithfulness = unfaithfulness(explainer=self.explainer, explanation=self.explanation)
+
+        return metrics, fidelity, unfaithfulness
+
+# Pensar na Corretividade fazendo a incerteza do modelo, usar mais modelos diferentes e fazer a variancia do erro obtido por esses modelos diferentes
 
 
 if __name__ == '__main__':
     pass
-    # # Exemplo de uso da classe
-    # # Calculando explicação SHAP para um batch específico
-    # batch_idx = 0
-    # mol_idx = 0
-
-    # # Obtendo dados do batch
-    # batch_data = next(iter(test_loader))
-
-    # # Calculando explicação SHAP
-    # explainer = Shap(model=model_without_noise, background_tensor=background, 
-    #                 test_tensor=batch_data[0], device=device)
-    # explanation = explainer.explain_local(index=mol_idx)
-
-    # # Criando o analisador e executando a análise
-    # analyzer = FingerprintAnalyzer(
-    #     explanation=explanation,
-    #     batch_idx=batch_idx,
-    #     mol_idx=mol_idx,
-    #     dataset_type='test',
-    #     train_loader=train_loader,
-    #     test_loader=test_loader,
-    #     device=device
-    # )
-
-    # # Executar a análise e obter o texto resumo
-    # resultado = analyzer.analyze()
-    # print(resultado)

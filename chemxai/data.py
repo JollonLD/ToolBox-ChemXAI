@@ -777,9 +777,409 @@ class qm9_tabular:
         return all_smiles[original_idx]
 
 
+#================================================================#
+# Extra Functions
+#================================================================#
+
+
+import pickle
+import json
+from collections import defaultdict
+
+# Criar Clusters para separar os dados com propriedades de valores parecidos
+class Cluster:
+    def __init__(self, data):
+        """
+        Inicializa o gerenciador de clusters.
+        
+        Args:
+            data: DataLoader com os dados para clusterização
+        """
+        self.data = data
+        self.clusters = {}
+        self.cluster_stats = {}
+        self.target_values = []
+        self.features_data = []
+
+    def _extract_data_from_loader(self):
+        """
+        Extrai features e targets do DataLoader.
+        
+        Returns:
+            tuple: (features_list, targets_list)
+        """
+        features_list = []
+        targets_list = []
+        
+        print("Extraindo dados do DataLoader...")
+        
+        try:
+            for batch_idx, batch in enumerate(self.data):
+                if isinstance(batch, (list, tuple)) and len(batch) >= 2:
+                    # Formato padrão: (features, targets)
+                    features, targets = batch[0], batch[1]
+                    
+                    # Converter tensors para numpy se necessário
+                    if hasattr(features, 'cpu'):
+                        features = features.cpu().numpy()
+                    if hasattr(targets, 'cpu'):
+                        targets = targets.cpu().numpy()
+                    
+                    # Garantir que temos arrays numpy
+                    features = np.array(features) if not isinstance(features, np.ndarray) else features
+                    targets = np.array(targets) if not isinstance(targets, np.ndarray) else targets
+                    
+                    # Achatar targets se necessário (para targets 2D)
+                    if targets.ndim > 1:
+                        targets = targets.flatten()
+                    
+                    features_list.extend(features)
+                    targets_list.extend(targets)
+                    
+                else:
+                    print(f"Formato de batch não reconhecido no índice {batch_idx}")
+                    continue
+                    
+        except Exception as e:
+            print(f"Erro ao extrair dados: {e}")
+            return [], []
+        
+        print(f"Dados extraídos: {len(features_list)} amostras")
+        return features_list, targets_list
+
+    def create_clusters(self, num_clusters=5, size_cluster=100, custom_intervals=None):
+        """
+        Cria clusters baseados nos valores dos targets.
+        
+        Args:
+            num_clusters (int): Número de clusters a criar
+            size_cluster (int): Tamanho máximo de cada cluster
+            custom_intervals (list, optional): Lista de tuplas (min, max) para intervalos customizados
+                                             Se None, intervalos são calculados automaticamente
+        
+        Returns:
+            dict: Dicionário com os clusters criados
+        """
+        print(f"Iniciando criação de {num_clusters} clusters com tamanho máximo {size_cluster}")
+        
+        # Extrair dados do DataLoader
+        self.features_data, self.target_values = self._extract_data_from_loader()
+        
+        if not self.target_values:
+            print("Nenhum dado foi extraído. Verificar formato do DataLoader.")
+            return {}
+        
+        # Converter para arrays numpy para facilitar manipulação
+        self.target_values = np.array(self.target_values)
+        self.features_data = np.array(self.features_data)
+        
+        # Determinar intervalos
+        if custom_intervals:
+            intervals = custom_intervals
+            print(f"Usando intervalos customizados: {intervals}")
+        else:
+            intervals = self._calculate_intervals(num_clusters)
+            print(f"Intervalos calculados automaticamente: {intervals}")
+        
+        # Inicializar clusters
+        self.clusters = {}
+        self.cluster_stats = {}
+        
+        for i, (min_val, max_val) in enumerate(intervals):
+            self.clusters[i] = {
+                'features': [],
+                'targets': [],
+                'indices': [],
+                'interval': (min_val, max_val),
+                'size': 0
+            }
+            self.cluster_stats[i] = {
+                'min_target': float('inf'),
+                'max_target': float('-inf'),
+                'mean_target': 0,
+                'count': 0,
+                'interval': (min_val, max_val)
+            }
+        
+        # Distribuir dados nos clusters
+        self._distribute_data_to_clusters(intervals, size_cluster)
+        
+        # Calcular estatísticas finais
+        self._calculate_cluster_statistics()
+        
+        print(f"Clusters criados com sucesso!")
+        return self.clusters
+
+    def _calculate_intervals(self, num_clusters):
+        """
+        Calcula intervalos automáticos baseados na distribuição dos targets.
+        
+        Args:
+            num_clusters (int): Número de clusters desejado
+            
+        Returns:
+            list: Lista de tuplas (min, max) para cada intervalo
+        """
+        min_val = float(np.min(self.target_values))
+        max_val = float(np.max(self.target_values))
+        
+        print(f"Valores target: min={min_val:.4f}, max={max_val:.4f}")
+        
+        # Criar intervalos igualmente espaçados
+        interval_size = (max_val - min_val) / num_clusters
+        intervals = []
+        
+        for i in range(num_clusters):
+            start = min_val + i * interval_size
+            end = min_val + (i + 1) * interval_size
+            
+            # Ajustar o último intervalo para incluir o valor máximo
+            if i == num_clusters - 1:
+                end = max_val
+            
+            intervals.append((start, end))
+        
+        return intervals
+
+    def _distribute_data_to_clusters(self, intervals, size_cluster):
+        """
+        Distribui os dados nos clusters baseado nos intervalos.
+        
+        Args:
+            intervals (list): Lista de tuplas (min, max) para cada cluster
+            size_cluster (int): Tamanho máximo de cada cluster
+        """
+        print("Distribuindo dados nos clusters...")
+        
+        for idx, (feature, target) in enumerate(zip(self.features_data, self.target_values)):
+            # Encontrar o cluster apropriado para este target
+            cluster_id = self._find_cluster_for_target(target, intervals)
+            
+            if cluster_id is not None and self.clusters[cluster_id]['size'] < size_cluster:
+                # Adicionar dados ao cluster
+                self.clusters[cluster_id]['features'].append(feature)
+                self.clusters[cluster_id]['targets'].append(float(target))
+                self.clusters[cluster_id]['indices'].append(idx)
+                self.clusters[cluster_id]['size'] += 1
+        
+        # Mostrar estatísticas de distribuição
+        for cluster_id, cluster_data in self.clusters.items():
+            print(f"Cluster {cluster_id}: {cluster_data['size']} amostras "
+                  f"(intervalo: {cluster_data['interval'][0]:.4f} - {cluster_data['interval'][1]:.4f})")
+
+    def _find_cluster_for_target(self, target, intervals):
+        """
+        Encontra o cluster apropriado para um valor de target.
+        
+        Args:
+            target (float): Valor do target
+            intervals (list): Lista de intervalos
+            
+        Returns:
+            int or None: ID do cluster ou None se não encontrar
+        """
+        for cluster_id, (min_val, max_val) in enumerate(intervals):
+            # Para o último cluster, incluir o valor máximo
+            if cluster_id == len(intervals) - 1:
+                if min_val <= target <= max_val:
+                    return cluster_id
+            else:
+                if min_val <= target < max_val:
+                    return cluster_id
+        return None
+
+    def _calculate_cluster_statistics(self):
+        """
+        Calcula estatísticas para cada cluster.
+        """
+        for cluster_id, cluster_data in self.clusters.items():
+            if cluster_data['targets']:
+                targets = np.array(cluster_data['targets'])
+                self.cluster_stats[cluster_id].update({
+                    'min_target': float(np.min(targets)),
+                    'max_target': float(np.max(targets)),
+                    'mean_target': float(np.mean(targets)),
+                    'std_target': float(np.std(targets)),
+                    'count': len(targets)
+                })
+
+    def get_cluster_summary(self):
+        """
+        Retorna um resumo dos clusters criados.
+        
+        Returns:
+            dict: Resumo com estatísticas de cada cluster
+        """
+        return {
+            'total_clusters': len(self.clusters),
+            'total_samples': sum(cluster['size'] for cluster in self.clusters.values()),
+            'cluster_details': self.cluster_stats
+        }
+
+    def print_cluster_info(self):
+        """
+        Imprime informações detalhadas dos clusters.
+        """
+        print("\n" + "="*60)
+        print("RESUMO DOS CLUSTERS")
+        print("="*60)
+        
+        summary = self.get_cluster_summary()
+        print(f"Total de clusters: {summary['total_clusters']}")
+        print(f"Total de amostras: {summary['total_samples']}")
+        print("-"*60)
+        
+        for cluster_id, stats in summary['cluster_details'].items():
+            print(f"\nCluster {cluster_id}:")
+            print(f"  Intervalo: [{stats['interval'][0]:.4f}, {stats['interval'][1]:.4f}]")
+            print(f"  Amostras: {stats['count']}")
+            if stats['count'] > 0:
+                print(f"  Target - Min: {stats['min_target']:.4f}")
+                print(f"  Target - Max: {stats['max_target']:.4f}")
+                print(f"  Target - Média: {stats['mean_target']:.4f}")
+                if 'std_target' in stats:
+                    print(f"  Target - Desvio Padrão: {stats['std_target']:.4f}")
+
+    def get_cluster_by_id(self, cluster_id):
+        """
+        Retorna os dados de um cluster específico.
+        
+        Args:
+            cluster_id (int): ID do cluster
+            
+        Returns:
+            dict or None: Dados do cluster ou None se não existir
+        """
+        return self.clusters.get(cluster_id)
+
+    def save_clusters(self, filepath):
+        """
+        Salva os clusters em arquivo.
+        
+        Args:
+            filepath (str): Caminho para salvar o arquivo
+        """
+        data_to_save = {
+            'clusters': {k: {
+                'features': [f.tolist() if isinstance(f, np.ndarray) else f 
+                           for f in v['features']],
+                'targets': v['targets'],
+                'indices': v['indices'],
+                'interval': v['interval'],
+                'size': v['size']
+            } for k, v in self.clusters.items()},
+            'cluster_stats': self.cluster_stats
+        }
+        
+        with open(filepath, 'wb') as f:
+            pickle.dump(data_to_save, f)
+        print(f"Clusters salvos em: {filepath}")
+
+    def load_clusters(self, filepath):
+        """
+        Carrega clusters de arquivo.
+        
+        Args:
+            filepath (str): Caminho do arquivo a carregar
+        """
+        with open(filepath, 'rb') as f:
+            data = pickle.load(f)
+        
+        self.clusters = {k: {
+            'features': [np.array(f) for f in v['features']],
+            'targets': v['targets'],
+            'indices': v['indices'],
+            'interval': v['interval'],
+            'size': v['size']
+        } for k, v in data['clusters'].items()}
+        
+        self.cluster_stats = data['cluster_stats']
+        print(f"Clusters carregados de: {filepath}")
+
+
+import numpy as np
+import torch
+from torch.utils.data import Dataset, DataLoader
+import matplotlib.pyplot as plt
+
+class FakeDataset(Dataset):
+    """Dataset sintético para testar clustering."""
+    
+    def __init__(self, n_samples=1000, n_features=50, noise_level=0.1, seed=42):
+        """
+        Cria um dataset sintético com padrões bem definidos.
+        
+        Args:
+            n_samples: Número total de amostras
+            n_features: Número de features
+            noise_level: Nível de ruído nos dados
+            seed: Semente aleatória
+        """
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        
+        # Criar diferentes grupos de dados com características distintas
+        samples_per_group = n_samples // 4
+        
+        # Grupo 1: Targets baixos (0.0 - 0.3)
+        group1_features = np.random.normal(0, 1, (samples_per_group, n_features))
+        group1_targets = np.random.uniform(0.0, 0.3, samples_per_group)
+        
+        # Grupo 2: Targets médio-baixos (0.3 - 0.6)
+        group2_features = np.random.normal(2, 1.5, (samples_per_group, n_features))
+        group2_targets = np.random.uniform(0.3, 0.6, samples_per_group)
+        
+        # Grupo 3: Targets médio-altos (0.6 - 0.85)
+        group3_features = np.random.normal(-1, 1.2, (samples_per_group, n_features))
+        group3_targets = np.random.uniform(0.6, 0.85, samples_per_group)
+        
+        # Grupo 4: Targets altos (0.85 - 1.0)
+        group4_features = np.random.normal(1, 2, (samples_per_group, n_features))
+        group4_targets = np.random.uniform(0.85, 1.0, samples_per_group)
+        
+        # Combinar todos os grupos
+        self.features = np.vstack([group1_features, group2_features, 
+                                  group3_features, group4_features])
+        self.targets = np.concatenate([group1_targets, group2_targets, 
+                                     group3_targets, group4_targets])
+        
+        # Adicionar ruído
+        self.features += np.random.normal(0, noise_level, self.features.shape)
+        self.targets += np.random.normal(0, noise_level * 0.1, self.targets.shape)
+        
+        # Garantir que targets ficam no intervalo [0, 1]
+        self.targets = np.clip(self.targets, 0, 1)
+        
+        # Embaralhar dados
+        indices = np.random.permutation(len(self.features))
+        self.features = self.features[indices]
+        self.targets = self.targets[indices]
+        
+        print(f"Dataset criado com {len(self.features)} amostras")
+        print(f"Target range: {self.targets.min():.3f} - {self.targets.max():.3f}")
+        
+    def __len__(self):
+        return len(self.features)
+    
+    def __getitem__(self, idx):
+        return (torch.FloatTensor(self.features[idx]), 
+                torch.FloatTensor([self.targets[idx]]))
+
+def create_fake_dataloader(n_samples=1000, batch_size=64, n_features=50):
+    """Cria um DataLoader com dados sintéticos."""
+    dataset = FakeDataset(n_samples=n_samples, n_features=n_features)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    return dataloader, dataset
+
 if __name__ == '__main__':
-    qm9 = qm9_tabular()
-    # 10 = 'Internal energy at 0 K (U0)'
-    train_loader, val_loader, test_loader, train_loader_noise, val_loader_noise, test_loader_noise, is_noise = qm9.get_paired_dataloaders(descriptor_type='Morgan')
-    print(train_loader.dataset[0])
-    print(train_loader_noise.dataset[0])
+    test_loader, dataset = create_fake_dataloader()
+
+    cluster_manager = Cluster(test_loader)
+    
+    # Criar clusters automáticos
+    clusters = cluster_manager.create_clusters(
+        num_clusters=5,
+        size_cluster=200
+    )
+    
+    cluster_manager.print_cluster_info()
