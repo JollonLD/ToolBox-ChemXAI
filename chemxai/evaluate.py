@@ -12,7 +12,10 @@ from rdkit.Chem import AllChem, Draw
 from contextlib import redirect_stdout
 from IPython.display import display, HTML
 import torch
+import torch.nn.functional as F
 from torch_geometric.explain.metrics import groundtruth_metrics, fidelity, unfaithfulness
+from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, roc_auc_score
+
 
 from chemxai.explainers import Shap, LIME, GNNExplain, GraphShap, GraphLIME, NodeGraphShap, NodeGrapLIME
 from chemxai.data import qm9_tabular
@@ -777,38 +780,86 @@ class FingerprintAnalyzer:
         return self.output.getvalue()
 
 class TabularAnalyzer:
-    def __init__(self, model, explainer, explanation, data_mask, metrics = ["accuracy", "recall", "precision", "f1_score", "auroc"]):
+    def __init__(self, model, explainer, explanation, data, y_true, y_pred, metrics = ["accuracy", "recall", "precision", "f1_score", "auroc"]):
         self.model = model
         self.explainer = explainer
         self.explanation = explanation
-        self.data_mask = data_mask
+        self.data = data
         self.metric = metrics
+        self.y_true = y_true
+        self.y_pred = y_pred
 
-    def _rank_explanation(explanation):
-        return np.argsort(explanation)[::-1].copy()
+    def _rank_explanation(self, explanation, descending=True):
+        if descending:
+            return np.argsort(explanation)[::-1].copy()
+        else:
+            return np.argsort(explanation).copy()
 
-    def _create_masked_dataset(self, data, explanation, n_features=5):
+    def _create_masked_dataset(self, data, explanation, descending=True, n_features=5):
         
         mask = torch.zeros(data.shape, dtype=torch.float64)
-
-        important_features = self._rank_explanation(explanation=explanation)
+        if descending:
+            important_features = self._rank_explanation(explanation=explanation, descending=True)
+        else:
+            important_features = self._rank_explanation(explanation=explanation, descending=False)
+        
         important_features = important_features[:n_features]
 
         mask[:, important_features] = data[:, important_features]
 
         return mask
 
-    def _calculate_fidelity(self, model, explanation, data):
+    def _calculate_fidelity(self, model, explanation, data, true):
         
-        data_mask = self._create_masked_dataset(data=data, explanation=explanation, n_features=5)
+        data_mask_pos = self._create_masked_dataset(data=data, explanation=explanation, descending=True, n_features=5)
+        data_mask_neg = self._create_masked_dataset(data=data, explanation=explanation, descending=False, n_features=5)
         
-        for data in data_mask:
+        for data in data_mask_pos:
+            pred = model(data)
+            pos_fidel = torch.sqrt(F.mse_loss(pred, true))
+
+        for data in data_mask_neg:
+            pred = model(data)
+            neg_fidel = torch.sqrt(F.mse_loss(pred, true))
 
         return pos_fidel, neg_fidel
 
+    def _compute_metrics(self, y_true, y_pred, metrics=["accuracy", "recall", "precision", "f1_score", "auroc"]):
+        results = {}
+
+        # Converter tensores para numpy, se necessário
+        if isinstance(y_true, torch.Tensor):
+            y_true = y_true.detach().cpu().numpy()
+        if isinstance(y_pred, torch.Tensor):
+            y_pred = y_pred.detach().cpu().numpy()
+
+        # Se for classificação binária, y_pred pode ser probabilidades ou rótulos
+        if y_pred.ndim > 1 and y_pred.shape[1] > 1:
+            y_pred_labels = y_pred.argmax(axis=1)
+        else:
+            y_pred_labels = (y_pred > 0.5).astype(int)
+        y_true_labels = y_true
+
+        if "accuracy" in metrics:
+            results["accuracy"] = accuracy_score(y_true_labels, y_pred_labels)
+        if "recall" in metrics:
+            results["recall"] = recall_score(y_true_labels, y_pred_labels)
+        if "precision" in metrics:
+            results["precision"] = precision_score(y_true_labels, y_pred_labels)
+        if "f1_score" in metrics:
+            results["f1_score"] = f1_score(y_true_labels, y_pred_labels)
+        if "auroc" in metrics:
+            if y_pred.ndim == 1 or y_pred.shape[1] == 1:
+                results["auroc"] = roc_auc_score(y_true_labels, y_pred)
+            else:
+                results["auroc"] = roc_auc_score(y_true_labels, y_pred, multi_class='ovr', average='macro')
+        return results
+
     def get_metrics(self):
         
-        fidelity = self._calculate_fidelity(model=self.model, explanation=self.explanation, data=self.data_mask)
+        fidelity = self._calculate_fidelity(model=self.model, explanation=self.explanation, data=self.data, pred=self.y_true)
+
+        metrics = self._compute_metrics(y_true=self.y_true, y_pred=self.y_pred, )
 
         return metrics, fidelity
 
