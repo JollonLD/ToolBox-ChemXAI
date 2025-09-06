@@ -13,30 +13,27 @@ from contextlib import redirect_stdout
 from IPython.display import display, HTML
 import torch
 import torch.nn.functional as F
-from torch_geometric.explain.metrics import groundtruth_metrics, fidelity, unfaithfulness
+from torch_geometric.explain.metric import groundtruth_metrics, fidelity, unfaithfulness
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, roc_auc_score
 
 
 from chemxai.explainers import Shap, LIME, GNNExplain, GraphShap, GraphLIME, NodeGraphShap, NodeGrapLIME
-from chemxai.data import qm9_tabular
 
 
-# Metrics for GNNs: https://pytorch-geometric.readthedocs.io/en/latest/modules/explain.html#explanation-metrics
-
-class Evaluator:
-    def __init__(self, first_model, second_model, first_train_loader, first_test_loader, second_train_loader, 
-                 second_test_loader, device, model_type='graph', explainer_type='shap_local', mol_index=0, atom_index=0):
+class RobustnessEvaluator:
+    def __init__(self, first_model, second_model, x1_train, x1_test, x2_train, 
+                 x2_test, device, model_type='graph', explainer_type='shap_local', mol_index=0, atom_index=0):
         self.first_model = first_model
         self.second_model = second_model
-        self.first_train_loader = first_train_loader
-        self.first_test_loader = first_test_loader
-        self.second_train_loader = second_train_loader
-        self.second_test_loader = second_test_loader
+        self.x1_train = x1_train
+        self.x1_test = x1_test
+        self.x2_train = x2_train
+        self.x2_test = x2_test
         self.device = device
         self.model_type = model_type
         self.explainer_type = explainer_type
 
-    def robustness(self):
+    def get_metrics(self):
         dirname = os.getcwd()
         graphs_dir = os.path.join(dirname, 'graphs')
         os.makedirs(graphs_dir, exist_ok=True)
@@ -47,174 +44,172 @@ class Evaluator:
         l2_differences = []
         spearman_correlations = []
 
-        for batch_idx, (batch_train, batch_test, batch_train_noise, batch_test_noise) in enumerate(
-            zip(self.first_train_loader, self.first_test_loader, 
-                self.second_train_loader, self.second_test_loader)):
-            
+        for batch_idx, (batch_train_x1, batch_test_x1, batch_train_x2, batch_test_x2) in enumerate(zip(self.x1_train, self.x1_test, 
+                                                                                                        self.x2_train, self.x2_test)):
             f = io.StringIO()
             with contextlib.redirect_stdout(f):
                 if self.model_type == 'tabular':
-                    background = batch_train[0]
-                    test_tensor = batch_test[0]
-                    background_noise = batch_train_noise[0]
-                    test_tensor_noise = batch_test_noise[0]
+                    background_first = batch_train_x1[0]
+                    test_tensor_first = batch_test_x1[0]
+                    background_second = batch_train_x2[0]
+                    test_tensor_second = batch_test_x2[0]
                     
                     # Para análise local, iterar sobre todas as moléculas do batch
                     if self.explainer_type in ['shap_local', 'lime']:
-                        batch_size = len(test_tensor)
+                        batch_size = len(test_tensor_first)
                         
                         if self.explainer_type == 'shap_local' or self.explainer_type == 'shap_global':
 
-                            explainer = Shap(model=self.first_model, background_tensor=background, 
-                                            test_tensor=test_tensor, device=self.device)
-                            explainer_noise = Shap(model=self.second_model, background_tensor=background_noise, 
-                                                test_tensor=test_tensor_noise, device=self.device)
+                            explainer = Shap(model=self.first_model, background_tensor=background_first, 
+                                            test_tensor=test_tensor_first, device=self.device)
+                            explainer_second = Shap(model=self.second_model, background_tensor=background_second, 
+                                                test_tensor=test_tensor_second, device=self.device)
                         
                         # Analisar cada molécula do batch
                         for idx in range(batch_size):
                             if self.explainer_type == 'shap_local':
-                                explanation_without_noise = explainer.explain_local(index=idx)
-                                explanation_with_noise = explainer_noise.explain_local(index=idx)
+                                explanation_first = explainer.explain_local(index=idx)
+                                explanation_second = explainer_second.explain_local(index=idx)
                             elif self.explainer_type == 'lime':
-                                explainer_lime = LIME(model=self.first_model, background_tensor=background, 
-                                                test_tensor=test_tensor, device=self.device)
-                                explainer_lime_noise = LIME(model=self.second_model, background_tensor=background_noise, 
-                                                        test_tensor=test_tensor_noise, device=self.device)
-                                explanation_without_noise = explainer_lime.explain_local(index=idx)
-                                explanation_with_noise = explainer_lime_noise.explain_local(index=idx)
+                                explainer_lime = LIME(model=self.first_model, background_tensor=background_first, 
+                                                test_tensor=test_tensor_first, device=self.device)
+                                explainer_lime_second = LIME(model=self.second_model, background_tensor=background_second, 
+                                                        test_tensor=test_tensor_second, device=self.device)
+                                explanation_first = explainer_lime.explain_local(index=idx)
+                                explanation_second = explainer_lime_second.explain_local(index=idx)
                             
                             # Calcular métricas para esta molécula individual
-                            self._calculate_metrics(explanation_without_noise, explanation_with_noise, 
+                            self._calculate_metrics(explanation_first, explanation_second, 
                                                 similarities, l1_differences, l2_differences, spearman_correlations)
                     
                     # Para análise global, uma explicação por batch
                     elif self.explainer_type == 'shap_global':
-                        explainer = Shap(model=self.first_model, background_tensor=background, 
-                                        test_tensor=test_tensor, device=self.device)
-                        explainer_noise = Shap(model=self.second_model, background_tensor=background_noise, 
-                                            test_tensor=test_tensor_noise, device=self.device)
-                        explanation_without_noise = explainer.explain_global()
-                        explanation_with_noise = explainer_noise.explain_global()
+                        explainer = Shap(model=self.first_model, background_tensor=background_first, 
+                                        test_tensor=test_tensor_first, device=self.device)
+                        explainer_second = Shap(model=self.second_model, background_tensor=background_second, 
+                                            test_tensor=test_tensor_second, device=self.device)
+                        explanation_first = explainer.explain_global()
+                        explanation_second = explainer_second.explain_global()
                         
                         # Calcular métricas para o batch inteiro
-                        self._calculate_metrics(explanation_without_noise, explanation_with_noise, 
+                        self._calculate_metrics(explanation_first, explanation_second, 
                                             similarities, l1_differences, l2_differences, spearman_correlations)
                 
                 elif self.model_type == 'graph':
                     # Para grafos, analisar cada molécula individualmente
                     if self.explainer_type == 'gnn_explainer':
                         # Calcular para cada molécula do batch
-                        batch_size = len(batch_test)
+                        batch_size = len(batch_test_x1)
                         for idx in range(batch_size):
-                            data_normal = batch_test[idx]
-                            data_noise = batch_test_noise[idx]
+                            data_first = batch_test_x1[idx]
+                            data_second = batch_test_x2[idx]
                             
                             # Criar explainers uma vez por molécula para explicar a molécula inteira
-                            explainer = GNNExplain(model=self.first_model, data=data_normal, 
+                            explainer = GNNExplain(model=self.first_model, data=data_first, 
                                                 device=self.device, epochs=100, mode='regression', 
                                                 task_level='graph', return_type='raw')
-                            explainer_noise = GNNExplain(model=self.second_model, data=data_noise, 
+                            explainer_second = GNNExplain(model=self.second_model, data=data_second, 
                                                         device=self.device, epochs=100, mode='regression', 
                                                         task_level='graph', return_type='raw')
                             
                             # Explicar a molécula inteira
-                            explanation_without_noise, _ = explainer.explain()
-                            explanation_with_noise, _ = explainer_noise.explain()
+                            explanation_first, _ = explainer.explain()
+                            explanation_second, _ = explainer_second.explain()
                             
                             # Calcular métricas para esta molécula
-                            self._calculate_metrics(explanation_without_noise, explanation_with_noise,
+                            self._calculate_metrics(explanation_first, explanation_second,
                                                 similarities, l1_differences, l2_differences, 
                                                 spearman_correlations)
                     
                     elif self.explainer_type == 'graph_shap':
                         # GraphShap para explainer de grafo inteiro
-                        batch_size = len(batch_test)
+                        batch_size = len(batch_test_x1)
                         for idx in range(batch_size):
-                            data_normal = batch_test[idx]
-                            data_noise = batch_test_noise[idx]
+                            data_first = batch_test_x1[idx]
+                            data_second = batch_test_x2[idx]
                             
                             # Criar explainers GraphShap
-                            explainer = GraphShap(data=data_normal, model=self.first_model, 
+                            explainer = GraphShap(data=data_first, model=self.first_model, 
                                                 device=self.device)
-                            explainer_noise = GraphShap(data=data_noise, model=self.second_model, 
+                            explainer_second = GraphShap(data=data_second, model=self.second_model, 
                                                     device=self.device)
                             
                             # Obter explicações
-                            explanation_without_noise = explainer.explain(num_samples=30)
-                            explanation_with_noise = explainer_noise.explain(num_samples=30)
+                            explanation_first = explainer.explain(num_samples=30)
+                            explanation_second = explainer_second.explain(num_samples=30)
                             
                             # Calcular métricas para esta molécula
-                            self._calculate_metrics(explanation_without_noise, explanation_with_noise,
+                            self._calculate_metrics(explanation_first, explanation_second,
                                                 similarities, l1_differences, l2_differences, 
                                                 spearman_correlations)
                     
                     elif self.explainer_type == 'graph_lime':
                         # GraphLIME para explainer de grafo inteiro
-                        batch_size = len(batch_test)
+                        batch_size = len(batch_test_x1)
                         for idx in range(batch_size):
-                            data_normal = batch_test[idx]
-                            data_noise = batch_test_noise[idx]
+                            data_first = batch_test_x1[idx]
+                            data_second = batch_test_x2[idx]
                             
                             # Criar explainers GraphLIME
                             explainer = GraphLIME(model=self.first_model, device=self.device)
-                            explainer_noise = GraphLIME(model=self.second_model, device=self.device)
+                            explainer_second = GraphLIME(model=self.second_model, device=self.device)
                             
                             # Obter explicações
-                            explanation_without_noise = explainer.explain(data=data_normal)
-                            explanation_with_noise = explainer_noise.explain(data=data_noise)
+                            explanation_first = explainer.explain(data=data_first)
+                            explanation_second = explainer_second.explain(data=data_second)
                             
                             # Calcular métricas para esta molécula
-                            self._calculate_metrics(explanation_without_noise, explanation_with_noise,
+                            self._calculate_metrics(explanation_first, explanation_second,
                                                 similarities, l1_differences, l2_differences, 
                                                 spearman_correlations)
                     
                     elif self.explainer_type == 'node_graph_shap':
                         # NodeGraphShap para explicar nós específicos
-                        batch_size = len(batch_test)
+                        batch_size = len(batch_test_x1)
                         for idx in range(batch_size):
-                            data_normal = batch_test[idx]
-                            data_noise = batch_test_noise[idx]
+                            data_first = batch_test_x1[idx]
+                            data_second = batch_test_x2[idx]
                             
                             # Criar explainers NodeGraphShap
-                            explainer = NodeGraphShap(data=data_normal, model=self.first_model, 
+                            explainer = NodeGraphShap(data=data_first, model=self.first_model, 
                                                     device=self.device)
-                            explainer_noise = NodeGraphShap(data=data_noise, model=self.second_model, 
+                            explainer_second = NodeGraphShap(data=data_second, model=self.second_model, 
                                                         device=self.device)
                             
                             # Explicar nó específico (se self.atom_index estiver definido, caso contrário usa 0)
                             node_idx = getattr(self, 'atom_index', 0)
                             
                             # Obter explicações
-                            explanation_without_noise = explainer.explain(node_index=node_idx, hops=2, num_samples=30)
-                            explanation_with_noise = explainer_noise.explain(node_index=node_idx, hops=2, num_samples=30)
+                            explanation_first = explainer.explain(node_index=node_idx, hops=2, num_samples=30)
+                            explanation_second = explainer_second.explain(node_index=node_idx, hops=2, num_samples=30)
                             
                             # Calcular métricas para esta molécula
-                            self._calculate_metrics(explanation_without_noise, explanation_with_noise,
+                            self._calculate_metrics(explanation_first, explanation_second,
                                                 similarities, l1_differences, l2_differences, 
                                                 spearman_correlations)
                     
                     elif self.explainer_type == 'node_graph_lime':
                         # NodeGraphLIME para explicar nós específicos
-                        batch_size = len(batch_test)
+                        batch_size = len(batch_test_x1)
                         for idx in range(batch_size):
-                            data_normal = batch_test[idx]
-                            data_noise = batch_test_noise[idx]
+                            data_first = batch_test_x1[idx]
+                            data_second = batch_test_x2[idx]
                             
                             # Criar explainers NodeGraphLIME
-                            explainer = NodeGrapLIME(data=data_normal, model=self.first_model, 
+                            explainer = NodeGrapLIME(data=data_first, model=self.first_model, 
                                                     device=self.device)
-                            explainer_noise = NodeGrapLIME(data=data_noise, model=self.second_model, 
+                            explainer_second = NodeGrapLIME(data=data_second, model=self.second_model, 
                                                         device=self.device)
                             
                             # Explicar nó específico (se self.atom_index estiver definido, caso contrário usa 0)
                             node_idx = getattr(self, 'atom_index', 0)
                             
                             # Obter explicações
-                            explanation_without_noise = explainer.explain(node_index=node_idx, hops=2, num_samples=30)
-                            explanation_with_noise = explainer_noise.explain(node_index=node_idx, hops=2, num_samples=30)
+                            explanation_first = explainer.explain(node_index=node_idx, hops=2, num_samples=30)
+                            explanation_second = explainer_second.explain(node_index=node_idx, hops=2, num_samples=30)
                             
                             # Calcular métricas para esta molécula
-                            self._calculate_metrics(explanation_without_noise, explanation_with_noise,
+                            self._calculate_metrics(explanation_first, explanation_second,
                                                 similarities, l1_differences, l2_differences, 
                                                 spearman_correlations)
                             
@@ -245,21 +240,21 @@ class Evaluator:
 
         return similarities, l1_differences, l2_differences, spearman_correlations, figs
 
-    def _calculate_metrics(self, explanation_without_noise, explanation_with_noise, 
+    def _calculate_metrics(self, explanation_first, explanation_second, 
                       similarities, l1_differences, l2_differences, spearman_correlations):
         """
-        Calcula métricas comparativas entre explicações de modelos com e sem ruído.
+        Calcula métricas comparativas entre explicações de dois modelos diferentes.
         
-        Esta função compara as explicações geradas por explainers para modelos com e sem ruído, 
+        Esta função compara as explicações geradas por explainers para dois modelos distintos, 
         calculando várias métricas de similaridade. A função lida com diferentes formatos de 
         explicações, incluindo tuplas, arrays 1D/2D e explicações com diferentes dimensões.
         
         Parameters:
         -----------
-        explanation_without_noise : list, ndarray, tuple
-            Explicação gerada pelo modelo sem ruído
-        explanation_with_noise : list, ndarray, tuple
-            Explicação gerada pelo modelo com ruído
+        explanation_first : list, ndarray, tuple
+            Explicação gerada pelo primeiro modelo
+        explanation_second : list, ndarray, tuple
+            Explicação gerada pelo segundo modelo
         similarities : list
             Lista onde as similaridades de cosseno serão armazenadas
         l1_differences : list
@@ -272,71 +267,71 @@ class Evaluator:
         # 1. Verificações preliminares e tratamento de tipos
         try:
             # Verificar se as explicações são tuplas (caso do GNNExplainer)
-            if isinstance(explanation_without_noise, tuple):
+            if isinstance(explanation_first, tuple):
                 # GNNExplainer retorna (node_mask, edge_mask)
-                explanation_without_noise = explanation_without_noise[0]
+                explanation_first = explanation_first[0]
                 
-            if isinstance(explanation_with_noise, tuple):
-                explanation_with_noise = explanation_with_noise[0]
+            if isinstance(explanation_second, tuple):
+                explanation_second = explanation_second[0]
                 
             # Garantir que temos arrays ou listas
-            if not isinstance(explanation_without_noise, (list, np.ndarray)):
-                explanation_without_noise = [explanation_without_noise]
+            if not isinstance(explanation_first, (list, np.ndarray)):
+                explanation_first = [explanation_first]
                 
-            if not isinstance(explanation_with_noise, (list, np.ndarray)):
-                explanation_with_noise = [explanation_with_noise]
+            if not isinstance(explanation_second, (list, np.ndarray)):
+                explanation_second = [explanation_second]
                 
             # Verificar dimensões das explicações
-            is_2d_without_noise = any(isinstance(item, (list, np.ndarray)) 
-                                    for item in explanation_without_noise)
-            is_2d_with_noise = any(isinstance(item, (list, np.ndarray))
-                                for item in explanation_with_noise)
+            is_2d_first = any(isinstance(item, (list, np.ndarray)) 
+                                    for item in explanation_first)
+            is_2d_second = any(isinstance(item, (list, np.ndarray))
+                                for item in explanation_second)
             
             # 2. Processamento específico baseado na estrutura dos dados
             try:
                 # Caso as explicações tenham estruturas diferentes
-                if is_2d_without_noise != is_2d_with_noise:
+                if is_2d_first != is_2d_second:
                     print("Aviso: Estruturas de explicação inconsistentes. Tentando conversão segura.")
                 
-                if is_2d_without_noise or is_2d_with_noise:
+                if is_2d_first or is_2d_second:
                     # Tentativa de achatar arrays 2D de forma segura
                     try:
-                        if is_2d_without_noise:
-                            flattened_without_noise = []
-                            for item in explanation_without_noise:
+                        if is_2d_first:
+                            flattened_first = []
+                            for item in explanation_first:
                                 if isinstance(item, (list, np.ndarray)):
-                                    flattened_without_noise.extend(item)
+                                    flattened_first.extend(item)
                                 else:
-                                    flattened_without_noise.append(item)
-                            explanation_without_noise_flat = np.array(flattened_without_noise, dtype=float)
+                                    flattened_first.append(item)
+                            explanation_first_flat = np.array(flattened_first, dtype=float)
                         else:
-                            explanation_without_noise_flat = np.array(explanation_without_noise, dtype=float)
+                            explanation_first_flat = np.array(explanation_first, dtype=float)
                             
-                        if is_2d_with_noise:
-                            flattened_with_noise = []
-                            for item in explanation_with_noise:
+                        if is_2d_second:
+                            flattened_second = []
+                            for item in explanation_second:
                                 if isinstance(item, (list, np.ndarray)):
-                                    flattened_with_noise.extend(item)
+                                    flattened_second.extend(item)
                                 else:
-                                    flattened_with_noise.append(item)
-                            explanation_with_noise_flat = np.array(flattened_with_noise, dtype=float)
+                                    flattened_second.append(item)
+                            explanation_second_flat = np.array(flattened_second, dtype=float)
                         else:
-                            explanation_with_noise_flat = np.array(explanation_with_noise, dtype=float)
+                            explanation_second_flat = np.array(explanation_second, dtype=float)
                             
                     except Exception as e:
                         # Fallback para caso de erro na conversão
                         print(f"Erro ao achatar arrays: {e}. Usando método alternativo.")
-                        explanation_without_noise_flat = np.array([float(x) for x in np.array(explanation_without_noise).flatten() 
+                        explanation_first_flat = np.array([float(x) for x in np.array(explanation_first).flatten() 
                                                                 if str(x).replace('.','',1).isdigit()])
-                        explanation_with_noise_flat = np.array([float(x) for x in np.array(explanation_with_noise).flatten() 
+                        explanation_second_flat = np.array([float(x) for x in np.array(explanation_second).flatten() 
                                                             if str(x).replace('.','',1).isdigit()])
                 else:
                     # Caso simples: explicações 1D
-                    explanation_without_noise_flat = np.array(explanation_without_noise, dtype=float)
-                    explanation_with_noise_flat = np.array(explanation_with_noise, dtype=float)
+                    explanation_first_flat = np.array(explanation_first, dtype=float)
+                    explanation_second_flat = np.array(explanation_second, dtype=float)
                     
                 # 3. Verificar se temos dados válidos após conversão
-                if len(explanation_without_noise_flat) == 0 or len(explanation_with_noise_flat) == 0:
+                if len(explanation_first_flat) == 0 or len(explanation_second_flat) == 0:
                     print("Aviso: Explicação vazia após conversão. Pulando métricas.")
                     similarities.append(0.5)  # valor neutro
                     l1_differences.append(0)
@@ -345,28 +340,28 @@ class Evaluator:
                     return
                     
                 # 4. Criar vetores de importância alinhados
-                max_feature = max(len(explanation_without_noise_flat), len(explanation_with_noise_flat))
+                max_feature = max(len(explanation_first_flat), len(explanation_second_flat))
                 
                 # Converter para dicionários para fazer alinhamento quando dimensões são diferentes
-                importance_dict = dict(zip(range(len(explanation_without_noise_flat)), explanation_without_noise_flat))
-                importance_dict_noise = dict(zip(range(len(explanation_with_noise_flat)), explanation_with_noise_flat))
+                importance_dict = dict(zip(range(len(explanation_first_flat)), explanation_first_flat))
+                importance_dict_second = dict(zip(range(len(explanation_second_flat)), explanation_second_flat))
                 
                 # Criar listas alinhadas (preenchendo com zeros quando necessário)
                 importance_list = [importance_dict.get(i, 0) for i in range(max_feature)]
-                importance_list_noise = [importance_dict_noise.get(i, 0) for i in range(max_feature)]
+                importance_list_second = [importance_dict_second.get(i, 0) for i in range(max_feature)]
                 
                 # 5. Calcular métricas
                 imp = np.array(importance_list)
-                imp_noise = np.array(importance_list_noise)
+                imp_second = np.array(importance_list_second)
                 
                 # Verificar dados inválidos antes do cálculo de métricas
-                if np.isnan(imp).any() or np.isnan(imp_noise).any():
+                if np.isnan(imp).any() or np.isnan(imp_second).any():
                     print("Aviso: Detectados valores NaN nas explicações.")
                     imp = np.nan_to_num(imp)
-                    imp_noise = np.nan_to_num(imp_noise)
+                    imp_second = np.nan_to_num(imp_second)
                     
                 # Verificar se os vetores estão com valores iguais (evitar divisão por zero)
-                if np.array_equal(imp, imp_noise) or (np.sum(np.abs(imp)) < 1e-10 and np.sum(np.abs(imp_noise)) < 1e-10):
+                if np.array_equal(imp, imp_second) or (np.sum(np.abs(imp)) < 1e-10 and np.sum(np.abs(imp_second)) < 1e-10):
                     similarities.append(1.0)  # Vetores idênticos ou próximos de zero
                     l1_differences.append(0.0)
                     l2_differences.append(0.0)
@@ -375,7 +370,7 @@ class Evaluator:
                     
                 # Calcular similaridade de cosseno
                 try:
-                    sim = 1 - cosine(imp, imp_noise)
+                    sim = 1 - cosine(imp, imp_second)
                     if np.isnan(sim):
                         sim = 0.5  # Valor neutro se cosseno não puder ser calculado
                 except Exception:
@@ -383,16 +378,16 @@ class Evaluator:
                 similarities.append(sim)
                 
                 # Calcular diferença L1 (soma dos valores absolutos das diferenças)
-                l1_diff = np.sum(np.abs(imp - imp_noise))
+                l1_diff = np.sum(np.abs(imp - imp_second))
                 l1_differences.append(l1_diff)
                 
                 # Calcular diferença L2 (norma euclidiana da diferença)
-                l2_diff = np.linalg.norm(imp - imp_noise)
+                l2_diff = np.linalg.norm(imp - imp_second)
                 l2_differences.append(l2_diff)
                 
                 # Calcular correlação de Spearman
                 try:
-                    rho, _ = spearmanr(imp, imp_noise)
+                    rho, _ = spearmanr(imp, imp_second)
                     if np.isnan(rho):
                         rho = 0  # Valor neutro se correlação não puder ser calculada
                 except Exception:
@@ -415,7 +410,7 @@ class Evaluator:
             l2_differences.append(0)
             spearman_correlations.append(0)
 
-class FingerprintAnalyzer:
+class MolecularAnalyzer:
     """
     Classe para analisar os fingerprints e explicações SHAP de moléculas.
     
@@ -590,7 +585,7 @@ class FingerprintAnalyzer:
         """
         Exibe o resumo dos bits importantes da Explicação.
         """
-        display(HTML("<h2 style='background-color:#f0f0f0; padding:10px; border-radius:5px;'>Resumo dos bits importantes da Explicação</h2>"))
+        display(HTML("<h2 style='background_x1-color:#f0f0f0; padding:10px; border-radius:5px;'>Resumo dos bits importantes da Explicação</h2>"))
         
         with redirect_stdout(self.output):
             print("Os bits destacados em VERMELHO estão ATIVOS (presentes) na molécula.")
@@ -608,7 +603,7 @@ class FingerprintAnalyzer:
         """
         Exibe o cabeçalho para a seção de fragmentos importantes.
         """
-        display(HTML("<h2 style='background-color:#f0f0f0; padding:10px; border-radius:5px;'>Fragmentos Moleculares Importantes</h2>"))
+        display(HTML("<h2 style='background_x1-color:#f0f0f0; padding:10px; border-radius:5px;'>Fragmentos Moleculares Importantes</h2>"))
         
         with redirect_stdout(self.output):
             if not self.active_important_bits:
@@ -632,7 +627,7 @@ class FingerprintAnalyzer:
         value = self.importance_values[orig_idx]
         
         # Cabeçalho para cada fragmento
-        display(HTML(f"<h3 style='background-color:#ffeeee; padding:5px; border-radius:5px;'>Fragmento {fragment_idx+1}: Bit {bit} (Value: {value:.4f})</h3>"))
+        display(HTML(f"<h3 style='background_x1-color:#ffeeee; padding:5px; border-radius:5px;'>Fragmento {fragment_idx+1}: Bit {bit} (Value: {value:.4f})</h3>"))
         
         # Coletar todos os átomos envolvidos neste bit
         atoms_to_highlight = []
