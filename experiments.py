@@ -74,7 +74,7 @@ def experiment_MLP_SHAP_LIME(
     input_dim = next(iter(train_loader))[0].shape[1]
     output_dim = 1
     model = MLP(input_dim, output_dim, layers, device, lr=learning_rate)
-    model_path = os.path.join(os.getcwd(), 'models', f'mlp_qm9_noise_{descriptor_type}.pth')
+    model_path = os.path.join(os.getcwd(), 'models', f'mlp_qm9_{descriptor_type}.pth')
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
     model.to(device)
@@ -85,16 +85,16 @@ def experiment_MLP_SHAP_LIME(
     for xb, yb in train_loader:
         X_train.append(xb)
         y_train.append(yb)
-    X_train = torch.cat(X_train, dim=0)
-    y_train = torch.cat(y_train, dim=0)
+    X_train = torch.cat(X_train, dim=0)[:500]
+    y_train = torch.cat(y_train, dim=0)[:500]
 
     X_test = []
     y_test = []
     for xb, yb in test_loader:
         X_test.append(xb)
         y_test.append(yb)
-    X_test = torch.cat(X_test, dim=0)
-    y_test = torch.cat(y_test, dim=0)
+    X_test = torch.cat(X_test, dim=0)[:100]
+    y_test = torch.cat(y_test, dim=0)[:100]
 
     with torch.no_grad():
         y_pred = model(X_test.to(device)).cpu().numpy()
