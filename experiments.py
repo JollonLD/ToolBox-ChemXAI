@@ -49,7 +49,8 @@ def experiment_MLP_SHAP_LIME(
         att_index=att_index,
         batch_size=batch_size,
         descriptor_type=descriptor_type,
-        n_noise=n_noise
+        n_noise=n_noise,
+        add_noise=False
     )
     train_loader, val_loader, test_loader = loaders
 
@@ -66,7 +67,6 @@ def experiment_MLP_SHAP_LIME(
     #     batch_size=batch_size,
     #     n_noise=n_noise,
     #     descriptor_type=descriptor_type,
-    #     add_noise=False
     # )
     # log_lines.append("Histórico de treinamento (época, treino_loss, val_loss):\n")
     # for epoch, train_loss, val_loss in history:
