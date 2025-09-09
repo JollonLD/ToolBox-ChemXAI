@@ -130,8 +130,8 @@ def experiment_MLP_SHAP_LIME(
         y_pred=y_pred,
         device=device
     )
-    metrics_shap, fidelity_shap = analyzer_shap.get_metrics()
-    log_lines.append(f"Métricas SHAP: {metrics_shap}\n")
+    fidelity_shap = analyzer_shap.get_metrics()
+    # log_lines.append(f"Métricas SHAP: {metrics_shap}\n")
     log_lines.append(f"Fidelidade SHAP: {fidelity_shap}\n")
 
     # 9. Métricas LIME
@@ -144,8 +144,8 @@ def experiment_MLP_SHAP_LIME(
         y_pred=y_pred,
         device=device
     )
-    metrics_lime, fidelity_lime = analyzer_lime.get_metrics()
-    log_lines.append(f"Métricas LIME: {metrics_lime}\n")
+    fidelity_lime = analyzer_lime.get_metrics()
+    # log_lines.append(f"Métricas LIME: {metrics_lime}\n")
     log_lines.append(f"Fidelidade LIME: {fidelity_lime}\n")
 
     # 10. Plots

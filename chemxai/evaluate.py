@@ -861,9 +861,9 @@ class TabularAnalyzer:
         
         fidelity = self._calculate_fidelity(model=self.model, explanation=self.explanation, data=self.data, y_true=self.y_true)
 
-        metrics = self._compute_metrics(y_true=self.y_true, y_pred=self.y_pred)
+        #metrics = self._compute_metrics(y_true=self.y_true, y_pred=self.y_pred)
 
-        return metrics, fidelity
+        return fidelity
 
 class GraphAnalyzer:
     def __init__(self, explainer, explanation, pred_mask, target_mask, metrics = ["accuracy", "recall", "precision", "f1_score", "auroc"]):
