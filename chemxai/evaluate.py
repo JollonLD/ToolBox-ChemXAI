@@ -781,8 +781,8 @@ class TabularAnalyzer:
         self.explanation = explanation
         self.data = data
         self.metric = metrics
-        self.y_true = y_true.to(device)
-        self.y_pred = y_pred.to(device)
+        self.y_true = torch.tensor(y_true, device=device) if not isinstance(y_true, torch.Tensor) else y_true.to(device)
+        self.y_pred = torch.tensor(y_pred, device=device) if not isinstance(y_pred, torch.Tensor) else y_pred.to(device)
 
     def _rank_explanation(self, explanation, descending=True):
         if descending:
