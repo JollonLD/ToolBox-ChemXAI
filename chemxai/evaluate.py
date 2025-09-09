@@ -779,7 +779,7 @@ class TabularAnalyzer:
         self.model = model
         self.explainer = explainer
         self.explanation = explanation
-        self.data = data
+        self.data = torch.tensor(data, device=device) if not isinstance(data, torch.Tensor) else data.to(device)
         self.metric = metrics
         self.y_true = torch.tensor(y_true, device=device) if not isinstance(y_true, torch.Tensor) else y_true.to(device)
         self.y_pred = torch.tensor(y_pred, device=device) if not isinstance(y_pred, torch.Tensor) else y_pred.to(device)
