@@ -792,7 +792,7 @@ class TabularAnalyzer:
 
     def _create_masked_dataset(self, data, explanation, descending=True, n_features=5):
         
-        mask = torch.zeros(data.shape, dtype=torch.float64)
+        mask = torch.zeros(data.shape, dtype=torch.dtype)
         if descending:
             important_features = self._rank_explanation(explanation=explanation, descending=True)
         else:
