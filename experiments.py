@@ -37,11 +37,13 @@ def experiment_MLP_SHAP_LIME(
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     log_lines = []
     log_lines.append(f"Dispositivo: {device}\n")
+    print(f'Device: {device}')
     log_lines.append(f"Experimento MLP QM9 - SHAP & LIME\n")
     log_lines.append(f"Parâmetros: att_index={att_index}, epochs={epochs}, layers={layers}, batch_size={batch_size}, n_noise={n_noise}, descriptor_type={descriptor_type}\n")
     log_lines.append(f"Pasta do experimento: {experiment_dir}\n")
 
     # 2. Dados
+    print('Carregando Dados...\n')
     qm9 = qm9_tabular()
     loaders = qm9.get_paired_dataloaders(
         att_index=att_index,
@@ -55,6 +57,7 @@ def experiment_MLP_SHAP_LIME(
     log_lines.append("Iniciando Treinamento.\n")
 
     # 3. Treinamento
+    print('Iniciando Treinamento...\n')
     history = train_mlp_qm9(
         att_index=att_index,
         epochs=epochs,
@@ -71,6 +74,7 @@ def experiment_MLP_SHAP_LIME(
     log_lines.append("Iniciando Explicações.\n")
 
     # 4. Carregar modelo treinado
+    print('Carregando Modelo...')
     input_dim = next(iter(train_loader))[0].shape[1]
     output_dim = 1
     model = MLP(input_dim, output_dim, layers, device, lr=learning_rate)
@@ -101,6 +105,8 @@ def experiment_MLP_SHAP_LIME(
 
     log_lines.append(f"Test set: {X_test.shape[0]} amostras\n")
 
+    print('Iniciando Explicações...\n')
+
     # 6. SHAP
     shap_explainer = Shap(model, X_train, X_test, device)
     shap_explanation = shap_explainer.explain_global()
@@ -110,6 +116,8 @@ def experiment_MLP_SHAP_LIME(
     lime_explainer = LIME(model, X_train, X_test, device)
     lime_explanation = lime_explainer.explain_local(index=0)  # Exemplo: primeira amostra
     log_lines.append("Explicação LIME gerada.\n")
+
+    print('Colentando Métricas...\n')
 
     # 8. Métricas SHAP
     analyzer_shap = TabularAnalyzer(
@@ -139,6 +147,8 @@ def experiment_MLP_SHAP_LIME(
 
     # 10. Plots
     # SHAP - Radar e Bar
+    print('Gerando Gráficos...\n')
+
     try:
         radar_plot(np.array(shap_explanation), title="SHAP - Radar Plot")
         radar_path = os.path.join(experiment_dir, "shap_radar.png")

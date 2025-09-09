@@ -809,11 +809,18 @@ class TabularAnalyzer:
         data_mask_pos = self._create_masked_dataset(data=data, explanation=explanation, descending=True, n_features=5)
         data_mask_neg = self._create_masked_dataset(data=data, explanation=explanation, descending=False, n_features=5)
         
+        print(f'Data Mask Positive: {data_mask_pos}\n')
+        print(f'Data Mask Negative: {data_mask_neg}\n')
+
         for data in data_mask_pos:
+            print(f'Data to predict Positive: {data}\n')
+
             pred = model(data)
             pos_fidel = torch.sqrt(F.mse_loss(pred, true))
 
         for data in data_mask_neg:
+            print(f'Data to predict Negative: {data}\n')
+
             pred = model(data)
             neg_fidel = torch.sqrt(F.mse_loss(pred, true))
 
