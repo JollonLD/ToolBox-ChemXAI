@@ -804,7 +804,7 @@ class TabularAnalyzer:
 
         return mask
 
-    def _calculate_fidelity(self, model, explanation, data, true):
+    def _calculate_fidelity(self, model, explanation, data, y_true):
         
         data_mask_pos = self._create_masked_dataset(data=data, explanation=explanation, descending=True, n_features=5)
         data_mask_neg = self._create_masked_dataset(data=data, explanation=explanation, descending=False, n_features=5)
@@ -816,13 +816,13 @@ class TabularAnalyzer:
             print(f'Data to predict Positive: {data}\n')
 
             pred = model(data)
-            pos_fidel = torch.sqrt(F.mse_loss(pred, true))
+            pos_fidel = torch.sqrt(F.mse_loss(pred, y_true))
 
         for data in data_mask_neg:
             print(f'Data to predict Negative: {data}\n')
 
             pred = model(data)
-            neg_fidel = torch.sqrt(F.mse_loss(pred, true))
+            neg_fidel = torch.sqrt(F.mse_loss(pred, y_true))
 
         return pos_fidel, neg_fidel
 
@@ -859,9 +859,9 @@ class TabularAnalyzer:
 
     def get_metrics(self):
         
-        fidelity = self._calculate_fidelity(model=self.model, explanation=self.explanation, data=self.data, pred=self.y_true)
+        fidelity = self._calculate_fidelity(model=self.model, explanation=self.explanation, data=self.data, y_true=self.y_true)
 
-        metrics = self._compute_metrics(y_true=self.y_true, y_pred=self.y_pred, )
+        metrics = self._compute_metrics(y_true=self.y_true, y_pred=self.y_pred)
 
         return metrics, fidelity
 

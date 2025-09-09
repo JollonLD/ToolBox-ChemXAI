@@ -671,10 +671,9 @@ class qm9_tabular:
         return X_normal_scaled, X_noise_scaled, Ys_scaled
 
     def create_dataloaders(self, X_normal_scaled, X_noise_scaled, Ys_scaled, 
-                        split_ratio=[0.8, 0.1, 0.1], batch_size=256):
+                        split_ratio=[0.8, 0.1, 0.1], batch_size=256, n_noise=0):
         """Cria os dataloaders a partir dos dados normalizados."""
         dataset_normal = self.Data(X_normal_scaled, Ys_scaled)
-        dataset_noise = self.Data(X_noise_scaled, Ys_scaled)
         
         dataset_size = len(dataset_normal)
         train_size = int(dataset_size * split_ratio[0])
@@ -685,28 +684,35 @@ class qm9_tabular:
         val_indices = all_indices[train_size:train_size+val_size]
         test_indices = all_indices[train_size+val_size:]
         
+        
         train_dataset_normal = torch.utils.data.Subset(dataset_normal, train_indices)
         val_dataset_normal = torch.utils.data.Subset(dataset_normal, val_indices)
         test_dataset_normal = torch.utils.data.Subset(dataset_normal, test_indices)
-        
-        train_dataset_noise = torch.utils.data.Subset(dataset_noise, train_indices)
-        val_dataset_noise = torch.utils.data.Subset(dataset_noise, val_indices)
-        test_dataset_noise = torch.utils.data.Subset(dataset_noise, test_indices)
         
         train_loader_normal = DataLoader(train_dataset_normal, batch_size=batch_size, shuffle=False)
         val_loader_normal = DataLoader(val_dataset_normal, batch_size=batch_size, shuffle=False)
         test_loader_normal = DataLoader(test_dataset_normal, batch_size=batch_size, shuffle=False)
         
-        train_loader_noise = DataLoader(train_dataset_noise, batch_size=batch_size, shuffle=False)
-        val_loader_noise = DataLoader(val_dataset_noise, batch_size=batch_size, shuffle=False)
-        test_loader_noise = DataLoader(test_dataset_noise, batch_size=batch_size, shuffle=False)
+        if n_noise > 0:
+
+            dataset_noise = self.Data(X_noise_scaled, Ys_scaled)
+            
+            train_dataset_noise = torch.utils.data.Subset(dataset_noise, train_indices)
+            val_dataset_noise = torch.utils.data.Subset(dataset_noise, val_indices)
+            test_dataset_noise = torch.utils.data.Subset(dataset_noise, test_indices)
+            
+            train_loader_noise = DataLoader(train_dataset_noise, batch_size=batch_size, shuffle=False)
+            val_loader_noise = DataLoader(val_dataset_noise, batch_size=batch_size, shuffle=False)
+            test_loader_noise = DataLoader(test_dataset_noise, batch_size=batch_size, shuffle=False)
         
-        return (train_loader_normal, val_loader_normal, test_loader_normal,
+            return (train_loader_normal, val_loader_normal, test_loader_normal,
                 train_loader_noise, val_loader_noise, test_loader_noise)
+        
+        return train_loader_normal, val_loader_normal, test_loader_normal
 
     def get_paired_dataloaders(self, att_index=10, batch_size=256, descriptor_type='CM', 
                     list_mols=[], split_ratio=[0.8, 0.1, 0.1], seed=42, noise_type='gaussian', 
-                    noise_scale=1.0, n_noise=1, morgan_radius=3, morgan_nBits=512):
+                    noise_scale=1.0, n_noise=1, morgan_radius=3, morgan_nBits=512, add_noise=True):
         """Prepara dois conjuntos de DataLoaders (normal e com ruído) usando os descritores calculados."""
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -716,6 +722,15 @@ class qm9_tabular:
             morgan_nBits=morgan_nBits, att_index=att_index, list_mols=list_mols
         )
         
+        if not add_noise or n_noise == 0:
+            # Apenas dataloaders normais, sem ruído
+            X_normal_scaled, _, Ys_scaled = self.normalize_data(X_normal, X_normal, Ys)
+            dataloaders = self.create_dataloaders(
+                X_normal_scaled, X_normal_scaled, Ys_scaled, 
+                split_ratio=split_ratio, batch_size=batch_size, n_noise=0)
+            return dataloaders
+
+        # Caso queira adicionar ruído
         X_with_noise = X_normal.copy()
         n_samples = X_with_noise.shape[0]
         
@@ -744,12 +759,9 @@ class qm9_tabular:
         
         dataloaders = self.create_dataloaders(
             X_normal_scaled, X_noise_scaled, Ys_scaled, 
-            split_ratio=split_ratio, batch_size=batch_size)
+            split_ratio=split_ratio, batch_size=batch_size, n_noise=n_noise)
         
-        if n_noise > 0:
-            return (*dataloaders, is_noise)
-        else:
-            return dataloaders[:3]
+        return dataloaders
 
     def get_smiles_by_dataloader_idx(self, idx, dataset_type='test'):
         """Recupera o SMILES correspondente a um índice em um dataloader específico."""

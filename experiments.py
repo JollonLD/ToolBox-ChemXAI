@@ -56,21 +56,22 @@ def experiment_MLP_SHAP_LIME(
     log_lines.append("Dados carregados.\n")
     log_lines.append("Iniciando Treinamento.\n")
 
-    # 3. Treinamento
-    print('Iniciando Treinamento...\n')
-    history = train_mlp_qm9(
-        att_index=att_index,
-        epochs=epochs,
-        layers=layers,
-        learning_rate=learning_rate,
-        batch_size=batch_size,
-        n_noise=n_noise,
-        descriptor_type=descriptor_type
-    )
-    log_lines.append("Histórico de treinamento (época, treino_loss, val_loss):\n")
-    for epoch, train_loss, val_loss in history:
-        log_lines.append(f"Época {epoch}: Loss Treino={train_loss:.4f} | Loss Validação={val_loss:.4f}\n")
-    log_lines.append("Treinamento finalizado.\n")
+    # # 3. Treinamento
+    # print('Iniciando Treinamento...\n')
+    # history = train_mlp_qm9(
+    #     att_index=att_index,
+    #     epochs=epochs,
+    #     layers=layers,
+    #     learning_rate=learning_rate,
+    #     batch_size=batch_size,
+    #     n_noise=n_noise,
+    #     descriptor_type=descriptor_type,
+    #     add_noise=False
+    # )
+    # log_lines.append("Histórico de treinamento (época, treino_loss, val_loss):\n")
+    # for epoch, train_loss, val_loss in history:
+    #     log_lines.append(f"Época {epoch}: Loss Treino={train_loss:.4f} | Loss Validação={val_loss:.4f}\n")
+    # log_lines.append("Treinamento finalizado.\n")
     log_lines.append("Iniciando Explicações.\n")
 
     # 4. Carregar modelo treinado
