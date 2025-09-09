@@ -775,14 +775,14 @@ class MolecularAnalyzer:
         return self.output.getvalue()
 
 class TabularAnalyzer:
-    def __init__(self, model, explainer, explanation, data, y_true, y_pred, metrics = ["accuracy", "recall", "precision", "f1_score", "auroc"]):
+    def __init__(self, model, explainer, explanation, data, y_true, y_pred, device, metrics = ["accuracy", "recall", "precision", "f1_score", "auroc"]):
         self.model = model
         self.explainer = explainer
         self.explanation = explanation
         self.data = data
         self.metric = metrics
-        self.y_true = y_true
-        self.y_pred = y_pred
+        self.y_true = y_true.to(device)
+        self.y_pred = y_pred.to(device)
 
     def _rank_explanation(self, explanation, descending=True):
         if descending:

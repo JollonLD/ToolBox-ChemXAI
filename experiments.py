@@ -127,7 +127,8 @@ def experiment_MLP_SHAP_LIME(
         explanation=shap_explanation,
         data=X_test,
         y_true=y_test.numpy(),
-        y_pred=y_pred
+        y_pred=y_pred,
+        device=device
     )
     metrics_shap, fidelity_shap = analyzer_shap.get_metrics()
     log_lines.append(f"Métricas SHAP: {metrics_shap}\n")
@@ -140,7 +141,8 @@ def experiment_MLP_SHAP_LIME(
         explanation=lime_explanation,
         data=X_test,
         y_true=y_test.numpy(),
-        y_pred=y_pred
+        y_pred=y_pred,
+        device=device
     )
     metrics_lime, fidelity_lime = analyzer_lime.get_metrics()
     log_lines.append(f"Métricas LIME: {metrics_lime}\n")
