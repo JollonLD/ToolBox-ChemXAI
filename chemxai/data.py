@@ -401,6 +401,9 @@ class qm9_tabular:
         # Caminho absoluto baseado na localização do script atual
         base_dir = os.getcwd()
         
+        # Criar pasta data se não existir
+        os.makedirs(os.path.join(base_dir, "data"), exist_ok=True)
+
         self.directory_path = os.path.join(base_dir, "data", "QM9_tabular_Data")
         self.zip_path = os.path.join(base_dir, "data", "QM9.zip")
         self.qm9_folder = self.directory_path

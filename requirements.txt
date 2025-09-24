@@ -9,3 +9,4 @@ torch==2.6.0
 torch-geometric==2.6.1
 ase==3.24.0
 dscribe==2.1.1
+IPython==9.5.0

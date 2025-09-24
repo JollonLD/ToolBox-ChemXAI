@@ -10,7 +10,7 @@ from chemxai.explainers import Shap, LIME
 from chemxai.evaluate import TabularAnalyzer
 from chemxai.plots import radar_plot, horizontal_bar_plot
 
-def experiment_MLP_SHAP_LIME(
+def experiment_MLP_SHAP_LIME_predict_Feature10(
     att_index=10,
     epochs=10,
     layers=[64, 32],
@@ -57,21 +57,22 @@ def experiment_MLP_SHAP_LIME(
     log_lines.append("Dados carregados.\n")
     log_lines.append("Iniciando Treinamento.\n")
 
-    # # 3. Treinamento
-    # print('Iniciando Treinamento...\n')
-    # history = train_mlp_qm9(
-    #     att_index=att_index,
-    #     epochs=epochs,
-    #     layers=layers,
-    #     learning_rate=learning_rate,
-    #     batch_size=batch_size,
-    #     n_noise=n_noise,
-    #     descriptor_type=descriptor_type,
-    # )
-    # log_lines.append("Histórico de treinamento (época, treino_loss, val_loss):\n")
-    # for epoch, train_loss, val_loss in history:
-    #     log_lines.append(f"Época {epoch}: Loss Treino={train_loss:.4f} | Loss Validação={val_loss:.4f}\n")
-    # log_lines.append("Treinamento finalizado.\n")
+    # 3. Treinamento
+    print('Iniciando Treinamento...\n')
+    history = train_mlp_qm9(
+        att_index=att_index,
+        epochs=epochs,
+        layers=layers,
+        learning_rate=learning_rate,
+        batch_size=batch_size,
+        n_noise=n_noise,
+        descriptor_type=descriptor_type,
+    )
+    log_lines.append("Histórico de treinamento (época, treino_loss, val_loss):\n")
+    for epoch, train_loss, val_loss in history:
+        log_lines.append(f"Época {epoch}: Loss Treino={train_loss:.4f} | Loss Validação={val_loss:.4f}\n")
+    log_lines.append("Treinamento finalizado.\n")
+
     log_lines.append("Iniciando Explicações.\n")
 
     # 4. Carregar modelo treinado
@@ -132,7 +133,8 @@ def experiment_MLP_SHAP_LIME(
     )
     fidelity_shap = analyzer_shap.get_metrics()
     # log_lines.append(f"Métricas SHAP: {metrics_shap}\n")
-    log_lines.append(f"Fidelidade SHAP: {fidelity_shap}\n")
+    log_lines.append(f"Fidelidade Positiva SHAP: {fidelity_shap[0]}\n")
+    log_lines.append(f"Fidelidade Negativa SHAP: {fidelity_shap[1]}\n")
 
     # 9. Métricas LIME
     analyzer_lime = TabularAnalyzer(
@@ -146,7 +148,8 @@ def experiment_MLP_SHAP_LIME(
     )
     fidelity_lime = analyzer_lime.get_metrics()
     # log_lines.append(f"Métricas LIME: {metrics_lime}\n")
-    log_lines.append(f"Fidelidade LIME: {fidelity_lime}\n")
+    log_lines.append(f"Fidelidade Positiva LIME: {fidelity_lime[0]}\n")
+    log_lines.append(f"Fidelidade Negativa LIME: {fidelity_lime[1]}\n")
 
     # 10. Plots
     # SHAP - Radar e Bar
@@ -193,4 +196,4 @@ def experiment_MLP_SHAP_LIME(
     print(f"Resultados e gráficos salvos em {experiment_dir}")
 
 if __name__ == "__main__":
-    experiment_MLP_SHAP_LIME()
+    experiment_MLP_SHAP_LIME_predict_Feature10()

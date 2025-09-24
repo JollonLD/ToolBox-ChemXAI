@@ -809,17 +809,12 @@ class TabularAnalyzer:
         data_mask_pos = self._create_masked_dataset(data=data, explanation=explanation, descending=True, n_features=5)
         data_mask_neg = self._create_masked_dataset(data=data, explanation=explanation, descending=False, n_features=5)
         
-        print(f'Data Mask Positive: {data_mask_pos}\n')
-        print(f'Data Mask Negative: {data_mask_neg}\n')
-
         for data in data_mask_pos:
-            print(f'Data to predict Positive: {data}\n')
 
             pred = model(data)
             pos_fidel = torch.sqrt(F.mse_loss(pred, y_true))
 
         for data in data_mask_neg:
-            print(f'Data to predict Negative: {data}\n')
 
             pred = model(data)
             neg_fidel = torch.sqrt(F.mse_loss(pred, y_true))
@@ -835,7 +830,7 @@ class TabularAnalyzer:
         if isinstance(y_pred, torch.Tensor):
             y_pred = y_pred.detach().cpu().numpy()
 
-        # Se for classificação binária, y_pred pode ser probabilidades ou rótulos
+        # Se for classificação binária, yreturn fidelity, metrics if classfication else fidelity_pred pode ser probabilidades ou rótulos
         if y_pred.ndim > 1 and y_pred.shape[1] > 1:
             y_pred_labels = y_pred.argmax(axis=1)
         else:
@@ -857,13 +852,13 @@ class TabularAnalyzer:
                 results["auroc"] = roc_auc_score(y_true_labels, y_pred, multi_class='ovr', average='macro')
         return results
 
-    def get_metrics(self):
+    def get_metrics(self, classfication=False):
         
         fidelity = self._calculate_fidelity(model=self.model, explanation=self.explanation, data=self.data, y_true=self.y_true)
 
-        #metrics = self._compute_metrics(y_true=self.y_true, y_pred=self.y_pred)
+        metrics = self._compute_metrics(y_true=self.y_true, y_pred=self.y_pred)
 
-        return fidelity
+        return fidelity, metrics if classfication else fidelity
 
 class GraphAnalyzer:
     def __init__(self, explainer, explanation, pred_mask, target_mask, metrics = ["accuracy", "recall", "precision", "f1_score", "auroc"]):
@@ -873,7 +868,7 @@ class GraphAnalyzer:
         self.explainer = explainer
         self.explanation = explanation
     
-    def get_metrics(self):
+    def get_metrics(self, classification=False):
 
         metrics = groundtruth_metrics(pred_mask=self.pred_mask, target_mask=self.target_mask, metrics=self.metrics)
 
@@ -881,7 +876,7 @@ class GraphAnalyzer:
 
         unfaithfulness = unfaithfulness(explainer=self.explainer, explanation=self.explanation)
 
-        return metrics, fidelity, unfaithfulness
+        return metrics, fidelity, unfaithfulness if classification else fidelity, unfaithfulness
 
 # Pensar na Corretividade fazendo a incerteza do modelo, usar mais modelos diferentes e fazer a variancia do erro obtido por esses modelos diferentes
 
