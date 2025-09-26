@@ -457,34 +457,8 @@ def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4, n_nois
     dataset = dataset[:20000]
     dataset = [data for data in dataset]  
 
-    # for graph in dataset:
-    #     print(graph)
-
-    # working_graphs = [graph.clone() for graph in dataset]
-    # print(working_graphs)
-
-    aug = Augmentator(seed=42)
-
-    augmented_graphs = aug.Graphs.augment_data(dataset=dataset, augmentation_methods=["node_drop"], edge_drop_rate=0.15, node_drop_rate=0.1, augment_percentage=0.4)
-
-    # print(augmented_graphs[17580])
-    # print(augmented_graphs[-1])
-
     # 3. Loaders com drop_last para evitar batches incompletos
-    # train_loader, val_loader, test_loader = gd.get_paired_dataloaders(dataset_name='PCQM4', batch_size=batch_size)
-
-    augmented_graphs = rebuild_graph_dataset(augmented_graphs)
-    augmented_graphs = normalize_features(augmented_graphs)
-    augmented_graphs, target_mean, target_std = normalize_targets(augmented_graphs)
-
-    train_loader, val_loader, test_loader = create_dataloaders_from_augmented_graphs(
-        augmented_graphs, 
-        batch_size=batch_size,
-        train_ratio=0.7, 
-        val_ratio=0.15,
-        test_ratio=0.15,
-        seed=42
-    )
+    train_loader, val_loader, test_loader = gd.get_paired_dataloaders(dataset_name='PCQM4', batch_size=batch_size)
     
     mol = next(iter(train_loader))
     print(mol[0].num_nodes)
