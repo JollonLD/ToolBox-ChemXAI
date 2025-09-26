@@ -25,6 +25,11 @@ from dscribe.descriptors import CoulombMatrix
 import os
 import zipfile
 import requests
+import pickle
+from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
+from tqdm import tqdm
+from typing import List, Tuple, Dict, Optional, Any, Union
 
 
 
@@ -443,150 +448,504 @@ class qm9_tabular:
             print(f"Dados já existem em: {self.qm9_folder}")
 
     def inverse_transform_features(self, normalized_features, is_noise=False):
-        """Desnormaliza features usando o scaler armazenado."""
-        if is_noise:
-            if hasattr(self, 'scaler_noise'):
-                return self.scaler_noise.inverse_transform(normalized_features)
-            else:
-                raise AttributeError("O scaler de ruído não foi armazenado. Execute get_paired_dataloaders primeiro.")
-        else: 
-            if hasattr(self, 'scaler_normal'):
-                return self.scaler_normal.inverse_transform(normalized_features)
-            else:
-                raise AttributeError("O scaler normal não foi armazenado. Execute get_paired_dataloaders primeiro.")
+        """
+        Desnormaliza features usando o scaler armazenado.
+        
+        Parameters:
+        -----------
+        normalized_features : np.ndarray
+            Features normalizadas a serem convertidas de volta
+        is_noise : bool
+            Se True, usa o scaler para dados com ruído, senão usa o scaler normal
+            
+        Returns:
+        --------
+        np.ndarray: Features desnormalizadas
+        
+        Raises:
+        -------
+        AttributeError: Se o scaler requisitado não estiver disponível
+        """
+        scaler = getattr(self, f'scaler_{"noise" if is_noise else "normal"}', None)
+        if scaler is not None:
+            return scaler.inverse_transform(normalized_features)
+        else:
+            raise AttributeError(f"O scaler {'de ruído' if is_noise else 'normal'} não foi armazenado. "
+                                 "Execute get_paired_dataloaders_tabular primeiro.")
 
+    @lru_cache(maxsize=64)
     def load_qm9_xyz(self, file_path):
-        """Load a single QM9.xyz file."""
-        with open(file_path, 'r') as f:
-            natoms = int(f.readline())
-            properties = list(map(float, f.readline().split()[2:]))
-            atoms = []
-            coordinates = []
-            for num_line, line in enumerate(f):
-                if num_line >= 0 and num_line < natoms:
-                    info = line.replace("*^","e").split()
-                    atoms.append(info[0])
-                    coordinates.append(list(map(float, info[1:-1])))
-        return {"natoms": natoms, "atoms": atoms, "coordinates": np.array(coordinates), "properties": properties}
+        """
+        Carrega um arquivo QM9.xyz e extrai suas informações com cache para melhorar a performance.
+        
+        Parameters:
+        -----------
+        file_path : str
+            Caminho para o arquivo .xyz
+            
+        Returns:
+        --------
+        dict: Dicionário contendo informações da molécula
+        """
+        try:
+            with open(file_path, 'r') as f:
+                natoms = int(f.readline())
+                properties = list(map(float, f.readline().split()[2:]))
+                atoms = []
+                coordinates = []
+                for num_line, line in enumerate(f):
+                    if num_line >= 0 and num_line < natoms:
+                        info = line.replace("*^","e").split()
+                        atoms.append(info[0])
+                        coordinates.append(list(map(float, info[1:-1])))
+            return {"natoms": natoms, "atoms": atoms, "coordinates": np.array(coordinates), "properties": properties}
+        except Exception as e:
+            print(f"Erro ao carregar o arquivo {file_path}: {e}")
+            return {"natoms": 0, "atoms": [], "coordinates": np.array([]), "properties": []}
 
-    def load_qm9_dataset(self, list_mols=[]):
-        """Load the entire QM9 dataset from a directory containing .xyz files."""
+    def load_qm9_dataset(self, list_mols=None):
+        """
+        Carrega o dataset QM9 completo de arquivos .xyz com otimização de desempenho.
+        
+        Parameters:
+        -----------
+        list_mols : list, optional
+            Lista de moléculas (por número de átomos) a considerar. Se vazio, carrega todas.
+            
+        Returns:
+        --------
+        tuple: (coordenadas, propriedades, número de átomos)
+        """
+        if list_mols is None:
+            list_mols = []
+            
+        # Usar cache de disco se disponível
+        cache_path = os.path.join(os.getcwd(), "data", "qm9_dataset_cache.pkl")
+        if os.path.exists(cache_path) and not list_mols:
+            try:
+                with open(cache_path, 'rb') as f:
+                    print(f"Carregando QM9 do cache: {cache_path}")
+                    return pickle.load(f)
+            except Exception as e:
+                print(f"Erro ao carregar cache: {e}. Carregando dados brutos.")
+        
         coords, prop, natoms = [], [], []
-        for file_name in sorted(os.listdir(self.directory_path)):
-            if file_name.endswith(".xyz"):
-                file_path = os.path.join(self.directory_path, file_name)
-                molecule_data = self.load_qm9_xyz(file_path)
-                if not list_mols or molecule_data['natoms'] in list_mols:
-                    coords.append((molecule_data['atoms'], molecule_data['coordinates']))
-                    prop.append(molecule_data['properties'])
-                    natoms.append(molecule_data['natoms'])
+        
+        # Listar todos os arquivos .xyz
+        xyz_files = sorted([f for f in os.listdir(self.directory_path) if f.endswith(".xyz")])
+        total_files = len(xyz_files)
+        
+        print(f"Carregando {total_files} arquivos .xyz...")
+        
+        # Função para processar um arquivo
+        def process_file(file_name):
+            file_path = os.path.join(self.directory_path, file_name)
+            molecule_data = self.load_qm9_xyz(file_path)
+            
+            if not list_mols or molecule_data['natoms'] in list_mols:
+                return (
+                    (molecule_data['atoms'], molecule_data['coordinates']), 
+                    molecule_data['properties'],
+                    molecule_data['natoms']
+                )
+            return None
+            
+        # Processamento paralelo para arquivos grandes
+        if total_files > 1000:
+            with ThreadPoolExecutor(max_workers=min(os.cpu_count(), 8)) as executor:
+                results = list(tqdm(
+                    executor.map(process_file, xyz_files),
+                    total=total_files,
+                    desc="Carregando moléculas"
+                ))
+                
+            # Filtrar resultados None e separar dados
+            results = [r for r in results if r is not None]
+            coords = [r[0] for r in results]
+            prop = [r[1] for r in results]
+            natoms = [r[2] for r in results]
+        else:
+            # Processamento sequencial para conjuntos menores
+            for file_name in tqdm(xyz_files, desc="Carregando moléculas"):
+                result = process_file(file_name)
+                if result:
+                    coords.append(result[0])
+                    prop.append(result[1])
+                    natoms.append(result[2])
+        
+        # Salvar cache apenas se carregarmos todo o conjunto
+        if not list_mols:
+            try:
+                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                with open(cache_path, 'wb') as f:
+                    pickle.dump((coords, prop, natoms), f)
+                print(f"Cache do dataset salvo em: {cache_path}")
+            except Exception as e:
+                print(f"Aviso: Não foi possível salvar o cache: {e}")
+            
         return coords, prop, natoms
     
+    @staticmethod
     def dataset_to_numpy(dataset):
-        """Convert a dataset to NumPy arrays."""
+        """
+        Converte um dataset PyTorch para arrays NumPy.
+        
+        Parameters:
+        -----------
+        dataset : torch.utils.data.Dataset
+            Dataset a ser convertido
+            
+        Returns:
+        --------
+        tuple: (dados_numpy, alvos_numpy)
+        """
         all_data, all_targets = [], []
-        for data, target in dataset:
-            all_data.append(data.numpy())
-            all_targets.append(target.numpy())
-        return np.array(all_data), np.array(all_targets)
+        
+        # Usar loader para processar em batches para datasets grandes
+        if len(dataset) > 10000:
+            loader = DataLoader(dataset, batch_size=1000, num_workers=4)
+            for data, target in loader:
+                all_data.append(data.numpy())
+                all_targets.append(target.numpy())
+            return np.vstack(all_data), np.vstack(all_targets)
+        else:
+            # Método direto para datasets menores
+            for data, target in dataset:
+                all_data.append(data.numpy())
+                all_targets.append(target.numpy())
+            return np.array(all_data), np.array(all_targets)
 
-    def get_smiles(self):
-        """Get the SMILES representation of a molecule."""
+    def get_smiles(self, max_mols=None):
+        """
+        Obtém as representações SMILES para todas as moléculas com melhor desempenho.
+        
+        Parameters:
+        -----------
+        max_mols : int, optional
+            Número máximo de moléculas a processar (None para todas)
+            
+        Returns:
+        --------
+        list: Lista de strings SMILES
+        """
+        # Tentar carregar do cache
+        cache_path = os.path.join(os.getcwd(), "data", "qm9_smiles_cache.pkl")
+        if os.path.exists(cache_path) and max_mols is None:
+            try:
+                with open(cache_path, 'rb') as f:
+                    print(f"Carregando SMILES do cache: {cache_path}")
+                    return pickle.load(f)
+            except Exception as e:
+                print(f"Erro ao carregar cache de SMILES: {e}")
+        
         smiles = []
-        for file_name in sorted(os.listdir(self.directory_path)):
-            if file_name.endswith(".xyz"):
-                file_path = os.path.join(self.directory_path, file_name)
+        file_list = sorted(os.listdir(self.directory_path))
+        xyz_files = [f for f in file_list if f.endswith(".xyz")]
+        
+        if max_mols is not None:
+            xyz_files = xyz_files[:max_mols]
+        
+        # Função para extrair SMILES de um arquivo
+        def extract_smiles(file_path):
+            try:
                 with open(file_path, 'r') as f:
                     natoms = int(f.readline())
-                    f.readline()
-                    for i in range(natoms+1): f.readline()
-                    smiles.append(tuple(f.readline().strip().split('\t'))[0])
-        return smiles
+                    f.readline()  # Propriedades
+                    # Pular linhas de coordenadas
+                    for _ in range(natoms+1):
+                        f.readline()
+                    # Ler SMILES
+                    smiles_line = f.readline().strip().split('\t')
+                    return smiles_line[0] if smiles_line else ""
+            except Exception:
+                return ""
         
-    def load_smiles(self):
-        """Load all SMILES representations in the QM9 dataset."""    
-        list_smiles = []
-        i = 0
-        for file_name in sorted(os.listdir(self.directory_path)):
-            if i == 100: break
-            if file_name.endswith(".xyz"):
+        # Processamento paralelo para conjuntos grandes
+        if len(xyz_files) > 1000:
+            file_paths = [os.path.join(self.directory_path, f) for f in xyz_files]
+            with ThreadPoolExecutor(max_workers=min(os.cpu_count(), 8)) as executor:
+                smiles = list(tqdm(
+                    executor.map(extract_smiles, file_paths), 
+                    total=len(file_paths),
+                    desc="Extraindo SMILES"
+                ))
+        else:
+            # Processamento sequencial para conjuntos pequenos
+            for file_name in tqdm(xyz_files, desc="Extraindo SMILES"):
                 file_path = os.path.join(self.directory_path, file_name)
-                list_smiles.append(self.get_smiles(file_path))
-            i += 1
-        return list_smiles    
+                smiles.append(extract_smiles(file_path))
+        
+        # Salvar cache apenas se processarmos todo o conjunto
+        if max_mols is None:
+            try:
+                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                with open(cache_path, 'wb') as f:
+                    pickle.dump(smiles, f)
+                print(f"Cache de SMILES salvo em: {cache_path}")
+            except Exception as e:
+                print(f"Aviso: Não foi possível salvar o cache de SMILES: {e}")
+        
+        return smiles
     
-    def df_props(self):
-        """Create a DataFrame with the properties of the QM9 dataset."""
+    def df_props(self, include_smiles=False):
+        """
+        Cria um DataFrame com as propriedades do dataset QM9 com opção de incluir SMILES.
+        
+        Parameters:
+        -----------
+        include_smiles : bool, optional
+            Se True, inclui uma coluna com os SMILES
+            
+        Returns:
+        --------
+        pd.DataFrame: DataFrame com propriedades moleculares
+        """
         _, props, _ = self.load_qm9_dataset()
-        df = pd.DataFrame(props)
+        df = pd.DataFrame(props, columns=self.properties)
+        
+        if include_smiles:
+            df['SMILES'] = self.get_smiles()
+            
         df.reset_index(drop=True, inplace=True)
-        df.columns = self.properties
-        return df  
+        return df
     
-    def get_physicochemical_descriptors(self):
-        """Calcula um conjunto de descritores 2D e retorna features e índices válidos."""
+    def get_physicochemical_descriptors(self, n_jobs=4):
+        """
+        Calcula descritores físico-químicos 2D usando RDKit com processamento paralelo.
+        
+        Parameters:
+        -----------
+        n_jobs : int
+            Número de threads para processamento paralelo
+            
+        Returns:
+        --------
+        tuple: (pd.DataFrame de descritores, lista de índices válidos)
+        """
         smiles_list = self.get_smiles()
         mols = [Chem.MolFromSmiles(s) for s in smiles_list]
         
-        descriptors = []
-        valid_indices = []
         descriptor_names = ["MolWt", "MolLogP", "TPSA", "NumHDonors", "NumHAcceptors",
-                            "NumRotatableBonds", "NumAromaticRings", "BalabanJ", "qed"]
+                          "NumRotatableBonds", "NumAromaticRings", "BalabanJ", "qed"]
         
         funcs = {name: getattr(Descriptors, name) for name in descriptor_names}
-
-        for i, mol in enumerate(mols):
+        
+        # Processar uma molécula por vez
+        def process_molecule(mol_idx):
+            mol = mols[mol_idx]
             if mol:
-                desc_values = {name: func(mol) for name, func in funcs.items()}
-                descriptors.append(desc_values)
-                valid_indices.append(i)
+                try:
+                    desc_values = {name: func(mol) for name, func in funcs.items()}
+                    return mol_idx, desc_values
+                except Exception:
+                    return None
+            return None
+        
+        # Processar em paralelo
+        with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            results = list(executor.map(process_molecule, range(len(mols))))
+        
+        # Filtrar resultados None
+        results = [r for r in results if r is not None]
+        valid_indices = [r[0] for r in results]
+        descriptors = [r[1] for r in results]
         
         return pd.DataFrame(descriptors), valid_indices
-
-    def get_3d_descriptors(self):
-        """Calcula descritores 3D e retorna features e índices válidos."""
+    
+    def get_3d_descriptors(self, n_jobs=4, random_seed=42):
+        """
+        Calcula descritores 3D usando RDKit com melhor tratamento de erros e paralelização.
+        
+        Parameters:
+        -----------
+        n_jobs : int
+            Número de threads para processamento paralelo
+        random_seed : int
+            Semente para geração de conformações 3D
+            
+        Returns:
+        --------
+        tuple: (pd.DataFrame de descritores 3D, lista de índices válidos)
+        """
         smiles_list = self.get_smiles()
         mols = [Chem.MolFromSmiles(s) for s in smiles_list]
         
-        descriptors_3d = []
-        valid_indices = []
         descriptor_names = ["NPR1", "NPR2", "RadiusOfGyration", "Asphericity", "SpherocityIndex"]
         funcs = {name: getattr(Descriptors3D, name) for name in descriptor_names}
         
-        for i, mol in enumerate(mols):
-            if not mol: continue
+        # Processar uma molécula por vez com tratamento de erros
+        def process_molecule(mol_idx):
+            mol = mols[mol_idx]
+            if not mol:
+                return None
             
-            mol_with_hs = Chem.AddHs(mol)
-            conf_id = AllChem.EmbedMolecule(mol_with_hs, randomSeed=42)
-            
-            if conf_id >= 0:
+            try:
+                mol_with_hs = Chem.AddHs(mol)
+                conf_id = AllChem.EmbedMolecule(mol_with_hs, randomSeed=random_seed)
+                
+                if conf_id < 0:
+                    return None
+                    
+                # Otimização da conformação
                 AllChem.UFFOptimizeMolecule(mol_with_hs, confId=conf_id)
+                
+                # Calcular descritores 3D
                 desc_values = {name: func(mol_with_hs, confId=conf_id) for name, func in funcs.items()}
-                descriptors_3d.append(desc_values)
-                valid_indices.append(i)
-
-        return pd.DataFrame(descriptors_3d), valid_indices
-
-    def get_morgan_fingerprints(self, radius=3, n_bits=512):
-        """Calcula os Morgan Fingerprints (ECFP) e retorna features e índices válidos."""
-        smiles_list = self.get_smiles()
-        mols = [Chem.MolFromSmiles(s) for s in smiles_list]
-
-        fps = []
-        valid_indices = []
-        for i, mol in enumerate(mols):
-            if mol:
-                fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits=n_bits)
-                fps.append(np.array(list(fp)))
-                valid_indices.append(i)
-        return np.array(fps), valid_indices
+                
+                return mol_idx, desc_values
+            except Exception:
+                return None
         
-    def get_coulomb_matrix(self, n_atoms_max=29, list_mols=[]):
-        """Calcula a Matriz de Coulomb para as moléculas."""
+        # Processar em paralelo com barra de progresso
+        results = []
+        with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            futures = [executor.submit(process_molecule, i) for i in range(len(mols))]
+            
+            for future in tqdm(futures, desc="Calculando descritores 3D", total=len(futures)):
+                result = future.result()
+                if result:
+                    results.append(result)
+        
+        # Filtrar resultados válidos
+        valid_indices = [r[0] for r in results]
+        descriptors = [r[1] for r in results]
+        
+        print(f"Descritores 3D calculados para {len(valid_indices)} moléculas de {len(mols)}")
+        return pd.DataFrame(descriptors), valid_indices
+    
+    def get_morgan_fingerprints(self, radius=3, n_bits=512, n_jobs=4):
+        """
+        Calcula fingerprints Morgan (ECFP) com processamento paralelo otimizado.
+        
+        Parameters:
+        -----------
+        radius : int
+            Raio para o cálculo do fingerprint
+        n_bits : int
+            Número de bits para o fingerprint
+        n_jobs : int
+            Número de threads para processamento paralelo
+            
+        Returns:
+        --------
+        tuple: (np.ndarray de fingerprints, lista de índices válidos)
+        """
+        smiles_list = self.get_smiles()
+        
+        # Verificar cache
+        cache_path = os.path.join(os.getcwd(), "data", f"morgan_fp_r{radius}_n{n_bits}_cache.npz")
+        if os.path.exists(cache_path):
+            try:
+                data = np.load(cache_path)
+                print(f"Carregando fingerprints Morgan do cache: {cache_path}")
+                return data['fps'], data['valid_indices']
+            except Exception as e:
+                print(f"Erro ao carregar cache de fingerprints: {e}")
+        
+        # Processar uma molécula por vez
+        def process_molecule(mol_idx):
+            smiles = smiles_list[mol_idx]
+            try:
+                mol = Chem.MolFromSmiles(smiles)
+                if mol:
+                    fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits=n_bits)
+                    return mol_idx, np.array(list(fp))
+            except:
+                pass
+            return None
+        
+        # Processamento paralelo
+        results = []
+        with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            futures = [executor.submit(process_molecule, i) for i in range(len(smiles_list))]
+            
+            for future in tqdm(futures, desc="Calculando fingerprints Morgan", total=len(futures)):
+                result = future.result()
+                if result:
+                    results.append(result)
+        
+        # Organizar resultados
+        valid_indices = [r[0] for r in results]
+        fps = np.array([r[1] for r in results])
+        
+        # Salvar cache
+        try:
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            np.savez_compressed(cache_path, fps=fps, valid_indices=valid_indices)
+            print(f"Cache de fingerprints Morgan salvo em: {cache_path}")
+        except Exception as e:
+            print(f"Aviso: Não foi possível salvar o cache: {e}")
+        
+        return fps, valid_indices
+        
+    def get_coulomb_matrix(self, n_atoms_max=29, list_mols=None, use_cache=True):
+        """
+        Calcula a Matriz de Coulomb para as moléculas com gestão de memória melhorada.
+        
+        Parameters:
+        -----------
+        n_atoms_max : int
+            Número máximo de átomos a considerar
+        list_mols : list, optional
+            Lista de moléculas a considerar
+        use_cache : bool
+            Se True, utiliza cache para evitar recálculos
+            
+        Returns:
+        --------
+        np.ndarray: Matriz de Coulomb para cada molécula
+        """
+        if list_mols is None:
+            list_mols = []
+        
+        # Verificar cache
+        cache_key = f"coulomb_{n_atoms_max}_{hash(str(sorted(list_mols))) if list_mols else 'all'}"
+        cache_path = os.path.join(os.getcwd(), "data", f"{cache_key}_cache.npy")
+        
+        if use_cache and os.path.exists(cache_path):
+            try:
+                print(f"Carregando matrizes de Coulomb do cache: {cache_path}")
+                return np.load(cache_path)
+            except Exception as e:
+                print(f"Erro ao carregar cache: {e}")
+        
+        # Carregar coordenadas
         coords, _, natoms = self.load_qm9_dataset(list_mols=list_mols)
+        
+        # Converter para formato ASE
+        print("Preparando moléculas para cálculo de matrizes de Coulomb...")
         mols_ase = [Atoms(positions=xyz, symbols=symbols) for symbols, xyz in coords]
+        
+        # Criar gerador de matriz de Coulomb
+        print(f"Calculando matrizes de Coulomb (n_atoms_max={n_atoms_max})...")
         cm_generator = CoulombMatrix(n_atoms_max=n_atoms_max, permutation="eigenspectrum")
-        X = cm_generator.create(mols_ase)
+        
+        # Calcular em batches para gerenciar uso de memória
+        batch_size = 1000  # ajustar com base na memória disponível
+        num_batches = (len(mols_ase) + batch_size - 1) // batch_size
+        
+        all_matrices = []
+        for i in tqdm(range(num_batches), desc="Calculando matrizes por lotes"):
+            start_idx = i * batch_size
+            end_idx = min((i + 1) * batch_size, len(mols_ase))
+            batch_mols = mols_ase[start_idx:end_idx]
+            
+            # Calcular matrizes para o batch atual
+            batch_matrices = cm_generator.create(batch_mols)
+            all_matrices.append(batch_matrices)
+        
+        # Combinar resultados
+        X = np.vstack(all_matrices)
+        
+        # Salvar cache
+        if use_cache:
+            try:
+                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                np.save(cache_path, X)
+                print(f"Cache de matrizes de Coulomb salvo em: {cache_path}")
+            except Exception as e:
+                print(f"Aviso: Não foi possível salvar o cache: {e}")
+        
         return X
     
     class Data(Dataset):
@@ -658,60 +1017,178 @@ class qm9_tabular:
         return X, Y, props
 
     def normalize_data(self, X_normal, X_with_noise, Ys):
-        """Normaliza os dados usando StandardScaler."""
-        scaler_normal = StandardScaler()
-        self.scaler_normal = scaler_normal
-        X_normal_scaled = scaler_normal.fit_transform(X_normal)
+        """
+        Normaliza os dados usando StandardScaler com tratamento de erros melhorado.
         
-        scaler_noise = StandardScaler()
-        self.scaler_noise = scaler_noise
-        X_noise_scaled = scaler_noise.fit_transform(X_with_noise)
+        Parameters:
+        -----------
+        X_normal : np.ndarray
+            Matriz de features sem ruído
+        X_with_noise : np.ndarray
+            Matriz de features com ruído
+        Ys : np.ndarray
+            Valores alvo
+            
+        Returns:
+        --------
+        tuple: (X_normal_scaled, X_noise_scaled, Ys_scaled)
+        """
+        # Verificar entradas
+        for name, data in [("X_normal", X_normal), ("X_with_noise", X_with_noise), ("Ys", Ys)]:
+            if data is None or (hasattr(data, 'size') and data.size == 0):
+                raise ValueError(f"Dados de entrada {name} vazios ou inválidos")
         
-        target_scaler = StandardScaler()
-        self.target_scaler = target_scaler
-        Ys_scaled = target_scaler.fit_transform(Ys)
-        
-        return X_normal_scaled, X_noise_scaled, Ys_scaled
-
+        try:
+            # Normalizar features normais
+            scaler_normal = StandardScaler()
+            X_normal_scaled = scaler_normal.fit_transform(X_normal)
+            self.scaler_normal = scaler_normal
+            
+            # Normalizar features com ruído
+            scaler_noise = StandardScaler()
+            X_noise_scaled = scaler_noise.fit_transform(X_with_noise)
+            self.scaler_noise = scaler_noise
+            
+            # Normalizar alvos
+            target_scaler = StandardScaler()
+            Ys_scaled = target_scaler.fit_transform(Ys)
+            self.target_scaler = target_scaler
+            
+            # Verificar dados normalizados
+            for name, data in [("X_normal_scaled", X_normal_scaled), 
+                              ("X_noise_scaled", X_noise_scaled), 
+                              ("Ys_scaled", Ys_scaled)]:
+                if np.isnan(data).any() or np.isinf(data).any():
+                    print(f"Aviso: Valores NaN ou Inf detectados em {name} após normalização")
+                    # Substituir valores problemáticos
+                    data = np.nan_to_num(data)
+            
+            return X_normal_scaled, X_noise_scaled, Ys_scaled
+            
+        except Exception as e:
+            print(f"Erro durante normalização: {e}")
+            raise
+    
     def create_dataloaders(self, X_normal_scaled, X_noise_scaled, Ys_scaled, 
-                        split_ratio=[0.8, 0.1, 0.1], batch_size=256, n_noise=0):
-        """Cria os dataloaders a partir dos dados normalizados."""
+                         split_ratio=[0.8, 0.1, 0.1], batch_size=256, n_noise=0,
+                         shuffle_train=True, num_workers=4):
+        """
+        Cria DataLoaders a partir de dados normalizados com opções melhoradas.
+        
+        Parameters:
+        -----------
+        X_normal_scaled : np.ndarray
+            Matriz de features normalizadas sem ruído
+        X_noise_scaled : np.ndarray
+            Matriz de features normalizadas com ruído
+        Ys_scaled : np.ndarray
+            Valores alvo normalizados
+        split_ratio : list
+            Proporções para divisão dos dados [treino, validação, teste]
+        batch_size : int
+            Tamanho do lote
+        n_noise : int
+            Número de features de ruído (0 para não usar dados com ruído)
+        shuffle_train : bool
+            Se True, embaralha os dados de treino
+        num_workers : int
+            Número de workers para DataLoader
+            
+        Returns:
+        --------
+        tuple: DataLoaders para treino, validação e teste (com/sem ruído)
+        """
+        # Verificar entradas
+        if sum(split_ratio) != 1.0:
+            print(f"Aviso: As proporções de divisão ({split_ratio}) não somam 1.0. Normalizando.")
+            total = sum(split_ratio)
+            split_ratio = [r/total for r in split_ratio]
+            
+        # Criar dataset para dados normais
         dataset_normal = self.Data(X_normal_scaled, Ys_scaled)
         
+        # Calcular tamanhos das divisões
         dataset_size = len(dataset_normal)
         train_size = int(dataset_size * split_ratio[0])
         val_size = int(dataset_size * split_ratio[1])
+        test_size = dataset_size - train_size - val_size  # Para garantir que soma = total
         
+        # Verificar divisões
+        if train_size <= 0 or val_size <= 0 or test_size <= 0:
+            raise ValueError(f"Divisão inválida: train={train_size}, val={val_size}, test={test_size}")
+        
+        # Gerar índices de divisão
         all_indices = list(range(dataset_size))
-        train_indices = all_indices[:train_size]
-        val_indices = all_indices[train_size:train_size+val_size]
-        test_indices = all_indices[train_size+val_size:]
         
+        # Criar subsets
+        train_dataset_normal = torch.utils.data.Subset(dataset_normal, all_indices[:train_size])
+        val_dataset_normal = torch.utils.data.Subset(dataset_normal, all_indices[train_size:train_size+val_size])
+        test_dataset_normal = torch.utils.data.Subset(dataset_normal, all_indices[train_size+val_size:])
         
-        train_dataset_normal = torch.utils.data.Subset(dataset_normal, train_indices)
-        val_dataset_normal = torch.utils.data.Subset(dataset_normal, val_indices)
-        test_dataset_normal = torch.utils.data.Subset(dataset_normal, test_indices)
+        # Criar DataLoaders para dados normais
+        train_loader_normal = DataLoader(
+            train_dataset_normal, 
+            batch_size=batch_size, 
+            shuffle=shuffle_train, 
+            num_workers=num_workers,
+            pin_memory=torch.cuda.is_available()
+        )
         
-        train_loader_normal = DataLoader(train_dataset_normal, batch_size=batch_size, shuffle=False)
-        val_loader_normal = DataLoader(val_dataset_normal, batch_size=batch_size, shuffle=False)
-        test_loader_normal = DataLoader(test_dataset_normal, batch_size=batch_size, shuffle=False)
+        val_loader_normal = DataLoader(
+            val_dataset_normal, 
+            batch_size=batch_size, 
+            shuffle=False, 
+            num_workers=num_workers,
+            pin_memory=torch.cuda.is_available()
+        )
         
-        if n_noise > 0:
-
-            dataset_noise = self.Data(X_noise_scaled, Ys_scaled)
-            
-            train_dataset_noise = torch.utils.data.Subset(dataset_noise, train_indices)
-            val_dataset_noise = torch.utils.data.Subset(dataset_noise, val_indices)
-            test_dataset_noise = torch.utils.data.Subset(dataset_noise, test_indices)
-            
-            train_loader_noise = DataLoader(train_dataset_noise, batch_size=batch_size, shuffle=False)
-            val_loader_noise = DataLoader(val_dataset_noise, batch_size=batch_size, shuffle=False)
-            test_loader_noise = DataLoader(test_dataset_noise, batch_size=batch_size, shuffle=False)
+        test_loader_normal = DataLoader(
+            test_dataset_normal, 
+            batch_size=batch_size, 
+            shuffle=False, 
+            num_workers=num_workers,
+            pin_memory=torch.cuda.is_available()
+        )
         
-            return (train_loader_normal, val_loader_normal, test_loader_normal,
-                train_loader_noise, val_loader_noise, test_loader_noise)
+        # Se não houver ruído, retorna apenas loaders normais
+        if n_noise <= 0:
+            return train_loader_normal, val_loader_normal, test_loader_normal
         
-        return train_loader_normal, val_loader_normal, test_loader_normal
+        # Criar dataset e loaders para dados com ruído
+        dataset_noise = self.Data(X_noise_scaled, Ys_scaled)
+        
+        train_dataset_noise = torch.utils.data.Subset(dataset_noise, all_indices[:train_size])
+        val_dataset_noise = torch.utils.data.Subset(dataset_noise, all_indices[train_size:train_size+val_size])
+        test_dataset_noise = torch.utils.data.Subset(dataset_noise, all_indices[train_size+val_size:])
+        
+        train_loader_noise = DataLoader(
+            train_dataset_noise, 
+            batch_size=batch_size, 
+            shuffle=shuffle_train, 
+            num_workers=num_workers,
+            pin_memory=torch.cuda.is_available()
+        )
+        
+        val_loader_noise = DataLoader(
+            val_dataset_noise, 
+            batch_size=batch_size, 
+            shuffle=False, 
+            num_workers=num_workers,
+            pin_memory=torch.cuda.is_available()
+        )
+        
+        test_loader_noise = DataLoader(
+            test_dataset_noise, 
+            batch_size=batch_size, 
+            shuffle=False, 
+            num_workers=num_workers,
+            pin_memory=torch.cuda.is_available()
+        )
+        
+        return (
+            train_loader_normal, val_loader_normal, test_loader_normal,
+            train_loader_noise, val_loader_noise, test_loader_noise
+        )
 
     def get_paired_dataloaders(self, att_index=10, batch_size=256, descriptor_type='CM', 
                     list_mols=[], split_ratio=[0.8, 0.1, 0.1], seed=42, noise_type='gaussian', 
@@ -765,6 +1242,136 @@ class qm9_tabular:
             split_ratio=split_ratio, batch_size=batch_size, n_noise=n_noise)
         
         return dataloaders
+
+    def get_paired_dataloaders_tabular(self, att_index=10, batch_size=256, descriptor_type='CM', 
+                    list_mols=[], split_ratio=[0.8, 0.1, 0.1], seed=42, noise_type='gaussian', 
+                    noise_scale=1.0, n_noise=1, morgan_radius=3, morgan_nBits=512, add_noise=True,
+                    cache_descriptors=True):
+        """
+        Prepara dois conjuntos de DataLoaders (normal e com ruído) usando os descritores calculados,
+        com otimizações para melhor performance e uso de memória.
+        
+        Parameters:
+        -----------
+        att_index : int
+            Índice da propriedade a ser predita (default: 10)
+        batch_size : int
+            Tamanho do lote (default: 256)
+        descriptor_type : str
+            Tipo de descritor ('CM', 'Morgan', 'Physicochemical', '3D')
+        list_mols : list
+            Lista de moléculas a considerar (default: [])
+        split_ratio : list
+            Razões para divisão dos dados [treino, validação, teste]
+        seed : int
+            Semente para reprodutibilidade
+        noise_type : str
+            Tipo de ruído ('gaussian', 'uniform', 'binary')
+        noise_scale : float
+            Escala do ruído a ser adicionado
+        n_noise : int
+            Número de features de ruído a adicionar
+        morgan_radius : int
+            Raio para descritores Morgan
+        morgan_nBits : int
+            Número de bits para descritores Morgan
+        add_noise : bool
+            Se deve adicionar ruído aos dados
+        cache_descriptors : bool
+            Se deve armazenar em cache os descritores calculados
+            
+        Returns:
+        --------
+        tuple : Conjunto de DataLoaders organizados em tuplas:
+            (train_loader_normal, val_loader_normal, test_loader_normal,
+             train_loader_noise, val_loader_noise, test_loader_noise, is_noise_mask)
+        """
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+        
+        # Caminho para cache de descritores
+        cache_dir = os.path.join(os.getcwd(), "data", "descriptor_cache")
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_file = os.path.join(
+            cache_dir, 
+            f"{descriptor_type}_r{morgan_radius}_b{morgan_nBits}_a{att_index}_cache.npz"
+        )
+        
+        # Tentar carregar do cache se habilitado
+        if cache_descriptors and os.path.exists(cache_file):
+            print(f"Carregando descritores do cache: {cache_file}")
+            cached_data = np.load(cache_file, allow_pickle=True)
+            X_normal = cached_data['X_normal']
+            Ys = cached_data['Ys']
+            props = cached_data['props']
+        else:
+            # Calcular descritores
+            X_normal, Ys, props = self.compute_descriptors(
+                descriptor_type=descriptor_type, 
+                morgan_radius=morgan_radius,
+                morgan_nBits=morgan_nBits, 
+                att_index=att_index, 
+                list_mols=list_mols
+            )
+            
+            # Salvar no cache se habilitado
+            if cache_descriptors:
+                print(f"Salvando descritores em cache: {cache_file}")
+                np.savez_compressed(
+                    cache_file,
+                    X_normal=X_normal,
+                    Ys=Ys,
+                    props=props
+                )
+        
+        if not add_noise or n_noise == 0:
+            # Apenas dataloaders normais, sem ruído
+            X_normal_scaled, _, Ys_scaled = self.normalize_data(X_normal, X_normal, Ys)
+            dataloaders = self.create_dataloaders(
+                X_normal_scaled, X_normal_scaled, Ys_scaled, 
+                split_ratio=split_ratio, batch_size=batch_size, n_noise=0)
+            
+            # Retornar formato completo para compatibilidade
+            return (*dataloaders, None)  # Adiciona None como is_noise_mask
+
+        # Caso queira adicionar ruído
+        X_with_noise = X_normal.copy()
+        n_samples, n_features = X_with_noise.shape
+        
+        # Geração de ruído otimizada
+        if noise_type == 'gaussian':
+            noise_features = np.random.normal(0, noise_scale, size=(n_samples, n_noise))
+        elif noise_type == 'uniform':
+            noise_features = np.random.uniform(-noise_scale, noise_scale, size=(n_samples, n_noise))
+        elif noise_type == 'binary':
+            noise_features = np.random.choice([0, 1], size=(n_samples, n_noise))
+        else:
+            raise ValueError(f"Tipo de ruído desconhecido: {noise_type}")
+        
+        X_with_noise = np.hstack((X_with_noise, noise_features))
+        
+        # Máscara para identificar features de ruído
+        is_noise = np.zeros(X_with_noise.shape[1], dtype=bool)
+        is_noise[-n_noise:] = True
+        
+        # Embaralhar os dados de maneira consistente
+        indices = np.arange(len(props))
+        np.random.shuffle(indices)
+        self.shuffled_indices = indices
+
+        X_normal = X_normal[indices]
+        X_with_noise = X_with_noise[indices]
+        Ys = Ys[indices]
+        
+        # Normalizar os dados
+        X_normal_scaled, X_noise_scaled, Ys_scaled = self.normalize_data(X_normal, X_with_noise, Ys)
+        
+        # Criar dataloaders
+        dataloaders = self.create_dataloaders(
+            X_normal_scaled, X_noise_scaled, Ys_scaled, 
+            split_ratio=split_ratio, batch_size=batch_size, n_noise=n_noise)
+        
+        return (*dataloaders, is_noise)
 
     def get_smiles_by_dataloader_idx(self, idx, dataset_type='test'):
         """Recupera o SMILES correspondente a um índice em um dataloader específico."""

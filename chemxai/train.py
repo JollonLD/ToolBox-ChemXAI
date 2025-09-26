@@ -12,16 +12,24 @@ from torch_geometric.loader import DataLoader
 from models import GCN, MLP
 from data import graph_datasets, qm9_tabular
 
-def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, batch_size=32, n_noise=3, descriptor_type='Morgan'):
+def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, 
+                batch_size=32, n_noise=3, descriptor_type='Morgan', cache_descriptors=True,
+                num_workers=4, morgan_radius=2, morgan_nBits=512):
     """
-    Função para treinar um modelo MLP.
+    Função para treinar um modelo MLP com dados moleculares usando descritores otimizados.
 
     Args:
-        model (nn.Module): O modelo MLP a ser treinado.
-        train_loader (torch.utils.data.DataLoader): DataLoader para o conjunto de treinamento.
-        val_loader (torch.utils.data.DataLoader): DataLoader para o conjunto de validação.
-        epochs (int): Número de épocas de treinamento.
-        device (torch.device): Dispositivo para o qual os tensores serão movidos ('cuda' ou 'cpu').
+        att_index (int): Índice da propriedade a ser predita (default: 10)
+        epochs (int): Número de épocas de treinamento (default: 10)
+        layers (list): Lista de dimensões das camadas ocultas (default: [64, 32])
+        learning_rate (float): Taxa de aprendizado (default: 1e-3)
+        batch_size (int): Tamanho do lote (default: 32)
+        n_noise (int): Número de features de ruído a adicionar (default: 3)
+        descriptor_type (str): Tipo de descritor ('CM', 'Morgan', 'Physicochemical', '3D') (default: 'Morgan')
+        cache_descriptors (bool): Se deve usar cache para descritores (default: True)
+        num_workers (int): Número de workers para carregamento de dados (default: 4)
+        morgan_radius (int): Raio para fingerprints Morgan (default: 2)
+        morgan_nBits (int): Número de bits para fingerprints Morgan (default: 512)
 
     Returns:
         list: Uma lista de tuplas (epoch, train_loss, val_loss) para cada época.
@@ -37,32 +45,36 @@ def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, 
     else:
         path = models_dir + '/mlp_qm9_' + descriptor_type + '.pth'
 
-    # Carregar os dados
+    # Carregar os dados usando a função otimizada
     qm9 = qm9_tabular()
     if n_noise > 0:
-        _, _, _, train_loader, val_loader, test_loader, _ = qm9.get_paired_dataloaders(
+        train_loader, val_loader, test_loader, train_loader_noise, val_loader_noise, test_loader_noise, is_noise = qm9.get_paired_dataloaders_tabular(
             att_index=att_index,           # Índice da propriedade a ser prevista
             batch_size=batch_size,         # Tamanho do lote
             descriptor_type=descriptor_type,          
             list_mols=[],                  # Lista vazia = todas as moléculas
             n_noise=n_noise,
-            morgan_radius=2, morgan_nBits=512             
+            morgan_radius=morgan_radius, 
+            morgan_nBits=morgan_nBits,
+            cache_descriptors=cache_descriptors
         )
     else:    
-        train_loader, val_loader, test_loader = qm9.get_paired_dataloaders(
+        train_loader, val_loader, test_loader, *_ = qm9.get_paired_dataloaders_tabular(
             att_index=att_index,           # Índice da propriedade a ser prevista
             batch_size=batch_size,         # Tamanho do lote
-            descriptor_type=descriptor_type,          # Usar Coulomb Matrix como descritor
+            descriptor_type=descriptor_type,  
             list_mols=[],                   # Lista vazia = todas as moléculas
             n_noise=n_noise,
-            morgan_radius=2, morgan_nBits=512
+            morgan_radius=morgan_radius, 
+            morgan_nBits=morgan_nBits,
+            cache_descriptors=cache_descriptors
         )
 
     # Definir o dispositivo
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Usando dispositivo: {device}')
 
-    # Obter a dimensão da entrada (tamanho do descritor CM)
+    # Obter a dimensão da entrada (tamanho do descritor)
     input_dim = next(iter(train_loader))[0].shape[1]
     output_dim = 1  # Previsão de uma única propriedade
 
@@ -276,591 +288,215 @@ def train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay
 
     return history
 
-# Update the create_dataloaders_from_augmented_graphs function
-def create_dataloaders_from_augmented_graphs(augmented_graphs, batch_size=32, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, seed=42):
+def main():
     """
-    Separa os grafos aumentados em conjuntos de treino, validação e teste,
-    e cria dataloaders para cada conjunto.
+    Treina 6 modelos MLP com diferentes configurações:
+    - 3 modelos para att_index=10 (com diferentes arquiteturas)
+    - 3 modelos para att_index=0 (com diferentes arquiteturas)
+    - Todos com n_noise=0 (sem ruído)
+    - 30 épocas para todos
     """
-    # Verificar se as proporções somam 1
-    assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-6, "As proporções devem somar 1"
     
-    # Definir semente para reprodutibilidade
-    torch.manual_seed(seed)
-    np.random.seed(seed)
+    print("="*80)
+    print("TREINANDO 6 MODELOS MLP COM DIFERENTES CONFIGURAÇÕES")
+    print("="*80)
     
-    # Calcular o número de amostras para cada conjunto
-    num_samples = len(augmented_graphs)
-    num_train = int(train_ratio * num_samples)
-    num_val = int(val_ratio * num_samples)
-    num_test = num_samples - num_train - num_val
+    # Configurações dos modelos
+    models_config = [
+        # Modelos para att_index=10
+        {
+            'name': 'MLP_att10_small',
+            'att_index': 10,
+            'layers': [32, 16],
+            'descriptor_type': 'Morgan',
+            'cache_descriptors': True
+        },
+        {
+            'name': 'MLP_att10_medium', 
+            'att_index': 10,
+            'layers': [64, 32, 16],
+            'descriptor_type': 'CM',
+            'cache_descriptors': True
+        },
+        {
+            'name': 'MLP_att10_large',
+            'att_index': 10, 
+            'layers': [128, 64, 32],
+            'descriptor_type': 'Physicochemical',
+            'cache_descriptors': True
+        },
+        
+        # Modelos para att_index=0
+        {
+            'name': 'MLP_att0_small',
+            'att_index': 0,
+            'layers': [32, 16], 
+            'descriptor_type': 'Morgan',
+            'cache_descriptors': True
+        },
+        {
+            'name': 'MLP_att0_medium',
+            'att_index': 0,
+            'layers': [64, 32, 16],
+            'descriptor_type': 'CM',
+            'cache_descriptors': True
+        },
+        {
+            'name': 'MLP_att0_large',
+            'att_index': 0,
+            'layers': [128, 64, 32],
+            'descriptor_type': 'Physicochemical',
+            'cache_descriptors': True
+        }
+    ]
     
-    # Embaralhar índices
-    indices = torch.randperm(num_samples).tolist()
-    train_indices = indices[:num_train]
-    val_indices = indices[num_train:num_train+num_val]
-    test_indices = indices[num_train+num_val:]
+    # Parâmetros fixos para todos os modelos
+    epochs = 30
+    n_noise = 0  # Sem ruído
+    learning_rate = 1e-3
+    batch_size = 32
+    num_workers = 4  # Utilizar processamento paralelo
     
-    # Criar subconjuntos
-    train_dataset = [augmented_graphs[i] for i in train_indices]
-    val_dataset = [augmented_graphs[i] for i in val_indices]
-    test_dataset = [augmented_graphs[i] for i in test_indices]
+    results = {}
     
-    # Criar dataloaders com o collate function personalizado
-    train_loader = DataLoader(
-        train_dataset, 
-        batch_size=batch_size, 
-        shuffle=True, 
-        drop_last=True,
-        exclude_keys = ['smiles', 'augmentation_method', 'parent_idx']
-    )
-    val_loader = DataLoader(
-        val_dataset, 
-        batch_size=batch_size, 
-        shuffle=False,
-        exclude_keys = ['smiles', 'augmentation_method', 'parent_idx']
-    )
-    test_loader = DataLoader(
-        test_dataset, 
-        batch_size=batch_size, 
-        shuffle=False,
-        exclude_keys = ['smiles', 'augmentation_method', 'parent_idx']
-    )
+    print(f"Parâmetros fixos:")
+    print(f"  Épocas: {epochs}")
+    print(f"  Ruído: {n_noise} (sem ruído)")
+    print(f"  Learning Rate: {learning_rate}")
+    print(f"  Batch Size: {batch_size}")
+    print(f"  Num Workers: {num_workers}")
+    print()
     
-    print(f"Dataloaders criados: {len(train_dataset)} treino, {len(val_dataset)} validação, {len(test_dataset)} teste")
-    
-    return train_loader, val_loader, test_loader
-
-def rebuild_graph_dataset(augmented_graphs):
-    """Create a new dataset with consistently structured graphs."""
-    from torch_geometric.data import Data
-    
-    new_graphs = []
-    
-    for i, graph in enumerate(augmented_graphs):
+    for i, config in enumerate(models_config, 1):
+        print(f"[{i}/6] Treinando {config['name']}")
+        print(f"  att_index: {config['att_index']}")
+        print(f"  layers: {config['layers']}")
+        print(f"  descriptor_type: {config['descriptor_type']}")
+        print(f"  cache_descriptors: {config['cache_descriptors']}")
+        print("-" * 50)
+        
         try:
-            # Extract essential attributes
-            x = graph.x.clone() if hasattr(graph, 'x') and graph.x is not None else None
-            edge_index = graph.edge_index.clone() if hasattr(graph, 'edge_index') and graph.edge_index is not None else None
-            edge_attr = graph.edge_attr.clone() if hasattr(graph, 'edge_attr') and graph.edge_attr is not None else None
-            
-            # For y, handle both tensor and primitive values
-            y = None
-            if hasattr(graph, 'y') and graph.y is not None:
-                if torch.is_tensor(graph.y):
-                    y = graph.y.clone()
-                else:
-                    y = graph.y  # Just copy the primitive value
-            
-            # Calculate num_nodes
-            num_nodes = None
-            if hasattr(graph, 'x') and graph.x is not None:
-                num_nodes = graph.x.size(0)
-            elif hasattr(graph, 'edge_index') and graph.edge_index is not None and graph.edge_index.size(1) > 0:
-                num_nodes = int(graph.edge_index.max().item()) + 1
-                
-            # Create a new Data object with only essential attributes
-            new_graph = Data(
-                x=x,
-                edge_index=edge_index,
-                edge_attr=edge_attr,
-                y=y,
-                num_nodes=num_nodes
+            # Treinar o modelo
+            history = train_mlp_qm9(
+                att_index=config['att_index'],
+                epochs=epochs,
+                layers=config['layers'],
+                learning_rate=learning_rate,
+                batch_size=batch_size,
+                n_noise=n_noise,
+                descriptor_type=config['descriptor_type'],
+                cache_descriptors=config['cache_descriptors'],
+                num_workers=num_workers
             )
             
-            new_graphs.append(new_graph)
+            # Armazenar resultados
+            results[config['name']] = {
+                'config': config,
+                'history': history,
+                'final_train_loss': history[-1][1] if history else None,
+                'final_val_loss': history[-1][2] if history else None,
+                'status': 'success'
+            }
+            
+            print(f"✓ {config['name']} treinado com sucesso!")
+            if history:
+                print(f"  Loss final treino: {history[-1][1]:.4f}")
+                print(f"  Loss final validação: {history[-1][2]:.4f}")
             
         except Exception as e:
-            print(f"Error processing graph {i}: {e}")
-            continue
-            
-    print(f"Successfully rebuilt {len(new_graphs)} out of {len(augmented_graphs)} graphs")
-    return new_graphs
-
-def normalize_features(graphs):
-    """Normalize node features to have zero mean and unit variance."""
-    all_features = []
-    for graph in graphs:
-        if hasattr(graph, 'x') and graph.x is not None:
-            all_features.append(graph.x)
-    
-    if not all_features:
-        return graphs
-    
-    all_features_tensor = torch.cat(all_features, dim=0)
-    mean = all_features_tensor.mean(dim=0)
-    std = all_features_tensor.std(dim=0)
-    std[std < 1e-5] = 1.0  # Prevent division by zero
-    
-    for graph in graphs:
-        if hasattr(graph, 'x') and graph.x is not None:
-            graph.x = (graph.x - mean) / std
-    
-    return graphs
-
-# And normalize target values
-def normalize_targets(graphs):
-    """Normalize target values."""
-    all_targets = []
-    for graph in graphs:
-        if hasattr(graph, 'y') and graph.y is not None:
-            if torch.is_tensor(graph.y):
-                all_targets.append(graph.y)
-            else:
-                # Handle scalar values
-                all_targets.append(torch.tensor([graph.y], dtype=torch.float))
-    
-    if not all_targets:
-        return graphs, None, None
-    
-    all_targets_tensor = torch.cat([t.view(1) for t in all_targets], dim=0)
-    mean = all_targets_tensor.mean()
-    std = all_targets_tensor.std()
-    if std < 1e-5:
-        std = 1.0  # Prevent division by zero
-    
-    for graph in graphs:
-        if hasattr(graph, 'y') and graph.y is not None:
-            if torch.is_tensor(graph.y):
-                graph.y = (graph.y - mean) / std
-            else:
-                graph.y = (graph.y - mean.item()) / std.item()
-    
-    return graphs, mean.item(), std.item()
-
-def get_test_loader(test_loader):
-    return test_loader
-
-def train_gcn_pcqm4(epochs=20, batch_size=32, lr=1e-3, weight_decay=1e-4, n_noise=0):
-
-    dirname = os.getcwd()
-    models_dir = os.path.join(dirname, 'models')
-    os.makedirs(models_dir, exist_ok=True)
-    print(f'Diretório criado: {models_dir}')
-    
-    if n_noise > 0:
-        path = models_dir + '/gcn_pcqm4_noise.pth'
-    else:
-        path = models_dir + '/gcn_pcqm4.pth'
-
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Usando dispositivo: {device}")
-
-    gd = graph_datasets()
-
-    # 1. Carregar e transformar o dataset
-    if n_noise > 0:
-        dataset = gd.prepare_data_graph_noise('PCQM4')
-    else:
-        dataset = gd.prepare_data_graph('PCQM4')
-
-    dataset = dataset[:20000]
-    dataset = [data for data in dataset]  
-
-    # 3. Loaders com drop_last para evitar batches incompletos
-    train_loader, val_loader, test_loader = gd.get_paired_dataloaders(dataset_name='PCQM4', batch_size=batch_size)
-    
-    mol = next(iter(train_loader))
-    print(mol[0].num_nodes)
-
-    model = GCN(num_features=dataset[0].x.shape[1]).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    criterion = nn.MSELoss()
-
-    # 4. Treinamento
-    best_val_loss = float('inf')
-    history = []
-
-    for epoch in range(1, epochs + 1):
-        model.train()
-        total_loss = 0
-        for data in train_loader:
-            # print(data)
-            data = data.to(device)
-            optimizer.zero_grad()
-            pred = model(data.x, data.edge_index, data.batch).view(-1)
-            target = data.y.view(-1)
-            min_size = min(pred.size(0), target.size(0))
-            if pred.size(0) != target.size(0):
-                pred = pred[:min_size]
-                target = target[:min_size]
-            loss = criterion(pred, target)
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-            optimizer.step()
-            total_loss += loss.item() * data.num_graphs
-
-        avg_train_loss = total_loss / len(train_loader.dataset)
-
-        # Validação
-        model.eval()
-        val_loss = 0
-        with torch.no_grad():
-            for data in val_loader:
-                data = data.to(device)
-                pred = model(data.x, data.edge_index, data.batch).view(-1)
-                target = data.y.view(-1)
-                # Garantir que pred e target tenham o mesmo tamanho
-                min_size = min(pred.size(0), target.size(0))
-                if pred.size(0) != target.size(0):
-                    pred = pred[:min_size]
-                    target = target[:min_size]
-                loss = criterion(pred, target)
-                val_loss += loss.item() * data.num_graphs
-
-        avg_val_loss = val_loss / len(val_loader.dataset)
-
-        history.append((epoch + 1, avg_train_loss, avg_val_loss))
-
-        if avg_val_loss < best_val_loss:
-            best_val_loss = avg_val_loss
-            torch.save(model.state_dict(), path)
-
-        print(f"[{epoch:02d}/{epochs}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
-
-    from sklearn.metrics import r2_score
-
-    # 5. Avaliação final
-    model.load_state_dict(torch.load(path))
-    model.eval()
-    final_val_loss = 0
-    all_preds = []
-    all_targets = []
-
-    with torch.no_grad():
-        for data in test_loader:
-            data = data.to(device)
-            pred = model(data.x, data.edge_index, data.batch).view(-1)
-            target = data.y.view(-1)
-            final_val_loss += criterion(pred, target).item() * data.num_graphs
-            
-            # Collect predictions and targets for R² calculation
-            all_preds.append(pred.cpu())
-            all_targets.append(target.cpu())
-
-    final_val_loss /= len(test_loader.dataset)
-
-    # Convert lists to tensors
-    all_preds = torch.cat(all_preds, dim=0).numpy()
-    all_targets = torch.cat(all_targets, dim=0).numpy()
-
-    # Calculate R²
-    r2 = r2_score(all_targets, all_preds)
-
-    print(f"\nMSE final na validação: {final_val_loss:.4f}")
-    print(f"R²: {r2:.4f}")
-    print(f"RMSE final na validação: {final_val_loss ** 0.5:.4f}")
-
-    return test_loader, history
-
-def train_all_mlp_descriptors(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, batch_size=32):
-    """
-    Treina modelos MLP para todos os tipos de descritores disponíveis, com e sem ruído.
-    
-    Args:
-        att_index (int): Índice da propriedade a ser predita
-        epochs (int): Número de épocas de treinamento
-        layers (list): Arquitetura das camadas ocultas
-        learning_rate (float): Taxa de aprendizado
-        batch_size (int): Tamanho do batch
-    
-    Returns:
-        dict: Dicionário com os históricos de treinamento
-    """
-    descriptor_types = ['CM', 'Morgan', 'Physicochemical', '3D']
-    noise_configs = [0, 3]  # sem ruído e com 3 features de ruído
-    
-    results = {}
-    
-    print("="*60)
-    print("TREINANDO MODELOS MLP PARA TODOS OS DESCRITORES")
-    print("="*60)
-    
-    for descriptor_type in descriptor_types:
-        print(f"\n--- Treinando com descritor: {descriptor_type} ---")
+            print(f"✗ Erro no treinamento de {config['name']}: {e}")
+            results[config['name']] = {
+                'config': config,
+                'error': str(e),
+                'status': 'failed'
+            }
         
-        for n_noise in noise_configs:
-            noise_label = "com_ruido" if n_noise > 0 else "sem_ruido"
-            model_key = f"MLP_{descriptor_type}_{noise_label}"
-            
-            print(f"\nConfiguracao: {model_key}")
-            print(f"Epocas: {epochs}, Batch: {batch_size}, LR: {learning_rate}")
-            print(f"Ruido: {n_noise} features")
-            
-            try:
-                history = train_mlp_qm9(
-                    att_index=att_index,
-                    epochs=epochs,
-                    layers=layers,
-                    learning_rate=learning_rate,
-                    batch_size=batch_size,
-                    n_noise=n_noise,
-                    descriptor_type=descriptor_type
-                )
-                
-                results[model_key] = {
-                    'history': history,
-                    'descriptor_type': descriptor_type,
-                    'n_noise': n_noise,
-                    'final_train_loss': history[-1][1] if history else None,
-                    'final_val_loss': history[-1][2] if history else None
-                }
-                
-                print(f"✓ Treinamento concluído para {model_key}")
-                if history:
-                    print(f"  Loss final treino: {history[-1][1]:.4f}")
-                    print(f"  Loss final validação: {history[-1][2]:.4f}")
-                
-            except Exception as e:
-                print(f"✗ Erro no treinamento de {model_key}: {e}")
-                results[model_key] = {'error': str(e)}
+        print()
     
-    print("\n" + "="*60)
-    print("RESUMO DOS TREINAMENTOS MLP")
-    print("="*60)
-    
-    for model_key, result in results.items():
-        if 'error' in result:
-            print(f"{model_key}: ERRO - {result['error']}")
-        else:
-            print(f"{model_key}: OK - Val Loss: {result['final_val_loss']:.4f}")
-    
-    return results
-
-def train_all_gcn_datasets(target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay=1e-4):
-    """
-    Treina modelos GCN para todos os datasets disponíveis (QM9 e PCQM4), com e sem ruído.
-    
-    Args:
-        target_idx (int): Índice da propriedade a ser predita
-        epochs (int): Número de épocas de treinamento
-        batch_size (int): Tamanho do batch
-        lr (float): Taxa de aprendizado
-        weight_decay (float): Regularização L2
-    
-    Returns:
-        dict: Dicionário com os históricos de treinamento
-    """
-    datasets = ['QM9', 'PCQM4']
-    noise_configs = [0, 1]  # sem ruído e com ruído
-    
-    results = {}
-    
-    print("="*60)
-    print("TREINANDO MODELOS GCN PARA TODOS OS DATASETS")
-    print("="*60)
-    
-    for dataset_name in datasets:
-        print(f"\n--- Treinando com dataset: {dataset_name} ---")
-        
-        for n_noise in noise_configs:
-            noise_label = "com_ruido" if n_noise > 0 else "sem_ruido"
-            model_key = f"GCN_{dataset_name}_{noise_label}"
-            
-            print(f"\nConfiguracao: {model_key}")
-            print(f"Epocas: {epochs}, Batch: {batch_size}, LR: {lr}")
-            print(f"Ruido: {'Sim' if n_noise > 0 else 'Não'}")
-            
-            try:
-                if dataset_name == 'QM9':
-                    history = train_gcn_qm9(
-                        target_idx=target_idx,
-                        epochs=epochs,
-                        batch_size=batch_size,
-                        lr=lr,
-                        weight_decay=weight_decay,
-                        n_noise=n_noise
-                    )
-                elif dataset_name == 'PCQM4':
-                    test_loader, history = train_gcn_pcqm4(
-                        epochs=epochs,
-                        batch_size=batch_size,
-                        lr=lr,
-                        weight_decay=weight_decay,
-                        n_noise=n_noise
-                    )
-                
-                results[model_key] = {
-                    'history': history,
-                    'dataset': dataset_name,
-                    'n_noise': n_noise,
-                    'final_train_loss': history[-1][1] if history else None,
-                    'final_val_loss': history[-1][2] if history else None
-                }
-                
-                print(f"✓ Treinamento concluído para {model_key}")
-                if history:
-                    print(f"  Loss final treino: {history[-1][1]:.4f}")
-                    print(f"  Loss final validação: {history[-1][2]:.4f}")
-                
-            except Exception as e:
-                print(f"✗ Erro no treinamento de {model_key}: {e}")
-                results[model_key] = {'error': str(e)}
-    
-    print("\n" + "="*60)
-    print("RESUMO DOS TREINAMENTOS GCN")
-    print("="*60)
-    
-    for model_key, result in results.items():
-        if 'error' in result:
-            print(f"{model_key}: ERRO - {result['error']}")
-        else:
-            print(f"{model_key}: OK - Val Loss: {result['final_val_loss']:.4f}")
-    
-    return results
-
-def train_all_models_comprehensive(
-    att_index=10, 
-    target_idx=3,
-    epochs_mlp=10, 
-    epochs_gcn=10,
-    mlp_layers=[64, 32],
-    learning_rate_mlp=1e-3,
-    learning_rate_gcn=1e-3,
-    batch_size=32,
-    weight_decay=1e-4
-):
-    """
-    Função principal que treina TODOS os modelos disponíveis:
-    - MLP para todos os descritores tabulares (CM, Morgan, Physicochemical, 3D)
-    - GCN para todos os datasets gráficos (QM9, PCQM4)
-    Tanto com quanto sem ruído para todos os casos.
-    
-    Args:
-        att_index (int): Índice da propriedade para modelos MLP
-        target_idx (int): Índice da propriedade para modelos GCN
-        epochs_mlp (int): Épocas para modelos MLP
-        epochs_gcn (int): Épocas para modelos GCN
-        mlp_layers (list): Arquitetura MLP
-        learning_rate_mlp (float): LR para MLP
-        learning_rate_gcn (float): LR para GCN
-        batch_size (int): Tamanho do batch
-        weight_decay (float): Regularização L2 para GCN
-    
-    Returns:
-        dict: Resultados completos de todos os treinamentos
-    """
+    # Resumo final
     print("="*80)
-    print("TREINAMENTO ABRANGENTE DE TODOS OS MODELOS")
+    print("RESUMO DOS TREINAMENTOS")
     print("="*80)
-    print(f"Configurações:")
-    print(f"  MLP: {epochs_mlp} épocas, LR={learning_rate_mlp}, layers={mlp_layers}")
-    print(f"  GCN: {epochs_gcn} épocas, LR={learning_rate_gcn}, weight_decay={weight_decay}")
-    print(f"  Batch size: {batch_size}")
-    print(f"  Propriedade MLP (att_index): {att_index}")
-    print(f"  Propriedade GCN (target_idx): {target_idx}")
     
-    all_results = {}
-    
-    # 1. Treinar todos os modelos MLP
-    print(f"\n{'='*50}")
-    print("FASE 1: MODELOS MLP (DESCRITORES TABULARES)")
-    print(f"{'='*50}")
-    
-    mlp_results = train_all_mlp_descriptors(
-        att_index=att_index,
-        epochs=epochs_mlp,
-        layers=mlp_layers,
-        learning_rate=learning_rate_mlp,
-        batch_size=batch_size
-    )
-    
-    all_results['MLP'] = mlp_results
-    
-    # 2. Treinar todos os modelos GCN
-    print(f"\n{'='*50}")
-    print("FASE 2: MODELOS GCN (DADOS GRÁFICOS)")
-    print(f"{'='*50}")
-    
-    gcn_results = train_all_gcn_datasets(
-        target_idx=target_idx,
-        epochs=epochs_gcn,
-        batch_size=batch_size,
-        lr=learning_rate_gcn,
-        weight_decay=weight_decay
-    )
-    
-    all_results['GCN'] = gcn_results
-    
-    # 3. Resumo final
-    print(f"\n{'='*80}")
-    print("RESUMO FINAL DE TODOS OS TREINAMENTOS")
-    print(f"{'='*80}")
-    
-    total_models = 0
     successful_models = 0
-    failed_models = []
+    failed_models = 0
     
-    for model_type, results in all_results.items():
-        print(f"\n--- {model_type} ---")
-        for model_key, result in results.items():
-            total_models += 1
-            if 'error' in result:
-                print(f"  ✗ {model_key}: {result['error']}")
-                failed_models.append(model_key)
-            else:
-                print(f"  ✓ {model_key}: Val Loss = {result['final_val_loss']:.4f}")
-                successful_models += 1
+    print("MODELOS PARA att_index=10:")
+    for name in ['MLP_att10_small', 'MLP_att10_medium', 'MLP_att10_large']:
+        result = results[name]
+        if result['status'] == 'success':
+            print(f"  ✓ {name}: Val Loss = {result['final_val_loss']:.4f}")
+            print(f"    Arquitetura: {result['config']['layers']}")
+            print(f"    Descritor: {result['config']['descriptor_type']}")
+            successful_models += 1
+        else:
+            print(f"  ✗ {name}: FALHOU - {result['error']}")
+            failed_models += 1
+        print()
     
-    print(f"\n{'='*80}")
+    print("MODELOS PARA att_index=0:")
+    for name in ['MLP_att0_small', 'MLP_att0_medium', 'MLP_att0_large']:
+        result = results[name]
+        if result['status'] == 'success':
+            print(f"  ✓ {name}: Val Loss = {result['final_val_loss']:.4f}")
+            print(f"    Arquitetura: {result['config']['layers']}")
+            print(f"    Descritor: {result['config']['descriptor_type']}")
+            successful_models += 1
+        else:
+            print(f"  ✗ {name}: FALHOU - {result['error']}")
+            failed_models += 1
+        print()
+    
+    print("-" * 80)
     print(f"ESTATÍSTICAS FINAIS:")
-    print(f"  Total de modelos: {total_models}")
+    print(f"  Total de modelos: 6")
     print(f"  Sucessos: {successful_models}")
-    print(f"  Falhas: {len(failed_models)}")
-    print(f"  Taxa de sucesso: {successful_models/total_models*100:.1f}%")
+    print(f"  Falhas: {failed_models}")
+    print(f"  Taxa de sucesso: {successful_models/6*100:.1f}%")
     
-    if failed_models:
-        print(f"\nModelos que falharam:")
-        for model in failed_models:
-            print(f"  - {model}")
+    # Encontrar o melhor modelo para cada att_index
+    print("\nMELHORES MODELOS:")
+    
+    # Melhor para att_index=10
+    att10_models = {name: result for name, result in results.items() 
+                    if name.startswith('MLP_att10_') and result['status'] == 'success'}
+    if att10_models:
+        best_att10 = min(att10_models.items(), key=lambda x: x[1]['final_val_loss'])
+        print(f"  att_index=10: {best_att10[0]} (Val Loss: {best_att10[1]['final_val_loss']:.4f})")
+    
+    # Melhor para att_index=0  
+    att0_models = {name: result for name, result in results.items()
+                   if name.startswith('MLP_att0_') and result['status'] == 'success'}
+    if att0_models:
+        best_att0 = min(att0_models.items(), key=lambda x: x[1]['final_val_loss'])
+        print(f"  att_index=0:  {best_att0[0]} (Val Loss: {best_att0[1]['final_val_loss']:.4f})")
     
     # Salvar resultados
     results_dir = os.path.join(os.getcwd(), 'training_results')
     os.makedirs(results_dir, exist_ok=True)
     
     import json
-    results_file = os.path.join(results_dir, 'comprehensive_training_results.json')
+    results_file = os.path.join(results_dir, 'six_models_training_results.json')
     
     # Converter resultados para formato serializável
     serializable_results = {}
-    for model_type, results in all_results.items():
-        serializable_results[model_type] = {}
-        for model_key, result in results.items():
-            if 'history' in result:
-                # Converter history para formato serializável
-                result['history'] = [(int(epoch), float(train_loss), float(val_loss)) 
-                                   for epoch, train_loss, val_loss in result['history']]
-            serializable_results[model_type][model_key] = result
+    for name, result in results.items():
+        serializable_results[name] = result.copy()
+        if 'history' in result and result['history']:
+            # Converter history para formato serializável
+            serializable_results[name]['history'] = [
+                (int(epoch), float(train_loss), float(val_loss)) 
+                for epoch, train_loss, val_loss in result['history']
+            ]
     
     with open(results_file, 'w') as f:
         json.dump(serializable_results, f, indent=2)
     
     print(f"\nResultados salvos em: {results_file}")
+    print("="*80)
     
-    return all_results
-
-def quick_training_test():
-    """
-    Função de teste rápido com poucas épocas para verificar se tudo funciona.
-    """
-    print("EXECUTANDO TESTE RÁPIDO DE TREINAMENTO")
-    print("(Poucas épocas apenas para verificar funcionamento)")
-    
-    return train_all_models_comprehensive(
-        att_index=10,
-        target_idx=3,
-        epochs_mlp=2,  # Poucas épocas para teste
-        epochs_gcn=2,
-        mlp_layers=[32, 16],  # Arquitetura menor para teste
-        learning_rate_mlp=1e-3,
-        learning_rate_gcn=1e-3,
-        batch_size=64,
-        weight_decay=1e-4
-    )
+    return results
 
 if __name__ == '__main__':
-    # Para executar o treinamento completo, descomente a linha abaixo:
-    # results = train_all_models_comprehensive()
-    
-    # Para executar apenas um teste rápido:
-    results = quick_training_test()
+    # Executar o treinamento dos 6 modelos
+    results = main()
