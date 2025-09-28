@@ -447,6 +447,35 @@ class qm9_tabular:
         else:
             print(f"Dados já existem em: {self.qm9_folder}")
 
+    # Add the missing Data class that's used in create_dataloaders
+    class Data(Dataset):
+        """
+        PyTorch Dataset class for handling tabular molecular data.
+        
+        Parameters:
+        -----------
+        x : numpy.ndarray or torch.Tensor
+            Feature data (descriptors)
+        y : numpy.ndarray or torch.Tensor
+            Target values (properties)
+        """
+        def __init__(self, x, y):
+            if isinstance(x, np.ndarray):
+                self.x = torch.from_numpy(x).float()
+            else:
+                self.x = x.float()
+                
+            if isinstance(y, np.ndarray):
+                self.y = torch.from_numpy(y).float()
+            else:
+                self.y = y.float()
+            
+        def __len__(self):
+            return len(self.x)
+        
+        def __getitem__(self, idx):
+            return self.x[idx], self.y[idx]
+    
     def inverse_transform_features(self, normalized_features, is_noise=False):
         """
         Desnormaliza features usando o scaler armazenado.
