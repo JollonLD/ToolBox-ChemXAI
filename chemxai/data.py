@@ -878,85 +878,566 @@ class qm9_tabular:
         
         return fps, valid_indices
         
-    def get_coulomb_matrix(self, n_atoms_max=29, list_mols=None, use_cache=True):
+    def get_maccs_keys(self, n_jobs=4):
         """
-        Calcula a Matriz de Coulomb para as moléculas com gestão de memória melhorada.
+        Calcula os fingerprints MACCS Keys (166 bits) para as moléculas.
         
         Parameters:
         -----------
-        n_atoms_max : int
-            Número máximo de átomos a considerar
-        list_mols : list, optional
-            Lista de moléculas a considerar
-        use_cache : bool
-            Se True, utiliza cache para evitar recálculos
+        n_jobs : int
+            Número de threads para processamento paralelo
             
         Returns:
         --------
-        np.ndarray: Matriz de Coulomb para cada molécula
+        tuple: (np.ndarray de fingerprints, lista de índices válidos)
         """
-        if list_mols is None:
-            list_mols = []
+        smiles_list = self.get_smiles()
         
         # Verificar cache
-        cache_key = f"coulomb_{n_atoms_max}_{hash(str(sorted(list_mols))) if list_mols else 'all'}"
-        cache_path = os.path.join(os.getcwd(), "data", f"{cache_key}_cache.npy")
-        
-        if use_cache and os.path.exists(cache_path):
+        cache_path = os.path.join(os.getcwd(), "data", "maccs_keys_cache.npz")
+        if os.path.exists(cache_path):
             try:
-                print(f"Carregando matrizes de Coulomb do cache: {cache_path}")
-                return np.load(cache_path)
+                data = np.load(cache_path)
+                print(f"Carregando MACCS Keys do cache: {cache_path}")
+                return data['fps'], data['valid_indices']
             except Exception as e:
-                print(f"Erro ao carregar cache: {e}")
+                print(f"Erro ao carregar cache de MACCS Keys: {e}")
         
-        # Carregar coordenadas
-        coords, _, natoms = self.load_qm9_dataset(list_mols=list_mols)
+        # Processar uma molécula por vez
+        def process_molecule(mol_idx):
+            smiles = smiles_list[mol_idx]
+            try:
+                mol = Chem.MolFromSmiles(smiles)
+                if mol:
+                    fp = Chem.MACCSkeys.GenMACCSKeys(mol)
+                    return mol_idx, np.array(list(fp))
+            except:
+                pass
+            return None
         
-        # Converter para formato ASE
-        print("Preparando moléculas para cálculo de matrizes de Coulomb...")
-        mols_ase = [Atoms(positions=xyz, symbols=symbols) for symbols, xyz in coords]
-        
-        # Criar gerador de matriz de Coulomb
-        print(f"Calculando matrizes de Coulomb (n_atoms_max={n_atoms_max})...")
-        cm_generator = CoulombMatrix(n_atoms_max=n_atoms_max, permutation="eigenspectrum")
-        
-        # Calcular em batches para gerenciar uso de memória
-        batch_size = 1000  # ajustar com base na memória disponível
-        num_batches = (len(mols_ase) + batch_size - 1) // batch_size
-        
-        all_matrices = []
-        for i in tqdm(range(num_batches), desc="Calculando matrizes por lotes"):
-            start_idx = i * batch_size
-            end_idx = min((i + 1) * batch_size, len(mols_ase))
-            batch_mols = mols_ase[start_idx:end_idx]
+        # Processamento paralelo
+        results = []
+        with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            futures = [executor.submit(process_molecule, i) for i in range(len(smiles_list))]
             
-            # Calcular matrizes para o batch atual
-            batch_matrices = cm_generator.create(batch_mols)
-            all_matrices.append(batch_matrices)
+            for future in tqdm(futures, desc="Calculando MACCS Keys", total=len(futures)):
+                result = future.result()
+                if result:
+                    results.append(result)
         
-        # Combinar resultados
-        X = np.vstack(all_matrices)
+        # Organizar resultados
+        valid_indices = [r[0] for r in results]
+        fps = np.array([r[1] for r in results])
         
         # Salvar cache
-        if use_cache:
-            try:
-                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-                np.save(cache_path, X)
-                print(f"Cache de matrizes de Coulomb salvo em: {cache_path}")
-            except Exception as e:
-                print(f"Aviso: Não foi possível salvar o cache: {e}")
+        try:
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            np.savez_compressed(cache_path, fps=fps, valid_indices=valid_indices)
+            print(f"Cache de MACCS Keys salvo em: {cache_path}")
+        except Exception as e:
+            print(f"Aviso: Não foi possível salvar o cache: {e}")
         
-        return X
+        return fps, valid_indices
     
-    class Data(Dataset):
-        def __init__(self, data, targets):
-            self.data = data
-            self.targets = targets
-        def __len__(self):
-            return len(self.data)
-        def __getitem__(self, idx):
-            return torch.from_numpy(self.data[idx]).float(), torch.from_numpy(self.targets[idx]).float()
-
+    def get_topological_fingerprints(self, n_bits=2048, n_jobs=4):
+        """
+        Calcula fingerprints topológicos (tipo Daylight) para as moléculas.
+        
+        Parameters:
+        -----------
+        n_bits : int
+            Tamanho do fingerprint em bits
+        n_jobs : int
+            Número de threads para processamento paralelo
+            
+        Returns:
+        --------
+        tuple: (np.ndarray de fingerprints, lista de índices válidos)
+        """
+        smiles_list = self.get_smiles()
+        
+        # Verificar cache
+        cache_path = os.path.join(os.getcwd(), "data", f"topological_fp_n{n_bits}_cache.npz")
+        if os.path.exists(cache_path):
+            try:
+                data = np.load(cache_path)
+                print(f"Carregando fingerprints topológicos do cache: {cache_path}")
+                return data['fps'], data['valid_indices']
+            except Exception as e:
+                print(f"Erro ao carregar cache de fingerprints topológicos: {e}")
+        
+        # Processar uma molécula por vez
+        def process_molecule(mol_idx):
+            smiles = smiles_list[mol_idx]
+            try:
+                mol = Chem.MolFromSmiles(smiles)
+                if mol:
+                    fp = Chem.RDKFingerprint(mol, fpSize=n_bits)
+                    return mol_idx, np.array(list(fp))
+            except:
+                pass
+            return None
+        
+        # Processamento paralelo
+        results = []
+        with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            futures = [executor.submit(process_molecule, i) for i in range(len(smiles_list))]
+            
+            for future in tqdm(futures, desc="Calculando fingerprints topológicos", total=len(futures)):
+                result = future.result()
+                if result:
+                    results.append(result)
+        
+        # Organizar resultados
+        valid_indices = [r[0] for r in results]
+        fps = np.array([r[1] for r in results])
+        
+        # Salvar cache
+        try:
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            np.savez_compressed(cache_path, fps=fps, valid_indices=valid_indices)
+            print(f"Cache de fingerprints topológicos salvo em: {cache_path}")
+        except Exception as e:
+            print(f"Aviso: Não foi possível salvar o cache: {e}")
+        
+        return fps, valid_indices
+        
+    def get_atom_pair_fingerprints(self, n_bits=2048, n_jobs=4):
+        """
+        Calcula fingerprints de pares de átomos para as moléculas.
+        
+        Parameters:
+        -----------
+        n_bits : int
+            Tamanho do fingerprint em bits
+        n_jobs : int
+            Número de threads para processamento paralelo
+            
+        Returns:
+        --------
+        tuple: (np.ndarray de fingerprints, lista de índices válidos)
+        """
+        from rdkit.Chem import AllChem
+        smiles_list = self.get_smiles()
+        
+        # Verificar cache
+        cache_path = os.path.join(os.getcwd(), "data", f"atom_pair_fp_n{n_bits}_cache.npz")
+        if os.path.exists(cache_path):
+            try:
+                data = np.load(cache_path)
+                print(f"Carregando fingerprints de pares de átomos do cache: {cache_path}")
+                return data['fps'], data['valid_indices']
+            except Exception as e:
+                print(f"Erro ao carregar cache de fingerprints de pares de átomos: {e}")
+        
+        # Processar uma molécula por vez
+        def process_molecule(mol_idx):
+            smiles = smiles_list[mol_idx]
+            try:
+                mol = Chem.MolFromSmiles(smiles)
+                if mol:
+                    fp = AllChem.GetHashedAtomPairFingerprintAsBitVect(mol, nBits=n_bits)
+                    return mol_idx, np.array(list(fp))
+            except:
+                pass
+            return None
+        
+        # Processamento paralelo
+        results = []
+        with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            futures = [executor.submit(process_molecule, i) for i in range(len(smiles_list))]
+            
+            for future in tqdm(futures, desc="Calculando fingerprints de pares de átomos", total=len(futures)):
+                result = future.result()
+                if result:
+                    results.append(result)
+        
+        # Organizar resultados
+        valid_indices = [r[0] for r in results]
+        fps = np.array([r[1] for r in results])
+        
+        # Salvar cache
+        try:
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            np.savez_compressed(cache_path, fps=fps, valid_indices=valid_indices)
+            print(f"Cache de fingerprints de pares de átomos salvo em: {cache_path}")
+        except Exception as e:
+            print(f"Aviso: Não foi possível salvar o cache: {e}")
+        
+        return fps, valid_indices
+    
+    def get_estate_fingerprints(self, n_jobs=4):
+        """
+        Calcula fingerprints EState para as moléculas.
+        
+        Parameters:
+        -----------
+        n_jobs : int
+            Número de threads para processamento paralelo
+            
+        Returns:
+        --------
+        tuple: (np.ndarray de fingerprints, lista de índices válidos)
+        """
+        from rdkit.Chem import EState
+        from rdkit.Chem.EState import Fingerprinter
+        smiles_list = self.get_smiles()
+        
+        # Verificar cache
+        cache_path = os.path.join(os.getcwd(), "data", "estate_fp_cache.npz")
+        if os.path.exists(cache_path):
+            try:
+                data = np.load(cache_path)
+                print(f"Carregando fingerprints EState do cache: {cache_path}")
+                return data['fps'], data['valid_indices']
+            except Exception as e:
+                print(f"Erro ao carregar cache de fingerprints EState: {e}")
+        
+        # Processar uma molécula por vez
+        def process_molecule(mol_idx):
+            smiles = smiles_list[mol_idx]
+            try:
+                mol = Chem.MolFromSmiles(smiles)
+                if mol:
+                    fp = Fingerprinter.FingerprintMol(mol)[0]
+                    # Converter para array binário
+                    binary_fp = [1 if x else 0 for x in fp]
+                    return mol_idx, np.array(binary_fp)
+            except:
+                pass
+            return None
+        
+        # Processamento paralelo
+        results = []
+        with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            futures = [executor.submit(process_molecule, i) for i in range(len(smiles_list))]
+            
+            for future in tqdm(futures, desc="Calculando fingerprints EState", total=len(futures)):
+                result = future.result()
+                if result:
+                    results.append(result)
+        
+        # Organizar resultados
+        valid_indices = [r[0] for r in results]
+        fps = np.array([r[1] for r in results])
+        
+        # Salvar cache
+        try:
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            np.savez_compressed(cache_path, fps=fps, valid_indices=valid_indices)
+            print(f"Cache de fingerprints EState salvo em: {cache_path}")
+        except Exception as e:
+            print(f"Aviso: Não foi possível salvar o cache: {e}")
+        
+        return fps, valid_indices
+    
+    def get_pattern_fingerprints(self, n_bits=2048, n_jobs=4):
+        """
+        Calcula fingerprints de padrões SMARTS para as moléculas.
+        
+        Parameters:
+        -----------
+        n_bits : int
+            Tamanho do fingerprint em bits
+        n_jobs : int
+            Número de threads para processamento paralelo
+            
+        Returns:
+        --------
+        tuple: (np.ndarray de fingerprints, lista de índices válidos)
+        """
+        smiles_list = self.get_smiles()
+        
+        # Verificar cache
+        cache_path = os.path.join(os.getcwd(), "data", f"pattern_fp_n{n_bits}_cache.npz")
+        if os.path.exists(cache_path):
+            try:
+                data = np.load(cache_path)
+                print(f"Carregando fingerprints de padrões do cache: {cache_path}")
+                return data['fps'], data['valid_indices']
+            except Exception as e:
+                print(f"Erro ao carregar cache de fingerprints de padrões: {e}")
+        
+        # Processar uma molécula por vez
+        def process_molecule(mol_idx):
+            smiles = smiles_list[mol_idx]
+            try:
+                mol = Chem.MolFromSmiles(smiles)
+                if mol:
+                    fp = Chem.PatternFingerprint(mol, fpSize=n_bits)
+                    return mol_idx, np.array(list(fp))
+            except:
+                pass
+            return None
+        
+        # Processamento paralelo
+        results = []
+        with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            futures = [executor.submit(process_molecule, i) for i in range(len(smiles_list))]
+            
+            for future in tqdm(futures, desc="Calculando fingerprints de padrões", total=len(futures)):
+                result = future.result()
+                if result:
+                    results.append(result)
+        
+        # Organizar resultados
+        valid_indices = [r[0] for r in results]
+        fps = np.array([r[1] for r in results])
+        
+        # Salvar cache
+        try:
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            np.savez_compressed(cache_path, fps=fps, valid_indices=valid_indices)
+            print(f"Cache de fingerprints de padrões salvo em: {cache_path}")
+        except Exception as e:
+            print(f"Aviso: Não foi possível salvar o cache: {e}")
+        
+        return fps, valid_indices
+        
+    def get_avalon_fingerprints(self, n_bits=1024, n_jobs=4):
+        """
+        Calcula fingerprints Avalon para as moléculas.
+        
+        Parameters:
+        -----------
+        n_bits : int
+            Tamanho do fingerprint em bits
+        n_jobs : int
+            Número de threads para processamento paralelo
+            
+        Returns:
+        --------
+        tuple: (np.ndarray de fingerprints, lista de índices válidos)
+        """
+        try:
+            from rdkit.Avalon import pyAvalonTools
+        except ImportError:
+            print("Aviso: O módulo Avalon não está disponível. Instale com 'conda install -c rdkit avalon-toolkit'")
+            return np.array([]), []
+            
+        smiles_list = self.get_smiles()
+        
+        # Verificar cache
+        cache_path = os.path.join(os.getcwd(), "data", f"avalon_fp_n{n_bits}_cache.npz")
+        if os.path.exists(cache_path):
+            try:
+                data = np.load(cache_path)
+                print(f"Carregando fingerprints Avalon do cache: {cache_path}")
+                return data['fps'], data['valid_indices']
+            except Exception as e:
+                print(f"Erro ao carregar cache de fingerprints Avalon: {e}")
+        
+        # Processar uma molécula por vez
+        def process_molecule(mol_idx):
+            smiles = smiles_list[mol_idx]
+            try:
+                mol = Chem.MolFromSmiles(smiles)
+                if mol:
+                    fp = pyAvalonTools.GetAvalonFP(mol, nBits=n_bits)
+                    return mol_idx, np.array(list(fp))
+            except:
+                pass
+            return None
+        
+        # Processamento paralelo
+        results = []
+        with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            futures = [executor.submit(process_molecule, i) for i in range(len(smiles_list))]
+            
+            for future in tqdm(futures, desc="Calculando fingerprints Avalon", total=len(futures)):
+                result = future.result()
+                if result:
+                    results.append(result)
+        
+        # Organizar resultados
+        valid_indices = [r[0] for r in results]
+        fps = np.array([r[1] for r in results])
+        
+        # Salvar cache
+        try:
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            np.savez_compressed(cache_path, fps=fps, valid_indices=valid_indices)
+            print(f"Cache de fingerprints Avalon salvo em: {cache_path}")
+        except Exception as e:
+            print(f"Aviso: Não foi possível salvar o cache: {e}")
+        
+        return fps, valid_indices
+        
+    def get_morgan_count_fingerprints(self, radius=3, n_bits=1024, n_jobs=4):
+        """
+        Calcula fingerprints Morgan com contagem (ECFP com contagem de ocorrências) para as moléculas.
+        
+        Parameters:
+        -----------
+        radius : int
+            Raio para o cálculo do fingerprint
+        n_bits : int
+            Número de bits para o fingerprint
+        n_jobs : int
+            Número de threads para processamento paralelo
+            
+        Returns:
+        --------
+        tuple: (np.ndarray de fingerprints, lista de índices válidos)
+        """
+        smiles_list = self.get_smiles()
+        
+        # Verificar cache
+        cache_path = os.path.join(os.getcwd(), "data", f"morgan_count_fp_r{radius}_n{n_bits}_cache.npz")
+        if os.path.exists(cache_path):
+            try:
+                data = np.load(cache_path)
+                print(f"Carregando fingerprints Morgan com contagem do cache: {cache_path}")
+                return data['fps'], data['valid_indices']
+            except Exception as e:
+                print(f"Erro ao carregar cache de fingerprints Morgan com contagem: {e}")
+        
+        # Processar uma molécula por vez
+        def process_molecule(mol_idx):
+            smiles = smiles_list[mol_idx]
+            try:
+                mol = Chem.MolFromSmiles(smiles)
+                if mol:
+                    # Usar o GetHashedMorganFingerprint em vez do GetMorganFingerprintAsBitVect
+                    fp = AllChem.GetHashedMorganFingerprint(mol, radius, nBits=n_bits)
+                    # Converter para array
+                    arr = np.zeros((n_bits,), dtype=np.int32)
+                    for idx, count in fp.GetNonzeroElements().items():
+                        arr[idx % n_bits] += int(count)
+                    return mol_idx, arr
+            except:
+                pass
+            return None
+        
+        # Processamento paralelo
+        results = []
+        with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            futures = [executor.submit(process_molecule, i) for i in range(len(smiles_list))]
+            
+            for future in tqdm(futures, desc="Calculando fingerprints Morgan com contagem", total=len(futures)):
+                result = future.result()
+                if result:
+                    results.append(result)
+        
+        # Organizar resultados
+        valid_indices = [r[0] for r in results]
+        fps = np.array([r[1] for r in results])
+        
+        # Salvar cache
+        try:
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            np.savez_compressed(cache_path, fps=fps, valid_indices=valid_indices)
+            print(f"Cache de fingerprints Morgan com contagem salvo em: {cache_path}")
+        except Exception as e:
+            print(f"Aviso: Não foi possível salvar o cache: {e}")
+        
+        return fps, valid_indices
+        
+    def get_autocorr_descriptors(self, n_jobs=4):
+        """
+        Calcula descritores de autocorrelação 2D para as moléculas.
+        Esses descritores capturam a distribuição de propriedades atômicas ao longo da molécula.
+        
+        Parameters:
+        -----------
+        n_jobs : int
+            Número de threads para processamento paralelo
+            
+        Returns:
+        --------
+        tuple: (np.ndarray de descritores, lista de índices válidos)
+        """
+        from rdkit.Chem import Descriptors, Lipinski
+        from rdkit.Chem.AtomPairs import Utils
+        import rdkit.Chem.EState.EState as EState
+        
+        smiles_list = self.get_smiles()
+        
+        # Verificar cache
+        cache_path = os.path.join(os.getcwd(), "data", "autocorr_desc_cache.npz")
+        if os.path.exists(cache_path):
+            try:
+                data = np.load(cache_path)
+                print(f"Carregando descritores de autocorrelação do cache: {cache_path}")
+                return data['descs'], data['valid_indices']
+            except Exception as e:
+                print(f"Erro ao carregar cache de descritores de autocorrelação: {e}")
+        
+        # Propriedades atômicas a serem usadas
+        properties = {
+            'AtomicNumber': lambda a: a.GetAtomicNum(),
+            'Mass': lambda a: a.GetMass(),
+            'Valence': lambda a: a.GetTotalValence(),
+            'Charge': lambda a: a.GetFormalCharge(),
+            'HCount': lambda a: a.GetTotalNumHs(),
+            'Aromatic': lambda a: 1 if a.GetIsAromatic() else 0,
+            'EState': lambda a: EState.AtomTypes.EStateIndices(Chem.GetPeriodicTable())[a.GetAtomicNum()-1],
+        }
+        
+        # Processar uma molécula por vez
+        def process_molecule(mol_idx):
+            smiles = smiles_list[mol_idx]
+            try:
+                mol = Chem.MolFromSmiles(smiles)
+                if not mol:
+                    return None
+                
+                # Calcular distâncias topológicas entre todos os pares de átomos
+                dm = Chem.GetDistanceMatrix(mol)
+                n_atoms = mol.GetNumAtoms()
+                
+                # Calcular autocorrelações para cada propriedade e distância
+                autocorr = []
+                max_dist = 5  # Máxima distância topológica a considerar
+                
+                for prop_name, prop_func in properties.items():
+                    # Calcular propriedade para cada átomo
+                    atom_props = [prop_func(mol.GetAtomWithIdx(i)) for i in range(n_atoms)]
+                    
+                    for dist in range(max_dist + 1):
+                        # Autocorrelação para distância dist
+                        ac_value = 0
+                        count = 0
+                        for i in range(n_atoms):
+                            for j in range(i+1, n_atoms):
+                                if dm[i][j] == dist:
+                                    ac_value += atom_props[i] * atom_props[j]
+                                    count += 1
+                        
+                        if count > 0:
+                            ac_value /= count
+                        
+                        autocorr.append(ac_value)
+                
+                return mol_idx, np.array(autocorr)
+            except Exception as e:
+                print(f"Erro ao processar molécula {mol_idx}: {e}")
+                return None
+        
+        # Processamento paralelo
+        results = []
+        with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            futures = [executor.submit(process_molecule, i) for i in range(len(smiles_list))]
+            
+            for future in tqdm(futures, desc="Calculando descritores de autocorrelação", total=len(futures)):
+                result = future.result()
+                if result:
+                    results.append(result)
+        
+        # Organizar resultados
+        valid_indices = [r[0] for r in results]
+        descs = np.array([r[1] for r in results])
+        
+        # Salvar cache
+        try:
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            np.savez_compressed(cache_path, descs=descs, valid_indices=valid_indices)
+            print(f"Cache de descritores de autocorrelação salvo em: {cache_path}")
+        except Exception as e:
+            print(f"Aviso: Não foi possível salvar o cache: {e}")
+        
+        return descs, valid_indices
+    
     def compute_descriptors(self, descriptor_type='CM', morgan_radius=3, morgan_nBits=512, att_index=10, list_mols=[]):
         """
         Calcula os descritores para as moléculas e retorna as features (X) e os alvos (Y) alinhados.
@@ -964,7 +1445,8 @@ class qm9_tabular:
         Parameters:
         -----------
         descriptor_type : str
-            Tipo de descritor ('CM', 'Morgan', 'Physicochemical', '3D')
+            Tipo de descritor ('CM', 'Morgan', 'Physicochemical', '3D', 'MACCS', 'Topological', 
+            'AtomPair', 'EState', 'Pattern', 'Avalon', 'MorganCount', 'Autocorr')
         morgan_radius : int
             Raio para o cálculo dos fingerprints Morgan
         morgan_nBits : int
@@ -987,7 +1469,6 @@ class qm9_tabular:
         
         if descriptor_type == 'CM':
             X = self.get_coulomb_matrix(n_atoms_max=max(natoms) if natoms else 29, list_mols=list_mols)
-            # Assume que get_coulomb_matrix retorna features para todas as moléculas carregadas
         
         elif descriptor_type == 'Morgan':
             X_morgan, valid_indices = self.get_morgan_fingerprints(radius=morgan_radius, n_bits=morgan_nBits)
@@ -1002,6 +1483,47 @@ class qm9_tabular:
         elif descriptor_type == '3D':
             X_df, valid_indices = self.get_3d_descriptors()
             X = X_df.values
+            props = props[valid_indices]
+        
+        # Novos tipos de descritores
+        elif descriptor_type == 'MACCS':
+            X_maccs, valid_indices = self.get_maccs_keys()
+            X = X_maccs
+            props = props[valid_indices]
+            
+        elif descriptor_type == 'Topological':
+            X_topo, valid_indices = self.get_topological_fingerprints(n_bits=morgan_nBits)
+            X = X_topo
+            props = props[valid_indices]
+            
+        elif descriptor_type == 'AtomPair':
+            X_ap, valid_indices = self.get_atom_pair_fingerprints(n_bits=morgan_nBits)
+            X = X_ap
+            props = props[valid_indices]
+            
+        elif descriptor_type == 'EState':
+            X_estate, valid_indices = self.get_estate_fingerprints()
+            X = X_estate
+            props = props[valid_indices]
+            
+        elif descriptor_type == 'Pattern':
+            X_pattern, valid_indices = self.get_pattern_fingerprints(n_bits=morgan_nBits)
+            X = X_pattern
+            props = props[valid_indices]
+            
+        elif descriptor_type == 'Avalon':
+            X_avalon, valid_indices = self.get_avalon_fingerprints(n_bits=morgan_nBits)
+            X = X_avalon
+            props = props[valid_indices]
+            
+        elif descriptor_type == 'MorganCount':
+            X_morgan_count, valid_indices = self.get_morgan_count_fingerprints(radius=morgan_radius, n_bits=morgan_nBits)
+            X = X_morgan_count
+            props = props[valid_indices]
+            
+        elif descriptor_type == 'Autocorr':
+            X_autocorr, valid_indices = self.get_autocorr_descriptors()
+            X = X_autocorr
             props = props[valid_indices]
 
         else:
@@ -1398,6 +1920,187 @@ class qm9_tabular:
         all_smiles = self.get_smiles()
         return all_smiles[original_idx]
 
+    def get_descriptor_names(self, descriptor_type='Morgan', morgan_radius=2, morgan_nBits=512):
+        """
+        Retorna os nomes das features para um tipo específico de descritor.
+        
+        Parameters:
+        -----------
+        descriptor_type : str
+            Tipo de descritor ('CM', 'Morgan', 'Physicochemical', '3D', 'MACCS', 
+            'Topological', 'AtomPair', 'EState', 'Pattern', 'Avalon', 'MorganCount', 'Autocorr')
+        morgan_radius : int
+            Raio para os descritores Morgan (usado apenas para 'Morgan' e 'MorganCount')
+        morgan_nBits : int
+            Número de bits para fingerprints (usado para vários tipos de fingerprints)
+            
+        Returns:
+        --------
+        list: Lista com os nomes das features para o descritor especificado
+        """
+        if descriptor_type == 'Morgan' or descriptor_type == 'MorganCount':
+            return [f"Morgan{morgan_radius}_Bit_{i}" for i in range(morgan_nBits)]
+            
+        elif descriptor_type == 'Physicochemical':
+            return ["MolWt", "MolLogP", "TPSA", "NumHDonors", "NumHAcceptors",
+                    "NumRotatableBonds", "NumAromaticRings", "BalabanJ", "QED"]
+                    
+        elif descriptor_type == '3D':
+            return ["NPR1", "NPR2", "RadiusOfGyration", "Asphericity", "SpherocityIndex"]
+            
+        elif descriptor_type == 'CM':
+            # Para matriz de Coulomb, geramos nomes para cada elemento da matriz
+            n_atoms_max = 29  # valor padrão para QM9
+            names = []
+            for i in range(n_atoms_max):
+                for j in range(n_atoms_max):
+                    names.append(f"CM_{i}_{j}")
+            return names
+            
+        elif descriptor_type == 'MACCS':
+            # MACCS keys têm significados específicos na RDKit, mas aqui usaremos índices simples
+            return [f"MACCS_{i}" for i in range(166)]
+            
+        elif descriptor_type == 'Topological':
+            return [f"Topo_Bit_{i}" for i in range(morgan_nBits)]
+            
+        elif descriptor_type == 'AtomPair':
+            return [f"AtomPair_Bit_{i}" for i in range(morgan_nBits)]
+            
+        elif descriptor_type == 'EState':
+            # Estado E tem 79 bits padrão
+            estate_types = [
+                "EState_01", "EState_02", "EState_03", "EState_04", "EState_05",
+                "EState_06", "EState_07", "EState_08", "EState_09", "EState_10",
+                # Continuar com nomenclatura padrão até 79
+            ]
+            # Se não tivermos todos os nomes específicos, use nomes genéricos
+            return [f"EState_{i}" for i in range(79)]
+            
+        elif descriptor_type == 'Pattern':
+            return [f"Pattern_Bit_{i}" for i in range(morgan_nBits)]
+            
+        elif descriptor_type == 'Avalon':
+            return [f"Avalon_Bit_{i}" for i in range(morgan_nBits)]
+            
+        elif descriptor_type == 'Autocorr':
+            # Descritores de autocorrelação são compostos de propriedades atômicas e distâncias
+            properties = ["AtomicNumber", "Mass", "Valence", "Charge", "HCount", "Aromatic", "EState"]
+            max_dist = 5
+            names = []
+            for prop in properties:
+                for dist in range(max_dist + 1):
+                    names.append(f"Autocorr_{prop}_Dist{dist}")
+            return names
+            
+        else:
+            raise ValueError(f"Tipo de descritor desconhecido: {descriptor_type}")
+    
+    def get_descriptor_details(self, descriptor_type='Morgan'):
+        """
+        Retorna uma descrição detalhada de cada tipo de descritor molecular.
+        
+        Parameters:
+        -----------
+        descriptor_type : str
+            Tipo de descritor ('CM', 'Morgan', etc.)
+            
+        Returns:
+        --------
+        dict: Dicionário com detalhes sobre o descritor
+        """
+        details = {
+            'Morgan': {
+                'description': 'Fingerprints circulares de Morgan (ECFP), que capturam ambientes químicos em torno de cada átomo',
+                'dimensionality': 'Configurável (padrão: 512 bits)',
+                'interpretability': 'Baixa (bits específicos podem ser rastreados a subestruturas)',
+                'strengths': 'Bom para similaridade molecular e modelagem de propriedades',
+                'weaknesses': 'Não captura diretamente propriedades 3D'
+            },
+            'MorganCount': {
+                'description': 'Fingerprints circulares de Morgan com contagem (variante de ECFP com contagem de ocorrências)',
+                'dimensionality': 'Configurável (padrão: 512 bits)',
+                'interpretability': 'Baixa a média (contagens podem indicar prevalência de fragmentos)',
+                'strengths': 'Captura frequência de subestruturas',
+                'weaknesses': 'Maior sensibilidade a ruído'
+            },
+            'CM': {
+                'description': 'Matriz de Coulomb, representando interações entre pares de átomos baseadas em cargas e distâncias',
+                'dimensionality': 'n_atoms² (para QM9, geralmente 29²)',
+                'interpretability': 'Média (representa interações atômicas)',
+                'strengths': 'Invariante a rotação e translação, bom para propriedades energéticas',
+                'weaknesses': 'Alta dimensionalidade, sensível ao tamanho molecular'
+            },
+            'Physicochemical': {
+                'description': 'Conjunto de descritores físico-químicos 2D calculados a partir da estrutura',
+                'dimensionality': '9 features padrão',
+                'interpretability': 'Alta (cada descritor tem significado físico ou químico específico)',
+                'strengths': 'Altamente interpretável, útil para propriedades ADME',
+                'weaknesses': 'Número limitado de features, menos específico para identificação molecular'
+            },
+            '3D': {
+                'description': 'Descritores baseados na geometria 3D da molécula',
+                'dimensionality': '5 features padrão',
+                'interpretability': 'Média a alta (descritores têm significado geométrico)',
+                'strengths': 'Captura informação conformacional importante',
+                'weaknesses': 'Depende de geometria 3D acurada, computacionalmente intensivo'
+            },
+            'MACCS': {
+                'description': 'Keys MACCS - 166 bits representando fragments estruturais específicos',
+                'dimensionality': '166 bits',
+                'interpretability': 'Alta (cada bit corresponde a uma subestrutura específica)',
+                'strengths': 'Padrão da indústria, boa interpretabilidade',
+                'weaknesses': 'Número limitado de features, pode não capturar propriedades complexas'
+            },
+            'Topological': {
+                'description': 'Fingerprints topológicos, similares ao Daylight, baseados em caminhos na estrutura 2D',
+                'dimensionality': 'Configurável (padrão: 2048 bits)',
+                'interpretability': 'Baixa',
+                'strengths': 'Bom para similaridade estrutural',
+                'weaknesses': 'Menos específico que Morgan para propriedades'
+            },
+            'AtomPair': {
+                'description': 'Fingerprints baseados em pares de átomos e suas distâncias topológicas',
+                'dimensionality': 'Configurável (padrão: 2048 bits)',
+                'interpretability': 'Média (representa pares de átomos)',
+                'strengths': 'Captura relações entre átomos distantes',
+                'weaknesses': 'Pode ter colisões de hash'
+            },
+            'EState': {
+                'description': 'Fingerprints baseados em índices de estado eletrotopológico',
+                'dimensionality': '79 bits',
+                'interpretability': 'Média',
+                'strengths': 'Combina informação eletrônica e topológica',
+                'weaknesses': 'Mais complexo de interpretar'
+            },
+            'Pattern': {
+                'description': 'Fingerprints baseados em padrões SMARTS pré-definidos',
+                'dimensionality': 'Configurável',
+                'interpretability': 'Média (baseado em padrões conhecidos)',
+                'strengths': 'Pode ser personalizado para tipos específicos de grupos funcionais',
+                'weaknesses': 'Dependente do conjunto de padrões'
+            },
+            'Avalon': {
+                'description': 'Fingerprints Avalon, otimizados para triagem de subestruturas',
+                'dimensionality': 'Configurável (padrão: 1024 bits)',
+                'interpretability': 'Baixa',
+                'strengths': 'Bom para busca de subestruturas e similaridade',
+                'weaknesses': 'Requer biblioteca adicional, menos interpretável'
+            },
+            'Autocorr': {
+                'description': 'Descritores de autocorrelação 2D baseados em propriedades atômicas',
+                'dimensionality': 'n_props × max_dist (geralmente 7 × 6 = 42)',
+                'interpretability': 'Média',
+                'strengths': 'Captura distribuição de propriedades ao longo da molécula',
+                'weaknesses': 'Mais abstrato, requer pós-processamento para interpretação'
+            }
+        }
+        
+        if descriptor_type in details:
+            return details[descriptor_type]
+        else:
+            return {'description': 'Descritor não reconhecido ou sem detalhes disponíveis.'}
+        
 
 #================================================================#
 # Extra Functions
