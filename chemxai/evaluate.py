@@ -852,13 +852,15 @@ class TabularAnalyzer:
                 results["auroc"] = roc_auc_score(y_true_labels, y_pred, multi_class='ovr', average='macro')
         return results
 
-    def get_metrics(self, classfication=False):
-        
+    def get_metrics(self, classification=False):
+
         fidelity = self._calculate_fidelity(model=self.model, explanation=self.explanation, data=self.data, y_true=self.y_true)
 
-        metrics = self._compute_metrics(y_true=self.y_true, y_pred=self.y_pred)
-
-        return fidelity, metrics if classfication else fidelity
+        if classification:
+            metrics = self._compute_metrics(y_true=self.y_true, y_pred=self.y_pred)    
+            return fidelity, metrics
+        
+        return fidelity
 
 class GraphAnalyzer:
     def __init__(self, explainer, explanation, pred_mask, target_mask, metrics = ["accuracy", "recall", "precision", "f1_score", "auroc"]):

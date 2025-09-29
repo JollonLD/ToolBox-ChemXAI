@@ -39,7 +39,7 @@ def setup_logging(log_dir="logs"):
 
 def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, 
                 batch_size=32, n_noise=3, descriptor_type='Morgan', cache_descriptors=True,
-                num_workers=4, morgan_radius=2, morgan_nBits=512, log_dir="logs"):
+                num_workers=4, morgan_radius=2, morgan_nBits=512, log_dir="logs", layer_name='medium'):
     """
     Função para treinar um modelo MLP com dados moleculares usando descritores otimizados.
 
@@ -100,7 +100,7 @@ def train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3,
     if n_noise > 0:
         path = os.path.join(models_dir, f'mlp_qm9_noise_{descriptor_type}_att{att_index}.pth')
     else:
-        path = os.path.join(models_dir, f'mlp_qm9_{descriptor_type}_att{att_index}.pth')
+        path = os.path.join(models_dir, f'mlp_qm9_{descriptor_type}_att{att_index}_{layer_name}.pth')
 
     # Carregar os dados usando a função otimizada
     model_logger.info("Carregando dados...")
@@ -668,7 +668,8 @@ def main():
                 n_noise=n_noise,
                 cache_descriptors=config['cache_descriptors'],
                 num_workers=num_workers,
-                log_dir=log_dir
+                log_dir=log_dir,
+                layer_name=config['name'].split('_')[-1] # pega o tipo do modelo (small, medium, large) a partir do nome do modelo
             )
             model_time = time.time() - model_start_time
             
