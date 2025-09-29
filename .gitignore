@@ -4,10 +4,7 @@
 /__pycache__/
 /Doc_ChemXAI/
 /test_evaluation/
-/models/
-/graphs/
 key.txt
 key.txt.pub
 token.txt
-/Experiments/
 /Exp_Luis/

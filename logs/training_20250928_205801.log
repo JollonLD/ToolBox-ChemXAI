@@ -1,0 +1,140 @@
+2025-09-28 20:58:01,665 [INFO] ================================================================================
+2025-09-28 20:58:01,666 [INFO] INICIANDO TREINAMENTO DE MODELOS MLP COM DIFERENTES DESCRITORES
+2025-09-28 20:58:01,666 [INFO] ================================================================================
+2025-09-28 20:58:01,666 [INFO] Log global: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/logs/training_20250928_205801.log
+2025-09-28 20:58:01,666 [INFO] Arquivo de sumário: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/logs/training_summary_20250928_205801.txt
+2025-09-28 20:58:01,666 [INFO] Arquivo de resultados: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/logs/training_results_20250928_205801.json
+2025-09-28 20:58:01,666 [INFO] Parâmetros de treinamento:
+2025-09-28 20:58:01,666 [INFO]   Épocas: 30
+2025-09-28 20:58:01,666 [INFO]   Learning Rate: 0.001
+2025-09-28 20:58:01,666 [INFO]   Batch Size: 32
+2025-09-28 20:58:01,666 [INFO]   Descritores: ['Morgan', 'CM', 'Physicochemical', '3D', 'MACCS', 'Topological', 'AtomPair', 'EState', 'Pattern', 'Avalon', 'MorganCount', 'Autocorr']
+2025-09-28 20:58:01,666 [INFO]   Propriedades: [0, 10]
+2025-09-28 20:58:01,666 [INFO]   Arquiteturas: {'small': [32, 16], 'medium': [64, 32, 16], 'large': [128, 64, 32]}
+2025-09-28 20:58:01,666 [INFO] Total de 72 modelos a serem treinados
+2025-09-28 20:58:01,666 [INFO] [1/72] Iniciando treino: MLP_att0_Morgan_small
+2025-09-28 20:58:01,666 [INFO]   Propriedade: 0
+2025-09-28 20:58:01,666 [INFO]   Descritor: Morgan
+2025-09-28 20:58:01,666 [INFO]   Arquitetura: [32, 16]
+2025-09-28 20:58:01,666 [INFO] Iniciando treinamento do modelo mlp_att0_Morgan
+2025-09-28 20:58:01,666 [INFO] Configuração: att_index=0, epochs=30, layers=[32, 16], lr=0.001, batch_size=32, descriptor_type=Morgan
+2025-09-28 20:58:01,666 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
+2025-09-28 20:58:01,666 [INFO] Carregando dados...
+2025-09-28 20:58:01,723 [INFO] Preparando dataloaders sem ruído...
+2025-09-28 20:58:06,792 [ERROR] Erro ao carregar dados: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:10,786 [ERROR] ✗ Erro no treinamento de MLP_att0_Morgan_small: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:10,802 [INFO] Progresso: 1.4% | Tempo decorrido: 0.0h | Estimado restante: 0.2h
+2025-09-28 20:58:10,802 [INFO] --------------------------------------------------------------------------------
+2025-09-28 20:58:10,802 [INFO] [2/72] Iniciando treino: MLP_att0_Morgan_medium
+2025-09-28 20:58:10,802 [INFO]   Propriedade: 0
+2025-09-28 20:58:10,802 [INFO]   Descritor: Morgan
+2025-09-28 20:58:10,802 [INFO]   Arquitetura: [64, 32, 16]
+2025-09-28 20:58:10,803 [INFO] Iniciando treinamento do modelo mlp_att0_Morgan
+2025-09-28 20:58:10,803 [INFO] Configuração: att_index=0, epochs=30, layers=[64, 32, 16], lr=0.001, batch_size=32, descriptor_type=Morgan
+2025-09-28 20:58:10,803 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
+2025-09-28 20:58:10,803 [INFO] Carregando dados...
+2025-09-28 20:58:10,902 [INFO] Preparando dataloaders sem ruído...
+2025-09-28 20:58:16,319 [ERROR] Erro ao carregar dados: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:16,320 [ERROR] ✗ Erro no treinamento de MLP_att0_Morgan_medium: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:16,326 [INFO] Progresso: 2.8% | Tempo decorrido: 0.0h | Estimado restante: 0.1h
+2025-09-28 20:58:16,327 [INFO] --------------------------------------------------------------------------------
+2025-09-28 20:58:16,327 [INFO] [3/72] Iniciando treino: MLP_att0_Morgan_large
+2025-09-28 20:58:16,327 [INFO]   Propriedade: 0
+2025-09-28 20:58:16,327 [INFO]   Descritor: Morgan
+2025-09-28 20:58:16,327 [INFO]   Arquitetura: [128, 64, 32]
+2025-09-28 20:58:16,327 [INFO] Iniciando treinamento do modelo mlp_att0_Morgan
+2025-09-28 20:58:16,327 [INFO] Configuração: att_index=0, epochs=30, layers=[128, 64, 32], lr=0.001, batch_size=32, descriptor_type=Morgan
+2025-09-28 20:58:16,327 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
+2025-09-28 20:58:16,327 [INFO] Carregando dados...
+2025-09-28 20:58:16,382 [INFO] Preparando dataloaders sem ruído...
+2025-09-28 20:58:21,398 [ERROR] Erro ao carregar dados: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:21,399 [ERROR] ✗ Erro no treinamento de MLP_att0_Morgan_large: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:21,405 [INFO] Progresso: 4.2% | Tempo decorrido: 0.0h | Estimado restante: 0.1h
+2025-09-28 20:58:21,405 [INFO] --------------------------------------------------------------------------------
+2025-09-28 20:58:21,405 [INFO] [4/72] Iniciando treino: MLP_att0_CM_small
+2025-09-28 20:58:21,405 [INFO]   Propriedade: 0
+2025-09-28 20:58:21,405 [INFO]   Descritor: CM
+2025-09-28 20:58:21,405 [INFO]   Arquitetura: [32, 16]
+2025-09-28 20:58:21,406 [INFO] Iniciando treinamento do modelo mlp_att0_CM
+2025-09-28 20:58:21,406 [INFO] Configuração: att_index=0, epochs=30, layers=[32, 16], lr=0.001, batch_size=32, descriptor_type=CM
+2025-09-28 20:58:21,406 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
+2025-09-28 20:58:21,406 [INFO] Carregando dados...
+2025-09-28 20:58:21,460 [INFO] Preparando dataloaders sem ruído...
+2025-09-28 20:58:21,823 [ERROR] Erro ao carregar dados: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:21,823 [ERROR] ✗ Erro no treinamento de MLP_att0_CM_small: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:21,825 [INFO] Progresso: 5.6% | Tempo decorrido: 0.0h | Estimado restante: 0.1h
+2025-09-28 20:58:21,826 [INFO] --------------------------------------------------------------------------------
+2025-09-28 20:58:21,826 [INFO] [5/72] Iniciando treino: MLP_att0_CM_medium
+2025-09-28 20:58:21,826 [INFO]   Propriedade: 0
+2025-09-28 20:58:21,826 [INFO]   Descritor: CM
+2025-09-28 20:58:21,826 [INFO]   Arquitetura: [64, 32, 16]
+2025-09-28 20:58:21,826 [INFO] Iniciando treinamento do modelo mlp_att0_CM
+2025-09-28 20:58:21,826 [INFO] Configuração: att_index=0, epochs=30, layers=[64, 32, 16], lr=0.001, batch_size=32, descriptor_type=CM
+2025-09-28 20:58:21,826 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
+2025-09-28 20:58:21,826 [INFO] Carregando dados...
+2025-09-28 20:58:21,880 [INFO] Preparando dataloaders sem ruído...
+2025-09-28 20:58:22,237 [ERROR] Erro ao carregar dados: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:22,237 [ERROR] ✗ Erro no treinamento de MLP_att0_CM_medium: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:22,239 [INFO] Progresso: 6.9% | Tempo decorrido: 0.0h | Estimado restante: 0.1h
+2025-09-28 20:58:22,239 [INFO] --------------------------------------------------------------------------------
+2025-09-28 20:58:22,239 [INFO] [6/72] Iniciando treino: MLP_att0_CM_large
+2025-09-28 20:58:22,239 [INFO]   Propriedade: 0
+2025-09-28 20:58:22,239 [INFO]   Descritor: CM
+2025-09-28 20:58:22,239 [INFO]   Arquitetura: [128, 64, 32]
+2025-09-28 20:58:22,240 [INFO] Iniciando treinamento do modelo mlp_att0_CM
+2025-09-28 20:58:22,240 [INFO] Configuração: att_index=0, epochs=30, layers=[128, 64, 32], lr=0.001, batch_size=32, descriptor_type=CM
+2025-09-28 20:58:22,240 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
+2025-09-28 20:58:22,240 [INFO] Carregando dados...
+2025-09-28 20:58:22,294 [INFO] Preparando dataloaders sem ruído...
+2025-09-28 20:58:22,651 [ERROR] Erro ao carregar dados: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:22,651 [ERROR] ✗ Erro no treinamento de MLP_att0_CM_large: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:22,653 [INFO] Progresso: 8.3% | Tempo decorrido: 0.0h | Estimado restante: 0.1h
+2025-09-28 20:58:22,653 [INFO] --------------------------------------------------------------------------------
+2025-09-28 20:58:22,653 [INFO] [7/72] Iniciando treino: MLP_att0_Physicochemical_small
+2025-09-28 20:58:22,653 [INFO]   Propriedade: 0
+2025-09-28 20:58:22,653 [INFO]   Descritor: Physicochemical
+2025-09-28 20:58:22,653 [INFO]   Arquitetura: [32, 16]
+2025-09-28 20:58:22,653 [INFO] Iniciando treinamento do modelo mlp_att0_Physicochemical
+2025-09-28 20:58:22,654 [INFO] Configuração: att_index=0, epochs=30, layers=[32, 16], lr=0.001, batch_size=32, descriptor_type=Physicochemical
+2025-09-28 20:58:22,654 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
+2025-09-28 20:58:22,654 [INFO] Carregando dados...
+2025-09-28 20:58:22,708 [INFO] Preparando dataloaders sem ruído...
+2025-09-28 20:58:22,870 [ERROR] Erro ao carregar dados: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:22,871 [ERROR] ✗ Erro no treinamento de MLP_att0_Physicochemical_small: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:22,871 [INFO] Progresso: 9.7% | Tempo decorrido: 0.0h | Estimado restante: 0.1h
+2025-09-28 20:58:22,871 [INFO] --------------------------------------------------------------------------------
+2025-09-28 20:58:22,871 [INFO] [8/72] Iniciando treino: MLP_att0_Physicochemical_medium
+2025-09-28 20:58:22,871 [INFO]   Propriedade: 0
+2025-09-28 20:58:22,871 [INFO]   Descritor: Physicochemical
+2025-09-28 20:58:22,871 [INFO]   Arquitetura: [64, 32, 16]
+2025-09-28 20:58:22,871 [INFO] Iniciando treinamento do modelo mlp_att0_Physicochemical
+2025-09-28 20:58:22,871 [INFO] Configuração: att_index=0, epochs=30, layers=[64, 32, 16], lr=0.001, batch_size=32, descriptor_type=Physicochemical
+2025-09-28 20:58:22,871 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
+2025-09-28 20:58:22,871 [INFO] Carregando dados...
+2025-09-28 20:58:22,926 [INFO] Preparando dataloaders sem ruído...
+2025-09-28 20:58:23,079 [ERROR] Erro ao carregar dados: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:23,079 [ERROR] ✗ Erro no treinamento de MLP_att0_Physicochemical_medium: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:23,079 [INFO] Progresso: 11.1% | Tempo decorrido: 0.0h | Estimado restante: 0.0h
+2025-09-28 20:58:23,079 [INFO] --------------------------------------------------------------------------------
+2025-09-28 20:58:23,079 [INFO] [9/72] Iniciando treino: MLP_att0_Physicochemical_large
+2025-09-28 20:58:23,079 [INFO]   Propriedade: 0
+2025-09-28 20:58:23,079 [INFO]   Descritor: Physicochemical
+2025-09-28 20:58:23,079 [INFO]   Arquitetura: [128, 64, 32]
+2025-09-28 20:58:23,079 [INFO] Iniciando treinamento do modelo mlp_att0_Physicochemical
+2025-09-28 20:58:23,079 [INFO] Configuração: att_index=0, epochs=30, layers=[128, 64, 32], lr=0.001, batch_size=32, descriptor_type=Physicochemical
+2025-09-28 20:58:23,079 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
+2025-09-28 20:58:23,079 [INFO] Carregando dados...
+2025-09-28 20:58:23,134 [INFO] Preparando dataloaders sem ruído...
+2025-09-28 20:58:23,287 [ERROR] Erro ao carregar dados: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:23,287 [ERROR] ✗ Erro no treinamento de MLP_att0_Physicochemical_large: 'qm9_tabular' object has no attribute 'Data'
+2025-09-28 20:58:23,287 [INFO] Progresso: 12.5% | Tempo decorrido: 0.0h | Estimado restante: 0.0h
+2025-09-28 20:58:23,287 [INFO] --------------------------------------------------------------------------------
+2025-09-28 20:58:23,287 [INFO] [10/72] Iniciando treino: MLP_att0_3D_small
+2025-09-28 20:58:23,287 [INFO]   Propriedade: 0
+2025-09-28 20:58:23,287 [INFO]   Descritor: 3D
+2025-09-28 20:58:23,287 [INFO]   Arquitetura: [32, 16]
+2025-09-28 20:58:23,288 [INFO] Iniciando treinamento do modelo mlp_att0_3D
+2025-09-28 20:58:23,288 [INFO] Configuração: att_index=0, epochs=30, layers=[32, 16], lr=0.001, batch_size=32, descriptor_type=3D
+2025-09-28 20:58:23,288 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
+2025-09-28 20:58:23,288 [INFO] Carregando dados...
+2025-09-28 20:58:23,342 [INFO] Preparando dataloaders sem ruído...

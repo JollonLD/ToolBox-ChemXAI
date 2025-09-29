@@ -1,0 +1,102 @@
+================================================================================
+RESUMO DO TREINAMENTO
+================================================================================
+
+Data de execução: 2025-09-29 05:36:47
+Total de modelos: 72
+Sucessos: 60
+Falhas: 12
+Taxa de sucesso: 83.3%
+Tempo total: 8.54 horas
+
+MELHORES MODELOS POR PROPRIEDADE E TIPO DE DESCRITOR:
+--------------------------------------------------------------------------------
+
+PROPRIEDADE 0:
+  3D: MLP_att0_3D_medium
+    Val Loss: 0.0003
+    Arquitetura: [64, 32, 16]
+  AtomPair: MLP_att0_AtomPair_large
+    Val Loss: 0.0003
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att0_Avalon_small
+    Val Loss: 0.0003
+    Arquitetura: [32, 16]
+  CM: MLP_att0_CM_medium
+    Val Loss: 0.0003
+    Arquitetura: [64, 32, 16]
+  EState: MLP_att0_EState_medium
+    Val Loss: 0.0004
+    Arquitetura: [64, 32, 16]
+  Morgan: MLP_att0_Morgan_large
+    Val Loss: 0.0003
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att0_MorganCount_large
+    Val Loss: 0.0003
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att0_Pattern_large
+    Val Loss: 0.0002
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att0_Physicochemical_medium
+    Val Loss: 0.0003
+    Arquitetura: [64, 32, 16]
+  Topological: MLP_att0_Topological_large
+    Val Loss: 0.0003
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att0_Pattern_large
+    Val Loss: 0.0002
+    Descritor: Pattern
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 10:
+  3D: MLP_att10_3D_large
+    Val Loss: 0.6128
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att10_AtomPair_large
+    Val Loss: 0.1056
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att10_Avalon_small
+    Val Loss: 0.3005
+    Arquitetura: [32, 16]
+  CM: MLP_att10_CM_medium
+    Val Loss: 0.0034
+    Arquitetura: [64, 32, 16]
+  EState: MLP_att10_EState_large
+    Val Loss: 0.2551
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att10_Morgan_small
+    Val Loss: 0.4193
+    Arquitetura: [32, 16]
+  MorganCount: MLP_att10_MorganCount_medium
+    Val Loss: 0.0495
+    Arquitetura: [64, 32, 16]
+  Pattern: MLP_att10_Pattern_large
+    Val Loss: 0.2671
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att10_Physicochemical_large
+    Val Loss: 0.0453
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att10_Topological_large
+    Val Loss: 0.1456
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att10_CM_medium
+    Val Loss: 0.0034
+    Descritor: CM
+    Arquitetura: [64, 32, 16]
+
+
+MODELOS FALHOS:
+  - MLP_att0_MACCS_small: Dados de entrada X_normal vazios ou inválidos
+  - MLP_att0_MACCS_medium: Dados de entrada X_normal vazios ou inválidos
+  - MLP_att0_MACCS_large: Dados de entrada X_normal vazios ou inválidos
+  - MLP_att0_Autocorr_small: Dados de entrada X_normal vazios ou inválidos
+  - MLP_att0_Autocorr_medium: Dados de entrada X_normal vazios ou inválidos
+  - MLP_att0_Autocorr_large: Dados de entrada X_normal vazios ou inválidos
+  - MLP_att10_MACCS_small: arrays used as indices must be of integer (or boolean) type
+  - MLP_att10_MACCS_medium: arrays used as indices must be of integer (or boolean) type
+  - MLP_att10_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att10_Autocorr_small: arrays used as indices must be of integer (or boolean) type
+  - MLP_att10_Autocorr_medium: arrays used as indices must be of integer (or boolean) type
+  - MLP_att10_Autocorr_large: arrays used as indices must be of integer (or boolean) type

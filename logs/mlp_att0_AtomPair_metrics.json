@@ -1,0 +1,17 @@
+{
+  "model": "mlp_att0_AtomPair",
+  "descriptor_type": "AtomPair",
+  "att_index": 0,
+  "layers": [
+    128,
+    64,
+    32
+  ],
+  "train_loss": 0.004623883291433008,
+  "val_loss": 0.0002590503161030838,
+  "test_loss": 2.6551114754767316e-07,
+  "test_rmse": 0.0005152777382612926,
+  "test_mae": 0.0003517139994073659,
+  "training_time_seconds": 592.1216368675232,
+  "timestamp": "2025-09-28 23:46:07"
+}
