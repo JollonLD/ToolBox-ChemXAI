@@ -805,8 +805,8 @@ class TabularAnalyzer:
         return mask
 
     def _calculate_fidelity(self, model, explanation, data, y_true):
-        
-        n_features = explanation.shape[0]//10 if explanation.shape[0] >= 10 else explanation.shape[0]//2
+
+        n_features = len(explanation)//10 if len(explanation) >= 10 else len(explanation)//2
 
         data_mask_pos = self._create_masked_dataset(data=data, explanation=explanation, descending=True, n_features=n_features)
         data_mask_neg = self._create_masked_dataset(data=data, explanation=explanation, descending=False, n_features=n_features)

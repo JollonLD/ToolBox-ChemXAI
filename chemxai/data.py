@@ -738,6 +738,84 @@ class qm9_tabular:
         df.reset_index(drop=True, inplace=True)
         return df
     
+    def get_coulomb_matrix(self, n_atoms_max=29, list_mols=[], n_jobs=4):
+        """
+        Calcula a matriz de Coulomb para as moléculas usando DScribe com processamento paralelo.
+        
+        Parameters:
+        -----------
+        n_atoms_max : int
+            Número máximo de átomos para normalizar o tamanho da matriz
+        list_mols : list
+            Lista de moléculas por número de átomos (vazio para todas)
+        n_jobs : int
+            Número de threads para processamento paralelo
+            
+        Returns:
+        --------
+        np.ndarray: Matrizes de Coulomb achatadas
+        """
+        # Verificar cache
+        cache_path = os.path.join(os.getcwd(), "data", f"coulomb_matrix_n{n_atoms_max}_cache.npz")
+        if os.path.exists(cache_path) and not list_mols:
+            try:
+                data = np.load(cache_path)
+                print(f"Carregando matrizes de Coulomb do cache: {cache_path}")
+                return data['cm_matrices']
+            except Exception as e:
+                print(f"Erro ao carregar cache de matrizes de Coulomb: {e}")
+        
+        # Carregar dados moleculares
+        coords, props, natoms = self.load_qm9_dataset(list_mols=list_mols)
+        
+        # Configurar descritor de matriz de Coulomb
+        cm_descriptor = CoulombMatrix(n_atoms_max=n_atoms_max, permutation="sorted_l2")
+        
+        # Função para processar uma molécula
+        def process_molecule(mol_idx):
+            try:
+                atoms_list, coordinates = coords[mol_idx]
+                
+                # Criar objeto Atoms do ASE
+                molecule = Atoms(symbols=atoms_list, positions=coordinates)
+                
+                # Calcular matriz de Coulomb
+                cm_matrix = cm_descriptor.create(molecule)
+                
+                return mol_idx, cm_matrix
+            except Exception as e:
+                print(f"Erro ao processar molécula {mol_idx}: {e}")
+                return None
+        
+        # Processamento paralelo
+        cm_matrices = []
+        valid_indices = []
+        
+        with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            futures = [executor.submit(process_molecule, i) for i in range(len(coords))]
+            
+            for future in tqdm(futures, desc="Calculando matrizes de Coulomb", total=len(futures)):
+                result = future.result()
+                if result:
+                    mol_idx, cm_matrix = result
+                    cm_matrices.append(cm_matrix)
+                    valid_indices.append(mol_idx)
+        
+        cm_matrices = np.array(cm_matrices)
+        
+        # Salvar cache apenas se processarmos todo o conjunto
+        if not list_mols:
+            try:
+                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                np.savez_compressed(cache_path, cm_matrices=cm_matrices, valid_indices=valid_indices)
+                print(f"Cache de matrizes de Coulomb salvo em: {cache_path}")
+            except Exception as e:
+                print(f"Aviso: Não foi possível salvar o cache: {e}")
+        
+        print(f"Matrizes de Coulomb calculadas para {len(cm_matrices)} moléculas")
+        
+        return cm_matrices
+
     def get_physicochemical_descriptors(self, n_jobs=4):
         """
         Calcula descritores físico-químicos 2D usando RDKit com processamento paralelo.
