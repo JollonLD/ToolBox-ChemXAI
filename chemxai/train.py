@@ -14,8 +14,8 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
-from models import GCN, MLP
-from data import graph_datasets, qm9_tabular
+from .models import GCN, MLP
+from .data import graph_datasets, qm9_tabular
 
 # Configure logging system
 def setup_logging(log_dir="logs"):

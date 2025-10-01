@@ -1,3 +1,4 @@
+# Experimento: Avaliar fidelidade dos modelos por cluster
 import os
 import torch
 import numpy as np
@@ -14,6 +15,102 @@ from chemxai.train import train_mlp_qm9
 from chemxai.explainers import Shap, LIME
 from chemxai.evaluate import TabularAnalyzer
 from chemxai.plots import radar_plot, horizontal_bar_plot
+from chemxai.data import Cluster
+
+def run_cluster_fidelity_experiment(att_index=0, descriptor_type='Physicochemical', num_clusters=5, cluster_size=100):
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    print(f"[{timestamp}] Starting cluster fidelity experiment...")
+
+    # 1. Carregar dados
+    qm9 = qm9_tabular()
+    loaders = qm9.get_paired_dataloaders(
+        att_index=att_index,
+        batch_size=32,
+        descriptor_type=descriptor_type,
+        n_noise=0,
+        add_noise=False
+    )
+    train_loader, val_loader, test_loader = loaders
+
+    # 2. Criar clusters usando o train_loader
+    cluster_manager = Cluster(train_loader)
+    clusters = cluster_manager.create_clusters(num_clusters=num_clusters, size_cluster=cluster_size)
+    print(f"Clusters criados: {len(clusters)}")
+
+    # 3. Carregar modelo treinado
+    input_dim = next(iter(train_loader))[0].shape[1]
+    output_dim = 1
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model_name = f'Large/mlp_qm9_{descriptor_type}_att{att_index}'
+    model_path = os.path.join(os.getcwd(), 'models', f'{model_name}.pth')
+    model = MLP(input_dim, output_dim, layers=[128, 64, 32], device=device)
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+    model.to(device)
+
+    # 4. Avaliar fidelidade por cluster
+    cluster_results = {}
+    feature_names = qm9.get_descriptor_names(descriptor_type)
+    for cluster_id, cluster_data in clusters.items():
+        # Extrair X e y do cluster
+        X_cluster = []
+        y_cluster = []
+        for xb, yb in cluster_data:
+            X_cluster.append(xb)
+            y_cluster.append(yb)
+        if not X_cluster:
+            continue
+        X_cluster = torch.cat(X_cluster, dim=0)
+        y_cluster = torch.cat(y_cluster, dim=0)
+
+        # Limitar tamanho para explicação
+        X_cluster = X_cluster[:100]
+        y_cluster = y_cluster[:100]
+
+        # Rodar explicadores
+        shap_explainer = Shap(model, X_cluster, X_cluster, device)
+        shap_explanation = shap_explainer.explain_global()
+        lime_explainer = LIME(model, X_cluster, X_cluster, device)
+        lime_explanation = lime_explainer.explain_local(index=0)
+
+        # Predições
+        with torch.no_grad():
+            y_pred = model(X_cluster.to(device)).cpu().numpy()
+
+        # Calcular fidelidade
+        analyzer_shap = TabularAnalyzer(
+            model=model,
+            explainer=shap_explainer,
+            explanation=shap_explanation,
+            data=X_cluster,
+            y_true=y_cluster.numpy(),
+            y_pred=y_pred,
+            device=device
+        )
+        fidelity_shap = analyzer_shap.get_metrics()
+
+        analyzer_lime = TabularAnalyzer(
+            model=model,
+            explainer=lime_explainer,
+            explanation=lime_explanation,
+            data=X_cluster,
+            y_true=y_cluster.numpy(),
+            y_pred=y_pred,
+            device=device
+        )
+        fidelity_lime = analyzer_lime.get_metrics()
+
+        cluster_results[cluster_id] = {
+            "shap_fidelity": fidelity_shap,
+            "lime_fidelity": fidelity_lime
+        }
+        print(f"Cluster {cluster_id}: SHAP {fidelity_shap}, LIME {fidelity_lime}")
+
+    # 5. Salvar resultados
+    results_path = f"experiments/cluster_fidelity_{timestamp}.json"
+    with open(results_path, 'w') as f:
+        json.dump(cluster_results, f, indent=2)
+    print(f"Resultados salvos em {results_path}")
 
 def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physicochemical'):
     
@@ -25,7 +122,7 @@ def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physi
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     
     # Define model path
-    model_name = f'mlp_qm9_{descriptor_type}_att{att_index}'
+    model_name = f'Large/mlp_qm9_{descriptor_type}_att{att_index}'
     
     # Setup logging
     print(f"[{timestamp}] Starting analysis for model: {model_name}")
@@ -42,10 +139,17 @@ def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physi
     experiment_id = f"{next_id:03d}"
     experiment_dir = os.path.join(exp_dir, f"experiment_{experiment_id}")
     os.makedirs(experiment_dir, exist_ok=True)
-    log_file = os.path.join(experiment_dir, f"specific_model_analysis.txt")
-    json_log_file = os.path.join(experiment_dir, f"specific_model_analysis.json")
+
+    # NOVO: criar subpasta do modelo dentro do experimento
+    model_subdir_name = f"{descriptor_type}_att{att_index}"
+    model_dir = os.path.join(experiment_dir, model_subdir_name)
+    os.makedirs(model_dir, exist_ok=True)
+
+    log_file = os.path.join(model_dir, f"specific_model_analysis.txt")
+    json_log_file = os.path.join(model_dir, f"specific_model_analysis.json")
     print(f"[{timestamp}] Experiment ID: {experiment_id}")
     print(f"[{timestamp}] Experiment directory: {experiment_dir}")
+    print(f"[{timestamp}] Model directory: {model_dir}")
 
     # Initialize JSON log dictionary
     json_log = {
@@ -128,7 +232,7 @@ def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physi
         update_json_log(f"Model dimensions: input={input_dim}, output={output_dim}", 35)
         
         # For the specific model, we don't need to specify layers as they'll be loaded from the file
-        model = MLP(input_dim, output_dim, hidden_layers=[128, 64, 32], device=device)  # Default layers, will be overwritten
+        model = MLP(input_dim, output_dim, layers=[128, 64, 32], device=device)  # Default layers, will be overwritten
         update_json_log("MLP model instance created", 40)
         
         # Load the specific model
@@ -205,15 +309,15 @@ def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physi
         json_log["results"]["shap"]["local_explanations"] = local_shap_explanations
         
         # Save to separate JSON files for easy access
-        shap_global_path = os.path.join(experiment_dir, "shap_global_explanation.json")
+        shap_global_path = os.path.join(model_dir, "shap_global_explanation.json")
         with open(shap_global_path, 'w') as f:
             json.dump({"explanation": shap_explanation}, f, indent=2)
             
-        shap_local_path = os.path.join(experiment_dir, "shap_local_explanations.json")
+        shap_local_path = os.path.join(model_dir, "shap_local_explanations.json")
         with open(shap_local_path, 'w') as f:
             json.dump({"explanations": local_shap_explanations}, f, indent=2)
             
-        update_json_log(f"SHAP explanations saved to {experiment_dir}", 88)
+        update_json_log(f"SHAP explanations saved to {model_dir}", 88)
         log_lines.append("SHAP explanation generated.\n")
     except Exception as e:
         error_msg = f"Error during SHAP explanation: {str(e)}"
@@ -244,7 +348,7 @@ def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physi
         json_log["results"]["lime"]["local_explanations"] = lime_explanations
         
         # Save to a separate JSON file for easy access
-        lime_json_path = os.path.join(experiment_dir, "lime_explanation.json")
+        lime_json_path = os.path.join(model_dir, "lime_explanation.json")
         with open(lime_json_path, 'w') as f:
             json.dump({"explanations": lime_explanations}, f, indent=2)
             
@@ -322,19 +426,20 @@ def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physi
     # SHAP Plots
     try:
         update_json_log("Generating SHAP radar plot...")
-        radar_plot(np.array(shap_explanation), title=f"SHAP - Radar Plot - {model_name}")
-        radar_path = os.path.join(experiment_dir, "shap_radar.png")
+        feature_names = qm9.get_descriptor_names(descriptor_type)
+        radar_plot(np.array(shap_explanation), feature_names=feature_names, title=f"SHAP - Radar Plot - {model_name}")
+        radar_path = os.path.join(model_dir, "shap_radar.png")
         plt.savefig(radar_path)
         plt.close()
         update_json_log(f"SHAP radar plot saved to {radar_path}")
-        
+
         update_json_log("Generating SHAP bar plot...")
-        horizontal_bar_plot(np.array(shap_explanation), title=f"SHAP - Feature Importance - {model_name}",
-                          save_path=experiment_dir, filename="shap_bar.png")
-        
+        horizontal_bar_plot(np.array(shap_explanation), feature_names=feature_names, title=f"SHAP - Feature Importance - {model_name}",
+                            save_path=model_dir, filename="shap_bar.png")
+
         json_log["results"]["shap"]["plots"] = {
             "radar_plot": radar_path,
-            "bar_plot": os.path.join(experiment_dir, "shap_bar.png")
+            "bar_plot": os.path.join(model_dir, "shap_bar.png")
         }
     except Exception as e:
         error_msg = f"Error generating SHAP plots: {str(e)}"
@@ -344,19 +449,20 @@ def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physi
     # LIME Plots
     try:
         update_json_log("Generating LIME radar plot...")
-        radar_plot(np.array(lime_explanation), title=f"LIME - Radar Plot - {model_name}")
-        radar_path = os.path.join(experiment_dir, "lime_radar.png")
+        feature_names = qm9.get_descriptor_names(descriptor_type)
+        radar_plot(np.array(lime_explanation), feature_names=feature_names, title=f"LIME - Radar Plot - {model_name}")
+        radar_path = os.path.join(model_dir, "lime_radar.png")
         plt.savefig(radar_path)
         plt.close()
         update_json_log(f"LIME radar plot saved to {radar_path}")
-        
+
         update_json_log("Generating LIME bar plot...")
-        horizontal_bar_plot(np.array(lime_explanation), title=f"LIME - Feature Importance - {model_name}",
-                          save_path=experiment_dir, filename="lime_bar.png")
-        
+        horizontal_bar_plot(np.array(lime_explanation), feature_names=feature_names, title=f"LIME - Feature Importance - {model_name}",
+                            save_path=model_dir, filename="lime_bar.png")
+
         json_log["results"]["lime"]["plots"] = {
             "radar_plot": radar_path,
-            "bar_plot": os.path.join(experiment_dir, "lime_bar.png")
+            "bar_plot": os.path.join(model_dir, "lime_bar.png")
         }
     except Exception as e:
         error_msg = f"Error generating LIME plots: {str(e)}"
@@ -378,12 +484,36 @@ def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physi
             json.dump(json_log, f, indent=2)
             
         update_json_log(f"JSON log saved to {json_log_file}")
-        update_json_log(f"Results and plots saved to {experiment_dir}")
+        update_json_log(f"Results and plots saved to {model_dir}")
         update_json_log("Analysis completed!")
     except Exception as e:
         error_msg = f"Error saving logs: {str(e)}"
         update_json_log(error_msg)
 
+def run_all_large_models():
+    """
+    Run explanations for all models in models/Large matching mlp_qm9_{descriptor_type}_{att_index}.pth
+    """
+    models_dir = os.path.join(os.getcwd(), "models", "Large")
+    if not os.path.exists(models_dir):
+        print(f"Directory not found: {models_dir}")
+        return
+
+    for fname in os.listdir(models_dir):
+        if fname.startswith("mlp_qm9_") and fname.endswith(".pth"):
+            # Example fname: mlp_qm9_Physicochemical_att0.pth
+            parts = fname.split("_")
+            if len(parts) < 4 or not parts[-1].startswith("att"):
+                continue
+            descriptor_type = parts[2]
+            att_index = parts[-1].replace("att", "").replace(".pth", "")
+            try:
+                att_index = int(att_index)
+            except ValueError:
+                continue
+            print(f"Running for model: {fname} (descriptor_type={descriptor_type}, att_index={att_index})")
+            run_specific_model_with_explanations(att_index=att_index, descriptor_type=descriptor_type)
+
 if __name__ == "__main__":
-    # Use this to run the specific model analysis instead of the original experiment
-    run_specific_model_with_explanations()
+    run_all_large_models()
+    # run_cluster_fidelity_experiment()
