@@ -8,3 +8,5 @@ key.txt
 key.txt.pub
 token.txt
 /Exp_Luis/
+/__tests__/
+/.vscode/

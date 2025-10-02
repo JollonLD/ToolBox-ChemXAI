@@ -655,4 +655,4 @@ def check_model_compatibility(model_path, expected_input_dim, descriptor_type):
 
 if __name__ == "__main__":
     run_all_large_models()
-    # run_cluster_fidelity_experiment()
+    run_cluster_fidelity_experiment()
