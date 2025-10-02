@@ -227,53 +227,87 @@ def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physi
     # 3. Loading the specific model
     update_json_log("Loading specific model...", 30)
     try:
-        input_dim = next(iter(train_loader))[0].shape[1]
-        output_dim = 1
-        update_json_log(f"Model dimensions: input={input_dim}, output={output_dim}", 35)
+        # CORREÇÃO: Primeiro carregar os dados para obter as dimensões corretas
+        X_sample, _, _ = qm9.compute_descriptors(
+            descriptor_type=descriptor_type, 
+            att_index=att_index, 
+            list_mols=[]
+        )
         
-        # For the specific model, we don't need to specify layers as they'll be loaded from the file
-        model = MLP(input_dim, output_dim, layers=[128, 64, 32], device=device)  # Default layers, will be overwritten
+        # Usar as dimensões reais dos dados
+        input_dim = X_sample.shape[1]
+        output_dim = 1
+        update_json_log(f"Model dimensions from data: input={input_dim}, output={output_dim}", 35)
+        
+        # Criar o modelo com as dimensões corretas
+        model = MLP(input_dim, output_dim, layers=[128, 64, 32], device=device)
         update_json_log("MLP model instance created", 40)
         
         # Load the specific model
         model_path = os.path.join(os.getcwd(), 'models', f'{model_name}.pth')
         update_json_log(f"Loading model from: {model_path}", 45)
         
-        model.load_state_dict(torch.load(model_path, map_location=device))
+        # Verificar se o arquivo existe
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Modelo não encontrado: {model_path}")
+        
+        # Carregar o estado do modelo com verificação de compatibilidade
+        try:
+            state_dict = torch.load(model_path, map_location=device)
+            model.load_state_dict(state_dict)
+        except RuntimeError as e:
+            if "size mismatch" in str(e):
+                # Modelo incompatível - tentar reconstruir com dimensões corretas do checkpoint
+                update_json_log(f"Incompatibilidade detectada: {str(e)}")
+                
+                # Extrair dimensões do checkpoint
+                first_layer_weight = state_dict['layers.0.weight']
+                checkpoint_input_dim = first_layer_weight.shape[1]
+                
+                update_json_log(f"Checkpoint input dim: {checkpoint_input_dim}, Data input dim: {input_dim}")
+                
+                if checkpoint_input_dim != input_dim:
+                    error_msg = (f"Incompatibilidade irreconciliável: "
+                               f"modelo foi treinado com {checkpoint_input_dim} features, "
+                               f"mas dados atuais têm {input_dim} features. "
+                               f"Verifique se o descriptor_type está correto.")
+                    update_json_log(error_msg)
+                    raise ValueError(error_msg)
+            else:
+                raise e
+        
         model.eval()
         model.to(device) 
         update_json_log(f"Model loaded and moved to {device}", 50)
+        
     except Exception as e:
         error_msg = f"Error loading model: {str(e)}"
         update_json_log(error_msg)
         raise
 
-    # 4. Prepare data for explanation
+    # 4. Prepare data for explanation (usar os mesmos dados já carregados)
     update_json_log("Preparing data for explanation...", 55)
     try:
-        X_train = []
-        y_train = []
-        for i, (xb, yb) in enumerate(tqdm(train_loader, desc="Processing train data")):
-            X_train.append(xb)
-            y_train.append(yb)
-            if i == 0:
-                update_json_log(f"First train batch - X shape: {xb.shape}, Y shape: {yb.shape}")
+        # Carregar dados completos para explicação
+        X_all, Y_all, _ = qm9.compute_descriptors(
+            descriptor_type=descriptor_type, 
+            att_index=att_index, 
+            list_mols=[]
+        )
         
-        X_train = torch.cat(X_train, dim=0)[:500]  # Limit to 500 samples for explanation
-        y_train = torch.cat(y_train, dim=0)[:500]
-        update_json_log(f"Processed train data - X shape: {X_train.shape}, Y shape: {y_train.shape}", 60)
-
-        X_test = []
-        y_test = []
-        for i, (xb, yb) in enumerate(tqdm(test_loader, desc="Processing test data")):
-            X_test.append(xb)
-            y_test.append(yb)
-            if i == 0:
-                update_json_log(f"First test batch - X shape: {xb.shape}, Y shape: {yb.shape}")
+        # Dividir em train/test usando a mesma proporção do treinamento
+        from sklearn.model_selection import train_test_split
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_all, Y_all, test_size=0.2, random_state=42
+        )
         
-        X_test = torch.cat(X_test, dim=0)[:100]  # Limit to 100 samples for explanation
-        y_test = torch.cat(y_test, dim=0)[:100]
-        update_json_log(f"Processed test data - X shape: {X_test.shape}, Y shape: {y_test.shape}", 65)
+        # Limitar amostras para explicação
+        X_train = torch.from_numpy(X_train[:500]).float()
+        y_train = torch.from_numpy(y_train[:500]).float()
+        X_test = torch.from_numpy(X_test[:100]).float()
+        y_test = torch.from_numpy(y_test[:100]).float()
+        
+        update_json_log(f"Prepared data - Train: {X_train.shape}, Test: {X_test.shape}", 60)
 
         update_json_log("Making predictions...", 70)
         with torch.no_grad():
@@ -499,20 +533,125 @@ def run_all_large_models():
         print(f"Directory not found: {models_dir}")
         return
 
+    # Primeiro, verificar compatibilidade de todos os modelos
+    qm9 = qm9_tabular()
+    compatibility_report = {}
+    
+    print("Verificando compatibilidade dos modelos...")
+    
     for fname in os.listdir(models_dir):
         if fname.startswith("mlp_qm9_") and fname.endswith(".pth"):
             # Example fname: mlp_qm9_Physicochemical_att0.pth
             parts = fname.split("_")
             if len(parts) < 4 or not parts[-1].startswith("att"):
                 continue
+                
             descriptor_type = parts[2]
             att_index = parts[-1].replace("att", "").replace(".pth", "")
+            
             try:
                 att_index = int(att_index)
             except ValueError:
                 continue
-            print(f"Running for model: {fname} (descriptor_type={descriptor_type}, att_index={att_index})")
+                
+            # Obter dimensões esperadas dos dados
+            try:
+                X_sample, _, _ = qm9.compute_descriptors(
+                    descriptor_type=descriptor_type, 
+                    att_index=att_index, 
+                    list_mols=list(range(10))  # Apenas algumas moléculas para teste
+                )
+                expected_dim = X_sample.shape[1]
+                
+                model_path = os.path.join(models_dir, fname)
+                compatibility = check_model_compatibility(model_path, expected_dim, descriptor_type)
+                compatibility_report[fname] = compatibility
+                
+                status = "✓" if compatibility['compatible'] else "✗"
+                print(f"{status} {fname}: {compatibility.get('error', 'Compatible')}")
+                
+            except Exception as e:
+                compatibility_report[fname] = {
+                    'compatible': False,
+                    'error': f"Erro ao verificar dados: {str(e)}"
+                }
+                print(f"✗ {fname}: Erro ao verificar dados: {str(e)}")
+    
+    # Executar apenas modelos compatíveis
+    compatible_models = [fname for fname, report in compatibility_report.items() 
+                        if report['compatible']]
+    
+    print(f"\nModelos compatíveis: {len(compatible_models)}/{len(compatibility_report)}")
+    print("Iniciando análise dos modelos compatíveis...")
+    
+    for fname in compatible_models:
+        parts = fname.split("_")
+        descriptor_type = parts[2]
+        att_index = int(parts[-1].replace("att", "").replace(".pth", ""))
+        
+        print(f"Running for model: {fname} (descriptor_type={descriptor_type}, att_index={att_index})")
+        try:
             run_specific_model_with_explanations(att_index=att_index, descriptor_type=descriptor_type)
+        except Exception as e:
+            print(f"Erro ao processar {fname}: {str(e)}")
+            continue
+    
+    # Salvar relatório de compatibilidade
+    report_path = os.path.join(os.getcwd(), "experiments", "model_compatibility_report.json")
+    os.makedirs(os.path.dirname(report_path), exist_ok=True)
+    with open(report_path, 'w') as f:
+        json.dump(compatibility_report, f, indent=2)
+    print(f"Relatório de compatibilidade salvo em: {report_path}")
+
+
+def check_model_compatibility(model_path, expected_input_dim, descriptor_type):
+    """
+    Verifica se o modelo salvo é compatível com as dimensões dos dados atuais.
+    
+    Parameters:
+    -----------
+    model_path : str
+        Caminho para o arquivo do modelo
+    expected_input_dim : int
+        Dimensão de entrada esperada
+    descriptor_type : str
+        Tipo de descritor usado
+        
+    Returns:
+    --------
+    dict: Informações sobre compatibilidade
+    """
+    if not os.path.exists(model_path):
+        return {
+            'compatible': False,
+            'error': f"Arquivo não encontrado: {model_path}"
+        }
+    
+    try:
+        # Carregar apenas o estado do modelo para verificação
+        state_dict = torch.load(model_path, map_location='cpu')
+        
+        # Extrair dimensões da primeira camada
+        first_layer_weight = state_dict['layers.0.weight']
+        model_input_dim = first_layer_weight.shape[1]
+        model_output_dim = list(state_dict.keys())[-1]  # Última camada
+        
+        compatible = (model_input_dim == expected_input_dim)
+        
+        return {
+            'compatible': compatible,
+            'model_input_dim': model_input_dim,
+            'expected_input_dim': expected_input_dim,
+            'descriptor_type': descriptor_type,
+            'model_layers': len([k for k in state_dict.keys() if 'weight' in k]),
+            'error': None if compatible else f"Dimensão incompatível: modelo={model_input_dim}, dados={expected_input_dim}"
+        }
+        
+    except Exception as e:
+        return {
+            'compatible': False,
+            'error': f"Erro ao verificar modelo: {str(e)}"
+        }
 
 if __name__ == "__main__":
     run_all_large_models()
