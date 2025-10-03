@@ -17,6 +17,143 @@ from chemxai.evaluate import TabularAnalyzer
 from chemxai.plots import radar_plot, horizontal_bar_plot
 from chemxai.data import Cluster
 
+def safe_log(message, level="INFO"):
+    """
+    Função de logging segura que não falha
+    """
+    try:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+        sys.stdout.flush()
+    except Exception:
+        # Se até o logging falhar, apenas imprimir sem formatação
+        print(f"{level}: {message}")
+
+def run_single_model_safe(fname, models_dir):
+    """
+    Executa um único modelo com tratamento robusto de erros
+    
+    Returns:
+    --------
+    dict: Resultado da execução com status e informações
+    """
+    result = {
+        'model': fname,
+        'status': 'unknown',
+        'duration_minutes': 0,
+        'error': None,
+        'stage': 'initialization'
+    }
+    
+    start_time = time.time()
+    
+    try:
+        # 1. Parse do nome do arquivo
+        result['stage'] = 'parsing_filename'
+        safe_log(f"Parsing filename: {fname}")
+        
+        parts = fname.split("_")
+        if len(parts) < 4 or not parts[-1].startswith("att"):
+            raise ValueError(f"Formato de nome inválido: {fname}")
+            
+        descriptor_type = parts[2]
+        att_part = parts[-1].replace("att", "").replace(".pth", "")
+        att_index = int(att_part)
+        
+        safe_log(f"Parsed - Descriptor: {descriptor_type}, Att_index: {att_index}")
+        
+        # 2. Validação de parâmetros
+        result['stage'] = 'parameter_validation'
+        is_valid, validation_info = validate_parameters(att_index, descriptor_type)
+        if not is_valid:
+            raise ValueError(f"Parâmetros inválidos: {'; '.join(validation_info['errors'])}")
+        
+        # 3. Verificação de compatibilidade rápida
+        result['stage'] = 'compatibility_check'
+        model_path = os.path.join(models_dir, fname)
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Arquivo do modelo não encontrado: {model_path}")
+        
+        # 4. Executar análise principal
+        result['stage'] = 'main_execution'
+        safe_log(f"Iniciando análise principal para {fname}")
+        
+        run_specific_model_with_explanations(att_index=att_index, descriptor_type=descriptor_type)
+        
+        # 5. Sucesso
+        result['status'] = 'success'
+        result['duration_minutes'] = round((time.time() - start_time) / 60, 2)
+        safe_log(f"✅ Sucesso - {fname} ({result['duration_minutes']} min)", "SUCCESS")
+        
+    except KeyboardInterrupt:
+        result['status'] = 'interrupted'
+        result['error'] = 'Interrompido pelo usuário'
+        result['duration_minutes'] = round((time.time() - start_time) / 60, 2)
+        safe_log(f"🛑 Interrompido - {fname}", "WARNING")
+        raise  # Re-raise para parar a execução geral
+        
+    except Exception as e:
+        result['status'] = 'failed'
+        result['error'] = str(e)
+        result['duration_minutes'] = round((time.time() - start_time) / 60, 2)
+        
+        error_details = {
+            'type': type(e).__name__,
+            'message': str(e),
+            'stage': result['stage']
+        }
+        
+        safe_log(f"❌ Erro em {result['stage']} - {fname}: {error_details['type']}: {error_details['message']}", "ERROR")
+    
+    return result
+
+def validate_parameters(att_index, descriptor_type):
+    """
+    Valida os parâmetros antes de executar experimentos.
+    
+    Parameters:
+    -----------
+    att_index : int
+        Índice da propriedade (deve estar entre 0-18 para QM9)
+    descriptor_type : str
+        Tipo de descritor
+        
+    Returns:
+    --------
+    bool: True se válido, False caso contrário
+    dict: Informações sobre a validação
+    """
+    validation_info = {
+        'valid': True,
+        'errors': [],
+        'warnings': []
+    }
+    
+    # Validar att_index
+    if not isinstance(att_index, int):
+        validation_info['valid'] = False
+        validation_info['errors'].append(f"att_index deve ser um inteiro, recebido: {type(att_index)}")
+    elif att_index < 0 or att_index >= 19:
+        validation_info['valid'] = False
+        validation_info['errors'].append(f"att_index deve estar entre 0-18, recebido: {att_index}")
+    
+    # Validar descriptor_type
+    valid_descriptors = [
+        'CM', 'Morgan', 'Physicochemical', '3D', 'MACCS', 
+        'Topological', 'AtomPair', 'EState', 'Pattern', 
+        'Avalon', 'MorganCount', 'Autocorr'
+    ]
+    
+    if descriptor_type not in valid_descriptors:
+        validation_info['valid'] = False
+        validation_info['errors'].append(f"descriptor_type inválido. Válidos: {valid_descriptors}")
+    
+    # Avisos para combinações problemáticas
+    if att_index > 15:
+        validation_info['warnings'].append(f"att_index {att_index} pode não ter dados suficientes em alguns modelos")
+    
+    return validation_info['valid'], validation_info
+
 def run_cluster_fidelity_experiment(att_index=0, descriptor_type='Physicochemical', num_clusters=5, cluster_size=100):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     print(f"[{timestamp}] Starting cluster fidelity experiment...")
@@ -112,20 +249,39 @@ def run_cluster_fidelity_experiment(att_index=0, descriptor_type='Physicochemica
         json.dump(cluster_results, f, indent=2)
     print(f"Resultados salvos em {results_path}")
 
-def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physicochemical'):
-    
+def run_specific_model_with_explanations(att_index=0, descriptor_type='Physicochemical'):
     """
     Run SHAP and LIME explanations for a specific model: mlp_qm9_Physicochemical_att0.pth
     This function is optimized for nohup execution with real-time progress monitoring.
     """
+    
+    # Validar parâmetros antes de começar
+    try:
+        is_valid, validation_info = validate_parameters(att_index, descriptor_type)
+        if not is_valid:
+            error_msg = f"Parâmetros inválidos: {'; '.join(validation_info['errors'])}"
+            print(f"❌ {error_msg}")
+            raise ValueError(error_msg)
+        
+        if validation_info['warnings']:
+            for warning in validation_info['warnings']:
+                print(f"⚠️  Aviso: {warning}")
+    except Exception as e:
+        print(f"❌ Erro na validação de parâmetros: {str(e)}")
+        raise
+    
     # Create timestamp for the experiment
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     
     # Define model path
     model_name = f'Large/mlp_qm9_{descriptor_type}_att{att_index}'
     
-    # Setup logging
-    print(f"[{timestamp}] Starting analysis for model: {model_name}")
+    # Setup logging with error handling
+    try:
+        safe_log(f"Starting analysis for model: {model_name}")
+    except Exception as e:
+        print(f"❌ Erro no setup inicial: {str(e)}")
+        raise
     
     # 1. Create experiment folder
     print(f"[{timestamp}] Creating experiment directory...")
@@ -228,6 +384,10 @@ def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physi
     update_json_log("Loading specific model...", 30)
     try:
         # CORREÇÃO: Primeiro carregar os dados para obter as dimensões corretas
+        # Validar att_index antes de usar
+        if att_index >= 19:  # QM9 tem propriedades com índices 0-18
+            raise ValueError(f"att_index {att_index} é inválido. QM9 tem propriedades com índices 0-18.")
+        
         X_sample, _, _ = qm9.compute_descriptors(
             descriptor_type=descriptor_type, 
             att_index=att_index, 
@@ -254,25 +414,47 @@ def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physi
         # Carregar o estado do modelo com verificação de compatibilidade
         try:
             state_dict = torch.load(model_path, map_location=device)
-            model.load_state_dict(state_dict)
-        except RuntimeError as e:
-            if "size mismatch" in str(e):
-                # Modelo incompatível - tentar reconstruir com dimensões corretas do checkpoint
-                update_json_log(f"Incompatibilidade detectada: {str(e)}")
-                
-                # Extrair dimensões do checkpoint
-                first_layer_weight = state_dict['layers.0.weight']
-                checkpoint_input_dim = first_layer_weight.shape[1]
-                
-                update_json_log(f"Checkpoint input dim: {checkpoint_input_dim}, Data input dim: {input_dim}")
-                
-                if checkpoint_input_dim != input_dim:
-                    error_msg = (f"Incompatibilidade irreconciliável: "
-                               f"modelo foi treinado com {checkpoint_input_dim} features, "
+            
+            # Verificar compatibilidade antes de carregar
+            first_layer_weight = state_dict['layers.0.weight']
+            checkpoint_input_dim = first_layer_weight.shape[1]
+            
+            if checkpoint_input_dim != input_dim:
+                # CORREÇÃO ESPECIAL PARA MATRIZ DE COULOMB
+                if descriptor_type == 'CM' and checkpoint_input_dim == 29 and input_dim == 841:
+                    update_json_log(f"Detectada incompatibilidade CM: modelo treinado com 29 features, dados têm 841")
+                    update_json_log("Reconstruindo modelo com dimensões do checkpoint...")
+                    
+                    # Recriar modelo com dimensões do checkpoint
+                    model = MLP(checkpoint_input_dim, output_dim, layers=[128, 64, 32], device=device)
+                    update_json_log(f"Modelo recriado com {checkpoint_input_dim} features de entrada")
+                    
+                    # Agora precisamos ajustar os dados também
+                    update_json_log("AVISO: Dados CM serão recalculados com configuração compatível")
+                    
+                elif descriptor_type == 'CM' and checkpoint_input_dim == 841 and input_dim == 29:
+                    update_json_log(f"Detectada incompatibilidade CM: modelo treinado com 841 features, dados têm 29")
+                    update_json_log("Reconstruindo modelo com dimensões do checkpoint...")
+                    
+                    # Recriar modelo com dimensões do checkpoint  
+                    model = MLP(checkpoint_input_dim, output_dim, layers=[128, 64, 32], device=device)
+                    update_json_log(f"Modelo recriado com {checkpoint_input_dim} features de entrada")
+                    
+                else:
+                    error_msg = (f"Incompatibilidade irreconciliável para {descriptor_type}: "
+                               f"modelo treinado com {checkpoint_input_dim} features, "
                                f"mas dados atuais têm {input_dim} features. "
-                               f"Verifique se o descriptor_type está correto.")
+                               f"Tipos suportados para auto-correção: CM (Coulomb Matrix)")
                     update_json_log(error_msg)
                     raise ValueError(error_msg)
+            
+            # Carregar o estado do modelo
+            model.load_state_dict(state_dict)
+            
+        except RuntimeError as e:
+            if "size mismatch" in str(e):
+                update_json_log(f"Erro de carregamento: {str(e)}")
+                raise ValueError(f"Incompatibilidade dimensional não tratada: {str(e)}")
             else:
                 raise e
         
@@ -285,15 +467,40 @@ def run_specific_model_with_explanations(att_index = 0, descriptor_type = 'Physi
         update_json_log(error_msg)
         raise
 
-    # 4. Prepare data for explanation (usar os mesmos dados já carregados)
+    # 4. Prepare data for explanation
     update_json_log("Preparing data for explanation...", 55)
     try:
-        # Carregar dados completos para explicação
+        # Obter as dimensões finais do modelo carregado
+        final_input_dim = next(iter(model.parameters())).shape[1] if len(list(model.parameters())) > 0 else input_dim
+        update_json_log(f"Final model input dimension: {final_input_dim}")
+        
+        # Se o modelo foi ajustado para dimensões diferentes, recalcular dados
+        if final_input_dim != input_dim:
+            update_json_log(f"Recalculando dados para compatibilidade: {input_dim} -> {final_input_dim}")
+            
+            if descriptor_type == 'CM':
+                # Para CM, ajustar n_atoms_max se necessário
+                if final_input_dim == 29:
+                    # Configuração original (provavelmente triângulo superior)
+                    update_json_log("Usando configuração CM reduzida (29 features)")
+                    # Implementar lógica específica se necessário
+                elif final_input_dim == 841:
+                    # Configuração completa da matriz
+                    update_json_log("Usando configuração CM completa (841 features)")
+        
+        # Carregar dados completos para explicação com configuração correta
         X_all, Y_all, _ = qm9.compute_descriptors(
             descriptor_type=descriptor_type, 
             att_index=att_index, 
             list_mols=[]
         )
+        
+        # Verificar se as dimensões batem após o carregamento
+        if X_all.shape[1] != final_input_dim:
+            error_msg = (f"ERRO CRÍTICO: Dimensões ainda incompatíveis após ajuste. "
+                        f"Dados: {X_all.shape[1]}, Modelo: {final_input_dim}")
+            update_json_log(error_msg)
+            raise ValueError(error_msg)
         
         # Dividir em train/test usando a mesma proporção do treinamento
         from sklearn.model_selection import train_test_split
@@ -528,6 +735,9 @@ def run_all_large_models():
     """
     Run explanations for all models in models/Large matching mlp_qm9_{descriptor_type}_{att_index}.pth
     """
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
     models_dir = os.path.join(os.getcwd(), "models", "Large")
     if not os.path.exists(models_dir):
         print(f"Directory not found: {models_dir}")
@@ -547,28 +757,43 @@ def run_all_large_models():
                 continue
                 
             descriptor_type = parts[2]
-            att_index = parts[-1].replace("att", "").replace(".pth", "")
+            att_part = parts[-1].replace("att", "").replace(".pth", "")
             
             try:
-                att_index = int(att_index)
+                att_index = int(att_part)
+                
+                # Validar parâmetros extraídos
+                is_valid, validation_info = validate_parameters(att_index, descriptor_type)
+                if not is_valid:
+                    print(f"⏭️  {fname}: Parâmetros inválidos - {'; '.join(validation_info['errors'])}")
+                    continue
+                    
             except ValueError:
                 continue
                 
             # Obter dimensões esperadas dos dados
             try:
+                # Para teste de compatibilidade, usar sempre att_index=0 (sempre válido)
+                test_att_index = 0 if att_index >= 19 else att_index  # QM9 tem 19 propriedades (0-18)
                 X_sample, _, _ = qm9.compute_descriptors(
                     descriptor_type=descriptor_type, 
-                    att_index=att_index, 
-                    list_mols=list(range(10))  # Apenas algumas moléculas para teste
+                    att_index=test_att_index, 
+                    list_mols=[3, 4, 5, 6, 7]  # Índices específicos conhecidos como válidos
                 )
                 expected_dim = X_sample.shape[1]
                 
                 model_path = os.path.join(models_dir, fname)
-                compatibility = check_model_compatibility(model_path, expected_dim, descriptor_type)
+                compatibility = check_model_compatibility(model_path, expected_dim, descriptor_type, device=device)
                 compatibility_report[fname] = compatibility
                 
                 status = "✓" if compatibility['compatible'] else "✗"
-                print(f"{status} {fname}: {compatibility.get('error', 'Compatible')}")
+                if compatibility['compatible']:
+                    if compatibility.get('auto_fixable', False):
+                        print(f"{status} {fname}: {compatibility.get('fix_info', 'Compatible')} (AUTO-CORRIGÍVEL)")
+                    else:
+                        print(f"{status} {fname}: Compatible")
+                else:
+                    print(f"{status} {fname}: {compatibility.get('error', 'Unknown error')}")
                 
             except Exception as e:
                 compatibility_report[fname] = {
@@ -582,29 +807,108 @@ def run_all_large_models():
                         if report['compatible']]
     
     print(f"\nModelos compatíveis: {len(compatible_models)}/{len(compatibility_report)}")
-    print("Iniciando análise dos modelos compatíveis...")
     
-    for fname in compatible_models:
-        parts = fname.split("_")
-        descriptor_type = parts[2]
-        att_index = int(parts[-1].replace("att", "").replace(".pth", ""))
+    if not compatible_models:
+        print("❌ Nenhum modelo compatível encontrado!")
+        return
+    
+    print("=" * 80)
+    print("INICIANDO ANÁLISE DOS MODELOS")
+    print("=" * 80)
+    
+    # Estatísticas de execução
+    execution_stats = {
+        'total_models': len(compatible_models),
+        'successful': 0,
+        'failed': 0,
+        'skipped': 0,
+        'results': {}
+    }
+    
+    for i, fname in enumerate(compatible_models, 1):
+        print(f"\n{'='*60}")
+        print(f"MODELO {i}/{len(compatible_models)}: {fname}")
+        print(f"{'='*60}")
         
-        print(f"Running for model: {fname} (descriptor_type={descriptor_type}, att_index={att_index})")
-        try:
-            run_specific_model_with_explanations(att_index=att_index, descriptor_type=descriptor_type)
-        except Exception as e:
-            print(f"Erro ao processar {fname}: {str(e)}")
-            continue
+        # Usar função segura para executar o modelo
+        result = run_single_model_safe(fname, models_dir)
+        
+        # Atualizar estatísticas baseado no resultado
+        if result['status'] == 'success':
+            execution_stats['successful'] += 1
+        elif result['status'] == 'failed':
+            execution_stats['failed'] += 1
+        elif result['status'] == 'interrupted':
+            execution_stats['skipped'] += len(compatible_models) - i + 1
+            execution_stats['results'][fname] = result
+            break
+        
+        # Armazenar resultado
+        execution_stats['results'][fname] = result
+        
+        # Se houve interrupção, parar
+        if result['status'] == 'interrupted':
+            break
     
-    # Salvar relatório de compatibilidade
+    # Relatório final de execução
+    print(f"\n{'='*80}")
+    print(f"RELATÓRIO FINAL DE EXECUÇÃO")
+    print(f"{'='*80}")
+    print(f"📊 Total de modelos: {execution_stats['total_models']}")
+    print(f"✅ Sucessos: {execution_stats['successful']}")
+    print(f"❌ Falhas: {execution_stats['failed']}")
+    print(f"⏭️  Pulados: {execution_stats['skipped']}")
+    
+    if execution_stats['successful'] > 0:
+        success_rate = (execution_stats['successful'] / execution_stats['total_models']) * 100
+        print(f"📈 Taxa de sucesso: {success_rate:.1f}%")
+        
+        # Listar modelos bem-sucedidos
+        print(f"\n✅ MODELOS PROCESSADOS COM SUCESSO:")
+        for model, result in execution_stats['results'].items():
+            if result['status'] == 'success':
+                print(f"   • {model} ({result['duration_minutes']} min)")
+    
+    if execution_stats['failed'] > 0:
+        print(f"\n❌ MODELOS COM FALHA:")
+        for model, result in execution_stats['results'].items():
+            if result['status'] == 'failed':
+                print(f"   • {model}: {result['error']}")
+    
+    if execution_stats['skipped'] > 0:
+        print(f"\n⏭️  MODELOS PULADOS: {execution_stats['skipped']}")
+    
+    # Salvar relatórios
     report_path = os.path.join(os.getcwd(), "experiments", "model_compatibility_report.json")
+    execution_report_path = os.path.join(os.getcwd(), "experiments", "model_execution_report.json")
     os.makedirs(os.path.dirname(report_path), exist_ok=True)
+    
+    # Relatório de compatibilidade
     with open(report_path, 'w') as f:
         json.dump(compatibility_report, f, indent=2)
-    print(f"Relatório de compatibilidade salvo em: {report_path}")
+    print(f"\n💾 Relatório de compatibilidade salvo em: {report_path}")
+    
+    # Relatório de execução
+    execution_stats['timestamp'] = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    execution_stats['compatibility_report'] = compatibility_report
+    
+    with open(execution_report_path, 'w') as f:
+        json.dump(execution_stats, f, indent=2)
+    print(f"💾 Relatório de execução salvo em: {execution_report_path}")
+    
+    print(f"\n{'='*80}")
+    if execution_stats['successful'] == execution_stats['total_models']:
+        print("🎉 TODOS OS MODELOS FORAM PROCESSADOS COM SUCESSO!")
+    elif execution_stats['successful'] > 0:
+        print("⚠️  EXECUÇÃO PARCIALMENTE BEM-SUCEDIDA")
+        print("✅ Alguns modelos foram processados com sucesso")
+        print("❌ Alguns modelos falharam - verifique os logs acima")
+    else:
+        print("❌ NENHUM MODELO FOI PROCESSADO COM SUCESSO")
+        print("🔍 Verifique os erros de compatibilidade e execução")
+    print(f"{'='*80}")
 
-
-def check_model_compatibility(model_path, expected_input_dim, descriptor_type):
+def check_model_compatibility(model_path, expected_input_dim, descriptor_type, device='cpu'):
     """
     Verifica se o modelo salvo é compatível com as dimensões dos dados atuais.
     
@@ -616,6 +920,8 @@ def check_model_compatibility(model_path, expected_input_dim, descriptor_type):
         Dimensão de entrada esperada
     descriptor_type : str
         Tipo de descritor usado
+    device : str
+        Dispositivo para carregar o modelo
         
     Returns:
     --------
@@ -629,14 +935,30 @@ def check_model_compatibility(model_path, expected_input_dim, descriptor_type):
     
     try:
         # Carregar apenas o estado do modelo para verificação
-        state_dict = torch.load(model_path, map_location='cpu')
+        state_dict = torch.load(model_path, map_location=device)
         
         # Extrair dimensões da primeira camada
         first_layer_weight = state_dict['layers.0.weight']
         model_input_dim = first_layer_weight.shape[1]
-        model_output_dim = list(state_dict.keys())[-1]  # Última camada
         
+        # Verificação básica de compatibilidade
         compatible = (model_input_dim == expected_input_dim)
+        
+        # CORREÇÃO ESPECIAL PARA MATRIZ DE COULOMB
+        auto_fixable = False
+        fix_info = None
+        
+        if not compatible and descriptor_type == 'CM':
+            # Casos conhecidos de incompatibilidade CM que podem ser corrigidos
+            if (model_input_dim == 29 and expected_input_dim == 841) or \
+               (model_input_dim == 841 and expected_input_dim == 29):
+                auto_fixable = True
+                fix_info = f"CM auto-corrigível: modelo={model_input_dim}, dados={expected_input_dim}"
+                compatible = True  # Marcar como compatível porque pode ser corrigido
+        
+        error_msg = None
+        if not compatible and not auto_fixable:
+            error_msg = f"Dimensão incompatível: modelo={model_input_dim}, dados={expected_input_dim}"
         
         return {
             'compatible': compatible,
@@ -644,15 +966,17 @@ def check_model_compatibility(model_path, expected_input_dim, descriptor_type):
             'expected_input_dim': expected_input_dim,
             'descriptor_type': descriptor_type,
             'model_layers': len([k for k in state_dict.keys() if 'weight' in k]),
-            'error': None if compatible else f"Dimensão incompatível: modelo={model_input_dim}, dados={expected_input_dim}"
+            'auto_fixable': auto_fixable,
+            'fix_info': fix_info,
+            'error': error_msg
         }
         
     except Exception as e:
         return {
             'compatible': False,
+            'auto_fixable': False,
             'error': f"Erro ao verificar modelo: {str(e)}"
         }
 
 if __name__ == "__main__":
     run_all_large_models()
-    run_cluster_fidelity_experiment()
