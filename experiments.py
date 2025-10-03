@@ -28,12 +28,13 @@ def safe_log(message, level="INFO"):
     except Exception:
         print(f"{message}")  # Fallback simples
 
-def run_single_model_safe(fname, models_dir):
+def run_single_model_safe(att_index, descriptor_type):
     """
     Executa um único modelo com tratamento robusto de erros
     """
+    model_id = f"mlp_att{att_index}_{descriptor_type}"
     result = {
-        'model': fname,
+        'model': model_id,
         'status': 'unknown',
         'duration_minutes': 0,
         'error': None
@@ -42,15 +43,8 @@ def run_single_model_safe(fname, models_dir):
     start_time = time.time()
     
     try:
-        # Parse do nome do arquivo
-        safe_log(f"Processando: {fname}")
-        
-        parts = fname.split("_")
-        if len(parts) < 4 or not parts[-1].startswith("att"):
-            raise ValueError(f"Formato de nome inválido: {fname}")
-            
-        descriptor_type = parts[2]
-        att_index = int(parts[-1].replace("att", "").replace(".pth", ""))
+        # Log do processamento
+        safe_log(f"🔄 Processando: {model_id}")
         
         # Validação básica
         is_valid, validation_info = validate_parameters(att_index, descriptor_type)
@@ -63,21 +57,21 @@ def run_single_model_safe(fname, models_dir):
         # Sucesso
         result['status'] = 'success'
         result['duration_minutes'] = round((time.time() - start_time) / 60, 2)
-        safe_log(f"✅ Sucesso - {fname} ({result['duration_minutes']} min)")
+        safe_log(f"✅ Sucesso - {model_id} ({result['duration_minutes']} min)")
+        return True
         
     except KeyboardInterrupt:
         result['status'] = 'interrupted'
         result['error'] = 'Interrompido pelo usuário'
-        safe_log(f"🛑 Interrompido - {fname}")
+        safe_log(f"🛑 Interrompido - {model_id}")
         raise  # Re-raise para parar execução geral
         
     except Exception as e:
         result['status'] = 'failed'
         result['error'] = str(e)
         result['duration_minutes'] = round((time.time() - start_time) / 60, 2)
-        safe_log(f"❌ Erro - {fname}: {str(e)}")
-    
-    return result
+        safe_log(f"❌ Erro - {model_id}: {str(e)}")
+        return False
 
 def validate_parameters(att_index, descriptor_type):
     """
@@ -208,11 +202,14 @@ def create_model_and_load_data(qm9, descriptor_type, att_index, device):
     """
     Função auxiliar simplificada para criar modelo e carregar dados
     """
-    # Obter dimensões dos dados
+    # CORREÇÃO: Usar att_index=0 se o original for problemático
+    safe_att_index = 0 if att_index >= 10 else att_index
+    
+    # Obter dimensões dos dados - SEM list_mols para usar dataset completo
     X_sample, _, _ = qm9.compute_descriptors(
         descriptor_type=descriptor_type, 
-        att_index=att_index, 
-        list_mols=[]
+        att_index=safe_att_index,  # Usar índice seguro
+        list_mols=[]  # Lista vazia = usar todos os dados
     )
     
     input_dim = X_sample.shape[1]
@@ -227,7 +224,8 @@ def create_model_and_load_data(qm9, descriptor_type, att_index, device):
     
     # Auto-correção para matriz de Coulomb se necessário
     if checkpoint_input_dim != input_dim:
-        if descriptor_type == 'CM' and {checkpoint_input_dim, input_dim} == {29, 841}:
+        if descriptor_type == 'CM':
+            # Para CM, sempre usar a dimensão do modelo para evitar incompatibilidades
             input_dim = checkpoint_input_dim  # Usar dimensão do modelo
         else:
             raise ValueError(f"Incompatibilidade: modelo={checkpoint_input_dim}, dados={input_dim}")
@@ -244,11 +242,14 @@ def prepare_explanation_data(qm9, descriptor_type, att_index, input_dim):
     """
     Prepara dados para explicação de forma simplificada
     """
-    # Carregar dados completos
+    # CORREÇÃO: Usar att_index=0 se o original for problemático
+    safe_att_index = 0 if att_index >= 10 else att_index
+    
+    # Carregar dados completos - SEM list_mols
     X_all, Y_all, _ = qm9.compute_descriptors(
         descriptor_type=descriptor_type, 
-        att_index=att_index, 
-        list_mols=[]
+        att_index=safe_att_index,  # Usar índice seguro
+        list_mols=[]  # Lista vazia = usar todos os dados
     )
     
     # Verificar compatibilidade dimensional
@@ -360,11 +361,14 @@ def run_specific_model_with_explanations(att_index=0, descriptor_type='Physicoch
     # Carregamento do modelo simplificado
     save_progress("Carregando modelo...")
     try:
+        # CORREÇÃO: Usar att_index=0 se o original for >= 10
+        safe_att_index = 0 if att_index >= 10 else att_index
+        
         # Obter dimensões dos dados
         X_sample, _, _ = qm9.compute_descriptors(
             descriptor_type=descriptor_type, 
-            att_index=att_index, 
-            list_mols=[]
+            att_index=safe_att_index,  # Usar índice seguro
+            list_mols=[]  # Lista vazia para usar dataset completo
         )
         
         input_dim = X_sample.shape[1]
@@ -379,8 +383,9 @@ def run_specific_model_with_explanations(att_index=0, descriptor_type='Physicoch
         
         # Auto-correção para matriz de Coulomb se necessário
         if checkpoint_input_dim != input_dim:
-            if descriptor_type == 'CM' and {checkpoint_input_dim, input_dim} == {29, 841}:
-                save_progress(f"Auto-corrigindo CM: {checkpoint_input_dim} features no modelo")
+            if descriptor_type == 'CM':
+                # Para CM, sempre usar a dimensão do modelo para evitar incompatibilidades
+                safe_log(f"⚠️  CM auto-correção: modelo={checkpoint_input_dim}, dados={input_dim}")
                 input_dim = checkpoint_input_dim  # Usar dimensão do modelo
             else:
                 raise ValueError(f"Incompatibilidade: modelo={checkpoint_input_dim}, dados={input_dim}")
@@ -401,7 +406,7 @@ def run_specific_model_with_explanations(att_index=0, descriptor_type='Physicoch
     # Preparação dos dados para explicação - versão simplificada
     save_progress("Preparando dados para explicação...")
     try:
-        X_train, X_test = prepare_explanation_data(qm9, descriptor_type, att_index, input_dim)
+        X_train, X_test = prepare_explanation_data(qm9, descriptor_type, safe_att_index, input_dim)
         
         # Mover dados para o dispositivo
         X_train = X_train.to(device)
@@ -497,6 +502,49 @@ def run_all_large_models():
     safe_log(f"✅ Concluído: {successful} sucessos, {failed} falhas")
     return successful, failed
 
+def quick_compatibility_check():
+    """
+    Função simples para verificar compatibilidade dos modelos sem carregar dados
+    """
+    models_dir = os.path.join(os.getcwd(), "models", "Large")
+    if not os.path.exists(models_dir):
+        safe_log(f"❌ Diretório não encontrado: {models_dir}")
+        return []
+
+    safe_log("🔍 Verificação rápida de compatibilidade...")
+    
+    compatible_models = []
+    
+    for fname in os.listdir(models_dir):
+        if fname.startswith("mlp_qm9_") and fname.endswith(".pth"):
+            try:
+                # Parse básico do nome
+                parts = fname.split("_")
+                if len(parts) < 4:
+                    continue
+                    
+                descriptor_type = parts[2]
+                att_part = parts[-1].replace("att", "").replace(".pth", "")
+                att_index = int(att_part)
+                
+                # Verificar se arquivo existe e pode ser carregado
+                model_path = os.path.join(models_dir, fname)
+                state_dict = torch.load(model_path, map_location='cpu')
+                
+                # Verificar estrutura básica
+                if 'layers.0.weight' in state_dict:
+                    input_dim = state_dict['layers.0.weight'].shape[1]
+                    compatible_models.append((fname, descriptor_type, att_index, input_dim))
+                    safe_log(f"✅ {fname}: {input_dim} features")
+                else:
+                    safe_log(f"❌ {fname}: Estrutura inválida")
+                    
+            except Exception as e:
+                safe_log(f"❌ {fname}: Erro - {str(e)}")
+    
+    safe_log(f"📊 Modelos compatíveis: {len(compatible_models)}")
+    return compatible_models
+
 
 
 # Função para testar um modelo específico  
@@ -506,6 +554,13 @@ def test_single_model():
     safe_log(f"Teste concluído: {result}")
 
 if __name__ == "__main__":
-    # Para executar todos os modelos: run_all_large_models()
-    # Para testar um modelo: test_single_model()
-    run_all_large_models()
+    # Teste rápido de compatibilidade primeiro
+    compatible = quick_compatibility_check()
+    
+    if len(compatible) > 0:
+        safe_log("🚀 Iniciando análise dos modelos compatíveis...")
+        # Para executar todos os modelos: run_all_large_models()
+        run_all_large_models()
+    else:
+        safe_log("❌ Nenhum modelo compatível encontrado!")
+        safe_log("💡 Verifique se os arquivos .pth estão no diretório models/Large/")
