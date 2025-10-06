@@ -1,0 +1,8 @@
+{
+  "experiment_id": "002",
+  "timestamp": "20251003_180557",
+  "model": "Large/mlp_qm9_Topological_att10",
+  "att_index": 10,
+  "descriptor_type": "Topological",
+  "results": {}
+}

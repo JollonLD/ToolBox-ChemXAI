@@ -1,0 +1,15 @@
+{
+  "model_info": {
+    "descriptor_type": "AtomPair",
+    "att_index": 0,
+    "input_dim": 512,
+    "n_train_samples": 1000,
+    "n_test_samples": 200
+  },
+  "predictions": {
+    "mean_prediction": -0.0035190265625715256,
+    "std_prediction": 0.00013045193918514997,
+    "min_prediction": -0.003924309741705656,
+    "max_prediction": -0.003170586423948407
+  }
+}
