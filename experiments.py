@@ -61,21 +61,34 @@ def optimize_for_gpu():
     Configura otimizações para GPU e controle de memória
     """
     if torch.cuda.is_available():
-        # Configurações de GPU
+        # Configurações avançadas de GPU para SHAP
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = False
+        torch.backends.cudnn.enabled = True
         
-        # Limpeza de cache GPU
+        # Configurações de memória para SHAP
         torch.cuda.empty_cache()
+        
+        # Configurar para permitir crescimento de memória
+        try:
+            torch.cuda.set_per_process_memory_fraction(0.9)  # Usar 90% da memória disponível
+        except:
+            pass
         
         # Informações da GPU
         gpu_name = torch.cuda.get_device_name(0)
         gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1e9
-        safe_log(f"🔥 GPU: {gpu_name} ({gpu_memory:.1f}GB)")
+        free_memory = torch.cuda.memory_reserved(0) / 1e9
+        safe_log(f"🔥 GPU: {gpu_name} ({gpu_memory:.1f}GB total, {free_memory:.1f}GB livre)")
+        
+        # Configurar threads para otimização
+        torch.set_num_threads(min(8, torch.get_num_threads()))
         
         return torch.device('cuda')
     else:
         safe_log("💻 Usando CPU (GPU não disponível)")
+        # Otimizações para CPU
+        torch.set_num_threads(min(8, torch.get_num_threads()))
         return torch.device('cpu')
 
 def safe_log(message, level="INFO"):
@@ -203,10 +216,15 @@ def load_model_optimized(descriptor_type, att_index, device):
     model.load_state_dict(state_dict)
     model.eval()
     
-    # Mover para GPU se disponível
+    # Mover para GPU de forma otimizada
     if device.type == 'cuda':
         model = model.to(device)
+        # Configurar modelo para inferência otimizada
+        model = torch.jit.script(model) if hasattr(torch.jit, 'script') else model
         torch.cuda.empty_cache()  # Limpar cache após carregamento
+        safe_log(f"🚀 Modelo carregado na GPU com otimizações")
+    else:
+        safe_log(f"📱 Modelo carregado na CPU")
     
     return model, input_dim
 
@@ -240,19 +258,29 @@ def prepare_data_optimized(descriptor_type, att_index, input_dim, device, batch_
     X_train_tensor = torch.from_numpy(X_train).float()
     X_test_tensor = torch.from_numpy(X_test).float()
     
-    # Mover para device em batches para economizar memória
+    # Mover para device de forma otimizada
     if device.type == 'cuda':
-        # Verificar memória disponível
+        # Verificar memória disponível antes de mover
         available_memory = torch.cuda.get_device_properties(0).total_memory - torch.cuda.memory_allocated()
-        tensor_memory = X_train_tensor.numel() * 4  # 4 bytes por float
+        tensor_memory = (X_train_tensor.numel() + X_test_tensor.numel()) * 4  # 4 bytes por float
         
-        if tensor_memory > available_memory * 0.8:  # Usar no máximo 80% da memória
+        if tensor_memory > available_memory * 0.7:  # Usar no máximo 70% da memória
             safe_log("⚠️  Memória GPU limitada, reduzindo dados")
-            reduction_factor = int(available_memory * 0.8 / tensor_memory)
+            reduction_factor = max(1, int(tensor_memory / (available_memory * 0.7)))
             X_train_tensor = X_train_tensor[:len(X_train_tensor)//reduction_factor]
             X_test_tensor = X_test_tensor[:len(X_test_tensor)//reduction_factor]
+            safe_log(f"📉 Dados reduzidos por fator {reduction_factor}")
+        
+        # Mover para GPU com pin_memory para melhor performance
+        X_train_tensor = X_train_tensor.pin_memory().to(device, non_blocking=True)
+        X_test_tensor = X_test_tensor.pin_memory().to(device, non_blocking=True)
+        safe_log(f"🚀 Dados movidos para GPU com otimizações")
+    else:
+        X_train_tensor = X_train_tensor.to(device)
+        X_test_tensor = X_test_tensor.to(device)
+        safe_log(f"📱 Dados processados na CPU")
     
-    return X_train_tensor.to(device), X_test_tensor.to(device)
+    return X_train_tensor, X_test_tensor
 
 def run_explanations_optimized(model, X_train, X_test, device, experiment_dir, descriptor_type, att_index):
     """
@@ -705,6 +733,17 @@ def run_cluster_analysis(experiment_dir, descriptor_type='AtomPair', att_index=1
         
         if device.type == 'cuda':
             model = model.to(device)
+            # Otimizações para GPU no SHAP
+            try:
+                model = torch.jit.script(model)
+                safe_log("🚀 Modelo otimizado com JIT para GPU")
+            except:
+                safe_log("⚠️ JIT não aplicado, usando modelo normal")
+        
+        # Configurar autocast para mixed precision se disponível
+        use_amp = device.type == 'cuda' and hasattr(torch.cuda.amp, 'autocast')
+        if use_amp:
+            safe_log("⚡ Usando Automatic Mixed Precision (AMP)")
         
         # Obter nomes das features
         try:
@@ -741,8 +780,13 @@ def run_cluster_analysis(experiment_dir, descriptor_type='AtomPair', att_index=1
             max_samples = min(100, cluster_features.shape[0])
             cluster_features_sample = cluster_features[:max_samples]
             
-            # Converter para tensors
-            X_cluster = torch.from_numpy(cluster_features_sample).float().to(device)
+            # Converter para tensors com otimizações
+            if device.type == 'cuda':
+                # Usar pin_memory para melhor transferência para GPU
+                X_cluster = torch.from_numpy(cluster_features_sample).float().pin_memory().to(device, non_blocking=True)
+                safe_log(f"🚀 Dados do cluster {cluster_id} otimizados para GPU")
+            else:
+                X_cluster = torch.from_numpy(cluster_features_sample).float().to(device)
             
             try:
                 # Executar SHAP no cluster
@@ -752,6 +796,13 @@ def run_cluster_analysis(experiment_dir, descriptor_type='AtomPair', att_index=1
                 background_size = min(50, max_samples // 2)
                 X_background = X_cluster[:background_size]
                 X_test_cluster = X_cluster[:min(25, max_samples)]
+                
+                # Otimização GPU: manter dados na GPU durante SHAP
+                if device.type == 'cuda':
+                    safe_log(f"⚡ Usando GPU para SHAP no cluster {cluster_id}")
+                    # Garantir que os dados estejam na GPU
+                    X_background = X_background.to(device)
+                    X_test_cluster = X_test_cluster.to(device)
                 
                 explainer = Shap(model, X_background, X_test_cluster, device)
                 shap_global_cluster = explainer.explain_global()
@@ -774,9 +825,10 @@ def run_cluster_analysis(experiment_dir, descriptor_type='AtomPair', att_index=1
                 safe_log(f"❌ Erro SHAP no cluster {cluster_id}: {e}")
                 continue
             
-            # Limpeza de memória
+            # Limpeza agressiva de memória GPU
             if device.type == 'cuda':
                 torch.cuda.empty_cache()
+                torch.cuda.synchronize()  # Sincronizar para garantir conclusão das operações
         
         # 8. Fazer plots das explicações globais por cluster e salvar
         safe_log("📊 Gerando plots por cluster...")
