@@ -1,0 +1,562 @@
+nohup: ignoring input
+[2025-10-06 22:09:28] 🔬 Modo análise completa de clusters ativado
+[2025-10-06 22:09:28] 🚀 Iniciando análise de clusters para múltiplos descriptors...
+[2025-10-06 22:09:28] 📁 Experimento criado: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928
+[2025-10-06 22:09:28] 📊 Progresso: 1/5 - Processando AtomPair
+[2025-10-06 22:09:28] 🔥 GPU: NVIDIA RTX A6000 (51.0GB total, 0.0GB livre)
+[2025-10-06 22:09:28] 📁 Análise de clusters será salva em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_AtomPair_att10
+[2025-10-06 22:09:28] 💾 Carregando dados AtomPair...
+[2025-10-06 22:09:28] 💾 Cache miss - carregando AtomPair_10
+[2025-10-06 22:09:28] 🔄 Carregando QM9 pela primeira vez...
+Dados já existem em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/QM9_tabular_Data
+Carregando QM9 do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/qm9_dataset_cache.pkl
+Carregando SMILES do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/qm9_smiles_cache.pkl
+Carregando fingerprints de pares de átomos do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/atom_pair_fp_n512_cache.npz
+[2025-10-06 22:09:31] ✅ Dados carregados: 133885 amostras, 512 features
+[2025-10-06 22:09:31] 🔄 Criando clusters com KMeans...
+Iniciando criação de 5 clusters usando KMeans
+Extraindo dados do DataLoader...
+Dados extraídos: 133885 amostras
+Usando apenas targets para clustering
+Cluster 0: 19938 amostras (targets: -483.7516 - -444.7293)
+Cluster 1: 48918 amostras (targets: -407.5541 - -363.5714)
+Cluster 2: 13874 amostras (targets: -363.5713 - -40.4789)
+Cluster 3: 47880 amostras (targets: -443.8893 - -409.3717)
+Cluster 4: 3275 amostras (targets: -714.5681 - -484.7445)
+Clusters KMeans criados com sucesso!
+[2025-10-06 22:09:34] ⚡ Limitando cluster 0 de 19938 para 500 amostras
+[2025-10-06 22:09:34] ⚡ Limitando cluster 1 de 48918 para 500 amostras
+[2025-10-06 22:09:34] ⚡ Limitando cluster 2 de 13874 para 500 amostras
+[2025-10-06 22:09:34] ⚡ Limitando cluster 3 de 47880 para 500 amostras
+[2025-10-06 22:09:34] ⚡ Limitando cluster 4 de 3275 para 500 amostras
+
+============================================================
+RESUMO DOS CLUSTERS
+============================================================
+Total de clusters: 5
+Total de amostras: 2500
+------------------------------------------------------------
+
+Cluster 0:
+  Intervalo: [-483.7516, -444.7293]
+  Amostras: 19938
+  Target - Min: -483.7516
+  Target - Max: -444.7293
+  Target - Média: -461.4102
+  Target - Desvio Padrão: 8.3622
+
+Cluster 1:
+  Intervalo: [-407.5541, -363.5714]
+  Amostras: 48918
+  Target - Min: -407.5541
+  Target - Max: -363.5714
+  Target - Média: -389.9891
+  Target - Desvio Padrão: 12.0819
+
+Cluster 2:
+  Intervalo: [-363.5713, -40.4789]
+  Amostras: 13874
+  Target - Min: -363.5713
+  Target - Max: -40.4789
+  Target - Média: -337.5843
+  Target - Desvio Padrão: 26.4382
+
+Cluster 3:
+  Intervalo: [-443.8893, -409.3717]
+  Amostras: 47880
+  Target - Min: -443.8893
+  Target - Max: -409.3717
+  Target - Média: -427.6957
+  Target - Desvio Padrão: 8.7254
+
+Cluster 4:
+  Intervalo: [-714.5681, -484.7445]
+  Amostras: 3275
+  Target - Min: -714.5681
+  Target - Max: -484.7445
+  Target - Média: -507.1052
+  Target - Desvio Padrão: 26.9940
+[2025-10-06 22:09:34] 🔍 Procurando modelos compatíveis...
+[2025-10-06 22:09:34] ✅ Modelo encontrado: mlp_qm9_AtomPair_att0.pth
+[2025-10-06 22:09:34] ✅ Modelo encontrado: mlp_qm9_AtomPair_att10.pth
+[2025-10-06 22:09:34] 📊 2 modelos compatíveis encontrados
+[2025-10-06 22:09:34] 🎯 Usando modelo: mlp_qm9_AtomPair_att0.pth
+[2025-10-06 22:09:34] 📦 Carregando modelo para análise de clusters...
+[2025-10-06 22:09:34] 🚀 Modelo otimizado com JIT para GPU
+[2025-10-06 22:09:34] ⚡ Usando Automatic Mixed Precision (AMP)
+[2025-10-06 22:09:34] 🧠 Analisando cluster 0...
+[2025-10-06 22:09:34] 🚀 Dados do cluster 0 otimizados para GPU
+[2025-10-06 22:09:34] 🔍 Executando SHAP no cluster 0 (100 amostras)...
+[2025-10-06 22:09:34] ⚡ Usando GPU para SHAP no cluster 0
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:16,  1.47it/s]  8%|▊         | 2/25 [00:01<00:17,  1.32it/s] 12%|█▏        | 3/25 [00:02<00:15,  1.42it/s] 16%|█▌        | 4/25 [00:02<00:14,  1.45it/s] 20%|██        | 5/25 [00:03<00:13,  1.49it/s] 24%|██▍       | 6/25 [00:04<00:13,  1.36it/s] 28%|██▊       | 7/25 [00:05<00:14,  1.28it/s] 32%|███▏      | 8/25 [00:06<00:13,  1.22it/s] 36%|███▌      | 9/25 [00:06<00:12,  1.29it/s] 40%|████      | 10/25 [00:07<00:11,  1.28it/s] 44%|████▍     | 11/25 [00:08<00:10,  1.31it/s] 48%|████▊     | 12/25 [00:09<00:09,  1.31it/s] 52%|█████▏    | 13/25 [00:09<00:08,  1.34it/s] 56%|█████▌    | 14/25 [00:10<00:08,  1.36it/s] 60%|██████    | 15/25 [00:11<00:07,  1.38it/s] 64%|██████▍   | 16/25 [00:11<00:06,  1.40it/s] 68%|██████▊   | 17/25 [00:12<00:05,  1.40it/s] 72%|███████▏  | 18/25 [00:13<00:05,  1.40it/s] 76%|███████▌  | 19/25 [00:13<00:04,  1.42it/s] 80%|████████  | 20/25 [00:14<00:03,  1.42it/s] 84%|████████▍ | 21/25 [00:15<00:02,  1.46it/s] 88%|████████▊ | 22/25 [00:16<00:02,  1.44it/s] 92%|█████████▏| 23/25 [00:16<00:01,  1.45it/s] 96%|█████████▌| 24/25 [00:17<00:00,  1.43it/s]100%|██████████| 25/25 [00:18<00:00,  1.43it/s]100%|██████████| 25/25 [00:18<00:00,  1.38it/s]
+[2025-10-06 22:09:53] ✅ SHAP concluído para cluster 0
+[2025-10-06 22:09:53] 🧠 Analisando cluster 1...
+[2025-10-06 22:09:53] 🚀 Dados do cluster 1 otimizados para GPU
+[2025-10-06 22:09:53] 🔍 Executando SHAP no cluster 1 (100 amostras)...
+[2025-10-06 22:09:53] ⚡ Usando GPU para SHAP no cluster 1
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:14,  1.68it/s]  8%|▊         | 2/25 [00:01<00:13,  1.67it/s] 12%|█▏        | 3/25 [00:01<00:12,  1.72it/s] 16%|█▌        | 4/25 [00:02<00:12,  1.71it/s] 20%|██        | 5/25 [00:02<00:11,  1.69it/s] 24%|██▍       | 6/25 [00:03<00:11,  1.66it/s] 28%|██▊       | 7/25 [00:04<00:10,  1.66it/s] 32%|███▏      | 8/25 [00:04<00:10,  1.67it/s] 36%|███▌      | 9/25 [00:05<00:09,  1.66it/s] 40%|████      | 10/25 [00:06<00:09,  1.64it/s] 44%|████▍     | 11/25 [00:06<00:08,  1.64it/s] 48%|████▊     | 12/25 [00:07<00:07,  1.65it/s] 52%|█████▏    | 13/25 [00:07<00:07,  1.65it/s] 56%|█████▌    | 14/25 [00:08<00:06,  1.62it/s] 60%|██████    | 15/25 [00:09<00:06,  1.62it/s] 64%|██████▍   | 16/25 [00:09<00:05,  1.63it/s] 68%|██████▊   | 17/25 [00:10<00:04,  1.64it/s] 72%|███████▏  | 18/25 [00:10<00:04,  1.62it/s] 76%|███████▌  | 19/25 [00:11<00:03,  1.63it/s] 80%|████████  | 20/25 [00:12<00:02,  1.71it/s] 84%|████████▍ | 21/25 [00:12<00:02,  1.62it/s] 88%|████████▊ | 22/25 [00:13<00:01,  1.58it/s] 92%|█████████▏| 23/25 [00:14<00:01,  1.53it/s] 96%|█████████▌| 24/25 [00:14<00:00,  1.52it/s]100%|██████████| 25/25 [00:15<00:00,  1.50it/s]100%|██████████| 25/25 [00:15<00:00,  1.62it/s]
+[2025-10-06 22:10:08] ✅ SHAP concluído para cluster 1
+[2025-10-06 22:10:08] 🧠 Analisando cluster 2...
+[2025-10-06 22:10:08] 🚀 Dados do cluster 2 otimizados para GPU
+[2025-10-06 22:10:08] 🔍 Executando SHAP no cluster 2 (100 amostras)...
+[2025-10-06 22:10:08] ⚡ Usando GPU para SHAP no cluster 2
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:13,  1.77it/s]  8%|▊         | 2/25 [00:01<00:12,  1.86it/s] 12%|█▏        | 3/25 [00:01<00:11,  1.94it/s] 16%|█▌        | 4/25 [00:02<00:10,  1.96it/s] 20%|██        | 5/25 [00:02<00:09,  2.02it/s] 24%|██▍       | 6/25 [00:03<00:09,  2.06it/s] 28%|██▊       | 7/25 [00:03<00:08,  2.11it/s] 32%|███▏      | 8/25 [00:03<00:07,  2.14it/s] 36%|███▌      | 9/25 [00:04<00:07,  2.03it/s] 40%|████      | 10/25 [00:05<00:07,  1.97it/s] 44%|████▍     | 11/25 [00:05<00:07,  1.95it/s] 48%|████▊     | 12/25 [00:06<00:06,  1.95it/s] 52%|█████▏    | 13/25 [00:06<00:06,  1.98it/s] 56%|█████▌    | 14/25 [00:07<00:05,  1.98it/s] 60%|██████    | 15/25 [00:07<00:04,  2.01it/s] 64%|██████▍   | 16/25 [00:07<00:04,  2.03it/s] 68%|██████▊   | 17/25 [00:08<00:03,  2.08it/s] 72%|███████▏  | 18/25 [00:08<00:03,  2.11it/s] 76%|███████▌  | 19/25 [00:09<00:02,  2.02it/s] 80%|████████  | 20/25 [00:09<00:02,  1.96it/s] 84%|████████▍ | 21/25 [00:10<00:02,  1.96it/s] 88%|████████▊ | 22/25 [00:11<00:01,  1.95it/s] 92%|█████████▏| 23/25 [00:11<00:01,  1.96it/s] 96%|█████████▌| 24/25 [00:12<00:00,  1.98it/s]100%|██████████| 25/25 [00:12<00:00,  2.02it/s]100%|██████████| 25/25 [00:12<00:00,  2.00it/s]
+[2025-10-06 22:10:21] ✅ SHAP concluído para cluster 2
+[2025-10-06 22:10:21] 🧠 Analisando cluster 3...
+[2025-10-06 22:10:21] 🚀 Dados do cluster 3 otimizados para GPU
+[2025-10-06 22:10:21] 🔍 Executando SHAP no cluster 3 (100 amostras)...
+[2025-10-06 22:10:21] ⚡ Usando GPU para SHAP no cluster 3
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:13,  1.72it/s]  8%|▊         | 2/25 [00:01<00:13,  1.68it/s] 12%|█▏        | 3/25 [00:01<00:12,  1.70it/s] 16%|█▌        | 4/25 [00:02<00:13,  1.55it/s] 20%|██        | 5/25 [00:03<00:13,  1.51it/s] 24%|██▍       | 6/25 [00:03<00:12,  1.48it/s] 28%|██▊       | 7/25 [00:04<00:12,  1.45it/s] 32%|███▏      | 8/25 [00:05<00:11,  1.42it/s] 36%|███▌      | 9/25 [00:06<00:11,  1.40it/s] 40%|████      | 10/25 [00:06<00:10,  1.41it/s] 44%|████▍     | 11/25 [00:07<00:09,  1.41it/s] 48%|████▊     | 12/25 [00:08<00:09,  1.41it/s] 52%|█████▏    | 13/25 [00:08<00:08,  1.42it/s] 56%|█████▌    | 14/25 [00:09<00:07,  1.42it/s] 60%|██████    | 15/25 [00:10<00:07,  1.42it/s] 64%|██████▍   | 16/25 [00:11<00:06,  1.42it/s] 68%|██████▊   | 17/25 [00:11<00:05,  1.42it/s] 72%|███████▏  | 18/25 [00:12<00:04,  1.41it/s] 76%|███████▌  | 19/25 [00:13<00:04,  1.42it/s] 80%|████████  | 20/25 [00:13<00:03,  1.43it/s] 84%|████████▍ | 21/25 [00:14<00:02,  1.43it/s] 88%|████████▊ | 22/25 [00:15<00:02,  1.43it/s] 92%|█████████▏| 23/25 [00:15<00:01,  1.43it/s] 96%|█████████▌| 24/25 [00:16<00:00,  1.42it/s]100%|██████████| 25/25 [00:17<00:00,  1.42it/s]100%|██████████| 25/25 [00:17<00:00,  1.44it/s]
+[2025-10-06 22:10:38] ✅ SHAP concluído para cluster 3
+[2025-10-06 22:10:38] 🧠 Analisando cluster 4...
+[2025-10-06 22:10:38] 🚀 Dados do cluster 4 otimizados para GPU
+[2025-10-06 22:10:38] 🔍 Executando SHAP no cluster 4 (100 amostras)...
+[2025-10-06 22:10:38] ⚡ Usando GPU para SHAP no cluster 4
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:18,  1.33it/s]  8%|▊         | 2/25 [00:01<00:17,  1.34it/s] 12%|█▏        | 3/25 [00:02<00:16,  1.32it/s] 16%|█▌        | 4/25 [00:03<00:15,  1.33it/s] 20%|██        | 5/25 [00:03<00:15,  1.32it/s] 24%|██▍       | 6/25 [00:04<00:14,  1.31it/s] 28%|██▊       | 7/25 [00:05<00:13,  1.32it/s] 32%|███▏      | 8/25 [00:06<00:12,  1.33it/s] 36%|███▌      | 9/25 [00:06<00:12,  1.33it/s] 40%|████      | 10/25 [00:07<00:11,  1.32it/s] 44%|████▍     | 11/25 [00:08<00:10,  1.32it/s] 48%|████▊     | 12/25 [00:09<00:09,  1.32it/s] 52%|█████▏    | 13/25 [00:09<00:09,  1.32it/s] 56%|█████▌    | 14/25 [00:10<00:08,  1.33it/s] 60%|██████    | 15/25 [00:11<00:07,  1.33it/s] 64%|██████▍   | 16/25 [00:12<00:06,  1.33it/s] 68%|██████▊   | 17/25 [00:12<00:05,  1.34it/s] 72%|███████▏  | 18/25 [00:13<00:05,  1.33it/s] 76%|███████▌  | 19/25 [00:14<00:04,  1.31it/s] 80%|████████  | 20/25 [00:15<00:03,  1.31it/s] 84%|████████▍ | 21/25 [00:15<00:03,  1.32it/s] 88%|████████▊ | 22/25 [00:16<00:02,  1.33it/s] 92%|█████████▏| 23/25 [00:17<00:01,  1.32it/s] 96%|█████████▌| 24/25 [00:18<00:00,  1.31it/s]100%|██████████| 25/25 [00:18<00:00,  1.34it/s]100%|██████████| 25/25 [00:18<00:00,  1.32it/s]
+[2025-10-06 22:10:57] ✅ SHAP concluído para cluster 4
+[2025-10-06 22:10:57] 📊 Gerando plots por cluster...
+[2025-10-06 22:10:57] 💾 Explicações salvas em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_AtomPair_att10/cluster_explanations.json
+[2025-10-06 22:10:58] 📈 Plots gerados para cluster 0
+[2025-10-06 22:10:59] 📈 Plots gerados para cluster 1
+[2025-10-06 22:11:00] 📈 Plots gerados para cluster 2
+[2025-10-06 22:11:02] 📈 Plots gerados para cluster 3
+[2025-10-06 22:11:03] 📈 Plots gerados para cluster 4
+[2025-10-06 22:11:03] 📊 Gerando plot comparativo entre clusters...
+[2025-10-06 22:11:05] 📈 Plot comparativo salvo
+[2025-10-06 22:11:05] 📄 Resumo da análise salvo em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_AtomPair_att10/analysis_summary.json
+[2025-10-06 22:11:05] 🎉 Análise de clusters concluída! Resultados em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_AtomPair_att10
+[2025-10-06 22:11:05] ✅ Sucesso - AtomPair (1.62 min)
+[2025-10-06 22:11:05] 🗑️  Cache limpo
+[2025-10-06 22:11:05] 🧹 Limpeza completa realizada
+[2025-10-06 22:11:05] 📊 Progresso: 2/5 - Processando Morgan
+[2025-10-06 22:11:05] 🔥 GPU: NVIDIA RTX A6000 (51.0GB total, 0.0GB livre)
+[2025-10-06 22:11:05] 📁 Análise de clusters será salva em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_Morgan_att10
+[2025-10-06 22:11:05] 💾 Carregando dados Morgan...
+[2025-10-06 22:11:05] 💾 Cache miss - carregando Morgan_10
+Carregando QM9 do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/qm9_dataset_cache.pkl
+Carregando SMILES do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/qm9_smiles_cache.pkl
+Carregando fingerprints Morgan do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/morgan_fp_r3_n512_cache.npz
+[2025-10-06 22:11:07] ✅ Dados carregados: 133885 amostras, 512 features
+[2025-10-06 22:11:07] 🔄 Criando clusters com KMeans...
+Iniciando criação de 5 clusters usando KMeans
+Extraindo dados do DataLoader...
+Dados extraídos: 133885 amostras
+Usando apenas targets para clustering
+Cluster 0: 19938 amostras (targets: -483.7516 - -444.7293)
+Cluster 1: 48918 amostras (targets: -407.5541 - -363.5714)
+Cluster 2: 13874 amostras (targets: -363.5713 - -40.4789)
+Cluster 3: 47880 amostras (targets: -443.8893 - -409.3717)
+Cluster 4: 3275 amostras (targets: -714.5681 - -484.7445)
+Clusters KMeans criados com sucesso!
+[2025-10-06 22:11:10] ⚡ Limitando cluster 0 de 19938 para 500 amostras
+[2025-10-06 22:11:10] ⚡ Limitando cluster 1 de 48918 para 500 amostras
+[2025-10-06 22:11:10] ⚡ Limitando cluster 2 de 13874 para 500 amostras
+[2025-10-06 22:11:10] ⚡ Limitando cluster 3 de 47880 para 500 amostras
+[2025-10-06 22:11:10] ⚡ Limitando cluster 4 de 3275 para 500 amostras
+
+============================================================
+RESUMO DOS CLUSTERS
+============================================================
+Total de clusters: 5
+Total de amostras: 2500
+------------------------------------------------------------
+
+Cluster 0:
+  Intervalo: [-483.7516, -444.7293]
+  Amostras: 19938
+  Target - Min: -483.7516
+  Target - Max: -444.7293
+  Target - Média: -461.4102
+  Target - Desvio Padrão: 8.3622
+
+Cluster 1:
+  Intervalo: [-407.5541, -363.5714]
+  Amostras: 48918
+  Target - Min: -407.5541
+  Target - Max: -363.5714
+  Target - Média: -389.9891
+  Target - Desvio Padrão: 12.0819
+
+Cluster 2:
+  Intervalo: [-363.5713, -40.4789]
+  Amostras: 13874
+  Target - Min: -363.5713
+  Target - Max: -40.4789
+  Target - Média: -337.5843
+  Target - Desvio Padrão: 26.4382
+
+Cluster 3:
+  Intervalo: [-443.8893, -409.3717]
+  Amostras: 47880
+  Target - Min: -443.8893
+  Target - Max: -409.3717
+  Target - Média: -427.6957
+  Target - Desvio Padrão: 8.7254
+
+Cluster 4:
+  Intervalo: [-714.5681, -484.7445]
+  Amostras: 3275
+  Target - Min: -714.5681
+  Target - Max: -484.7445
+  Target - Média: -507.1052
+  Target - Desvio Padrão: 26.9940
+[2025-10-06 22:11:10] 🔍 Procurando modelos compatíveis...
+[2025-10-06 22:11:10] ✅ Modelo encontrado: mlp_qm9_Morgan_att10.pth
+[2025-10-06 22:11:10] ✅ Modelo encontrado: mlp_qm9_Morgan_att0.pth
+[2025-10-06 22:11:10] 📊 2 modelos compatíveis encontrados
+[2025-10-06 22:11:10] 🎯 Usando modelo: mlp_qm9_Morgan_att10.pth
+[2025-10-06 22:11:10] 📦 Carregando modelo para análise de clusters...
+[2025-10-06 22:11:10] 🚀 Modelo otimizado com JIT para GPU
+[2025-10-06 22:11:10] ⚡ Usando Automatic Mixed Precision (AMP)
+[2025-10-06 22:11:10] 🧠 Analisando cluster 0...
+[2025-10-06 22:11:10] 🚀 Dados do cluster 0 otimizados para GPU
+[2025-10-06 22:11:10] 🔍 Executando SHAP no cluster 0 (100 amostras)...
+[2025-10-06 22:11:10] ⚡ Usando GPU para SHAP no cluster 0
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:15,  1.54it/s]  8%|▊         | 2/25 [00:01<00:15,  1.49it/s] 12%|█▏        | 3/25 [00:02<00:14,  1.48it/s] 16%|█▌        | 4/25 [00:02<00:13,  1.55it/s] 20%|██        | 5/25 [00:03<00:12,  1.57it/s] 24%|██▍       | 6/25 [00:03<00:12,  1.55it/s] 28%|██▊       | 7/25 [00:04<00:11,  1.54it/s] 32%|███▏      | 8/25 [00:05<00:11,  1.54it/s] 36%|███▌      | 9/25 [00:05<00:10,  1.52it/s] 40%|████      | 10/25 [00:06<00:09,  1.51it/s] 44%|████▍     | 11/25 [00:07<00:09,  1.52it/s] 48%|████▊     | 12/25 [00:07<00:08,  1.49it/s] 52%|█████▏    | 13/25 [00:08<00:07,  1.51it/s] 56%|█████▌    | 14/25 [00:09<00:07,  1.52it/s] 60%|██████    | 15/25 [00:09<00:06,  1.54it/s] 64%|██████▍   | 16/25 [00:10<00:05,  1.55it/s] 68%|██████▊   | 17/25 [00:11<00:05,  1.55it/s] 72%|███████▏  | 18/25 [00:11<00:04,  1.52it/s] 76%|███████▌  | 19/25 [00:12<00:04,  1.50it/s] 80%|████████  | 20/25 [00:13<00:03,  1.47it/s] 84%|████████▍ | 21/25 [00:13<00:02,  1.48it/s] 88%|████████▊ | 22/25 [00:14<00:01,  1.54it/s] 92%|█████████▏| 23/25 [00:15<00:01,  1.55it/s] 96%|█████████▌| 24/25 [00:15<00:00,  1.58it/s]100%|██████████| 25/25 [00:16<00:00,  1.59it/s]100%|██████████| 25/25 [00:16<00:00,  1.53it/s]
+[2025-10-06 22:11:27] ✅ SHAP concluído para cluster 0
+[2025-10-06 22:11:27] 🧠 Analisando cluster 1...
+[2025-10-06 22:11:27] 🚀 Dados do cluster 1 otimizados para GPU
+[2025-10-06 22:11:27] 🔍 Executando SHAP no cluster 1 (100 amostras)...
+[2025-10-06 22:11:27] ⚡ Usando GPU para SHAP no cluster 1
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:14,  1.68it/s]  8%|▊         | 2/25 [00:01<00:13,  1.68it/s] 12%|█▏        | 3/25 [00:01<00:13,  1.65it/s] 16%|█▌        | 4/25 [00:02<00:13,  1.59it/s] 20%|██        | 5/25 [00:03<00:12,  1.60it/s] 24%|██▍       | 6/25 [00:03<00:11,  1.64it/s] 28%|██▊       | 7/25 [00:04<00:10,  1.67it/s] 32%|███▏      | 8/25 [00:04<00:10,  1.68it/s] 36%|███▌      | 9/25 [00:05<00:09,  1.69it/s] 40%|████      | 10/25 [00:06<00:08,  1.69it/s] 44%|████▍     | 11/25 [00:06<00:08,  1.69it/s] 48%|████▊     | 12/25 [00:07<00:07,  1.70it/s] 52%|█████▏    | 13/25 [00:07<00:07,  1.70it/s] 56%|█████▌    | 14/25 [00:08<00:06,  1.69it/s] 60%|██████    | 15/25 [00:08<00:05,  1.71it/s] 64%|██████▍   | 16/25 [00:09<00:05,  1.67it/s] 68%|██████▊   | 17/25 [00:10<00:04,  1.65it/s] 72%|███████▏  | 18/25 [00:10<00:04,  1.69it/s] 76%|███████▌  | 19/25 [00:11<00:03,  1.72it/s] 80%|████████  | 20/25 [00:11<00:02,  1.75it/s] 84%|████████▍ | 21/25 [00:12<00:02,  1.65it/s] 88%|████████▊ | 22/25 [00:13<00:02,  1.36it/s] 92%|█████████▏| 23/25 [00:14<00:01,  1.34it/s] 96%|█████████▌| 24/25 [00:15<00:00,  1.32it/s]100%|██████████| 25/25 [00:15<00:00,  1.37it/s]100%|██████████| 25/25 [00:15<00:00,  1.58it/s]
+[2025-10-06 22:11:42] ✅ SHAP concluído para cluster 1
+[2025-10-06 22:11:42] 🧠 Analisando cluster 2...
+[2025-10-06 22:11:42] 🚀 Dados do cluster 2 otimizados para GPU
+[2025-10-06 22:11:42] 🔍 Executando SHAP no cluster 2 (100 amostras)...
+[2025-10-06 22:11:42] ⚡ Usando GPU para SHAP no cluster 2
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:13,  1.72it/s]  8%|▊         | 2/25 [00:00<00:10,  2.11it/s] 12%|█▏        | 3/25 [00:01<00:09,  2.21it/s] 16%|█▌        | 4/25 [00:01<00:09,  2.29it/s] 20%|██        | 5/25 [00:02<00:08,  2.34it/s] 24%|██▍       | 6/25 [00:02<00:07,  2.40it/s] 28%|██▊       | 7/25 [00:03<00:07,  2.40it/s] 32%|███▏      | 8/25 [00:03<00:06,  2.44it/s] 36%|███▌      | 9/25 [00:03<00:06,  2.44it/s] 40%|████      | 10/25 [00:04<00:06,  2.45it/s] 44%|████▍     | 11/25 [00:04<00:05,  2.48it/s] 48%|████▊     | 12/25 [00:05<00:05,  2.51it/s] 52%|█████▏    | 13/25 [00:05<00:04,  2.43it/s] 56%|█████▌    | 14/25 [00:05<00:04,  2.48it/s] 60%|██████    | 15/25 [00:06<00:04,  2.49it/s] 64%|██████▍   | 16/25 [00:06<00:03,  2.51it/s] 68%|██████▊   | 17/25 [00:07<00:03,  2.53it/s] 72%|███████▏  | 18/25 [00:07<00:02,  2.53it/s] 76%|███████▌  | 19/25 [00:07<00:02,  2.46it/s] 80%|████████  | 20/25 [00:08<00:02,  2.48it/s] 84%|████████▍ | 21/25 [00:08<00:01,  2.48it/s] 88%|████████▊ | 22/25 [00:09<00:01,  2.46it/s] 92%|█████████▏| 23/25 [00:09<00:00,  2.48it/s] 96%|█████████▌| 24/25 [00:09<00:00,  2.48it/s]100%|██████████| 25/25 [00:10<00:00,  2.47it/s]100%|██████████| 25/25 [00:10<00:00,  2.43it/s]
+[2025-10-06 22:11:53] ✅ SHAP concluído para cluster 2
+[2025-10-06 22:11:53] 🧠 Analisando cluster 3...
+[2025-10-06 22:11:53] 🚀 Dados do cluster 3 otimizados para GPU
+[2025-10-06 22:11:53] 🔍 Executando SHAP no cluster 3 (100 amostras)...
+[2025-10-06 22:11:53] ⚡ Usando GPU para SHAP no cluster 3
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:14,  1.69it/s]  8%|▊         | 2/25 [00:01<00:14,  1.64it/s] 12%|█▏        | 3/25 [00:01<00:13,  1.65it/s] 16%|█▌        | 4/25 [00:02<00:12,  1.63it/s] 20%|██        | 5/25 [00:03<00:12,  1.62it/s] 24%|██▍       | 6/25 [00:03<00:11,  1.62it/s] 28%|██▊       | 7/25 [00:04<00:11,  1.63it/s] 32%|███▏      | 8/25 [00:04<00:10,  1.64it/s] 36%|███▌      | 9/25 [00:05<00:09,  1.63it/s] 40%|████      | 10/25 [00:06<00:09,  1.61it/s] 44%|████▍     | 11/25 [00:06<00:08,  1.62it/s] 48%|████▊     | 12/25 [00:07<00:08,  1.62it/s] 52%|█████▏    | 13/25 [00:07<00:07,  1.63it/s] 56%|█████▌    | 14/25 [00:08<00:06,  1.59it/s] 60%|██████    | 15/25 [00:09<00:06,  1.57it/s] 64%|██████▍   | 16/25 [00:09<00:05,  1.58it/s] 68%|██████▊   | 17/25 [00:10<00:05,  1.60it/s] 72%|███████▏  | 18/25 [00:11<00:04,  1.61it/s] 76%|███████▌  | 19/25 [00:11<00:03,  1.60it/s] 80%|████████  | 20/25 [00:12<00:03,  1.60it/s] 84%|████████▍ | 21/25 [00:13<00:02,  1.60it/s] 88%|████████▊ | 22/25 [00:13<00:01,  1.60it/s] 92%|█████████▏| 23/25 [00:14<00:01,  1.62it/s] 96%|█████████▌| 24/25 [00:14<00:00,  1.62it/s]100%|██████████| 25/25 [00:15<00:00,  1.62it/s]100%|██████████| 25/25 [00:15<00:00,  1.61it/s]
+[2025-10-06 22:12:08] ✅ SHAP concluído para cluster 3
+[2025-10-06 22:12:08] 🧠 Analisando cluster 4...
+[2025-10-06 22:12:08] 🚀 Dados do cluster 4 otimizados para GPU
+[2025-10-06 22:12:08] 🔍 Executando SHAP no cluster 4 (100 amostras)...
+[2025-10-06 22:12:08] ⚡ Usando GPU para SHAP no cluster 4
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:14,  1.67it/s]  8%|▊         | 2/25 [00:01<00:13,  1.65it/s] 12%|█▏        | 3/25 [00:01<00:13,  1.66it/s] 16%|█▌        | 4/25 [00:02<00:12,  1.67it/s] 20%|██        | 5/25 [00:03<00:12,  1.65it/s] 24%|██▍       | 6/25 [00:03<00:11,  1.64it/s] 28%|██▊       | 7/25 [00:04<00:10,  1.64it/s] 32%|███▏      | 8/25 [00:04<00:10,  1.64it/s] 36%|███▌      | 9/25 [00:05<00:09,  1.61it/s] 40%|████      | 10/25 [00:06<00:09,  1.62it/s] 44%|████▍     | 11/25 [00:06<00:08,  1.64it/s] 48%|████▊     | 12/25 [00:07<00:07,  1.64it/s] 52%|█████▏    | 13/25 [00:07<00:07,  1.62it/s] 56%|█████▌    | 14/25 [00:08<00:06,  1.62it/s] 60%|██████    | 15/25 [00:09<00:06,  1.63it/s] 64%|██████▍   | 16/25 [00:09<00:05,  1.63it/s] 68%|██████▊   | 17/25 [00:10<00:04,  1.62it/s] 72%|███████▏  | 18/25 [00:11<00:04,  1.62it/s] 76%|███████▌  | 19/25 [00:11<00:03,  1.63it/s] 80%|████████  | 20/25 [00:12<00:03,  1.62it/s] 84%|████████▍ | 21/25 [00:12<00:02,  1.63it/s] 88%|████████▊ | 22/25 [00:13<00:01,  1.62it/s] 92%|█████████▏| 23/25 [00:14<00:01,  1.63it/s] 96%|█████████▌| 24/25 [00:14<00:00,  1.64it/s]100%|██████████| 25/25 [00:15<00:00,  1.65it/s]100%|██████████| 25/25 [00:15<00:00,  1.63it/s]
+[2025-10-06 22:12:24] ✅ SHAP concluído para cluster 4
+[2025-10-06 22:12:24] 📊 Gerando plots por cluster...
+[2025-10-06 22:12:24] 💾 Explicações salvas em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_Morgan_att10/cluster_explanations.json
+[2025-10-06 22:12:25] 📈 Plots gerados para cluster 0
+[2025-10-06 22:12:26] 📈 Plots gerados para cluster 1
+[2025-10-06 22:12:27] 📈 Plots gerados para cluster 2
+[2025-10-06 22:12:28] 📈 Plots gerados para cluster 3
+[2025-10-06 22:12:29] 📈 Plots gerados para cluster 4
+[2025-10-06 22:12:29] 📊 Gerando plot comparativo entre clusters...
+[2025-10-06 22:12:32] 📈 Plot comparativo salvo
+[2025-10-06 22:12:32] 📄 Resumo da análise salvo em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_Morgan_att10/analysis_summary.json
+[2025-10-06 22:12:32] 🎉 Análise de clusters concluída! Resultados em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_Morgan_att10
+[2025-10-06 22:12:32] ✅ Sucesso - Morgan (1.44 min)
+[2025-10-06 22:12:32] 🗑️  Cache limpo
+[2025-10-06 22:12:32] 🧹 Limpeza completa realizada
+[2025-10-06 22:12:32] 📊 Progresso: 3/5 - Processando Physicochemical
+[2025-10-06 22:12:32] 🔥 GPU: NVIDIA RTX A6000 (51.0GB total, 0.0GB livre)
+[2025-10-06 22:12:32] 📁 Análise de clusters será salva em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_Physicochemical_att10
+[2025-10-06 22:12:32] 💾 Carregando dados Physicochemical...
+[2025-10-06 22:12:32] ⚡ Otimização: usando att_index 0 para Physicochemical
+[2025-10-06 22:12:32] 💾 Cache miss - carregando Physicochemical_0
+Carregando QM9 do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/qm9_dataset_cache.pkl
+Carregando SMILES do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/qm9_smiles_cache.pkl
+[2025-10-06 22:21:48] ✅ Dados carregados: 133885 amostras, 9 features
+[2025-10-06 22:21:48] 🔄 Criando clusters com KMeans...
+Iniciando criação de 5 clusters usando KMeans
+Extraindo dados do DataLoader...
+Dados extraídos: 133885 amostras
+Usando apenas targets para clustering
+Cluster 0: 133866 amostras (targets: 0.0000 - 73.8472)
+Cluster 1: 1 amostras (targets: 619867.6875 - 619867.6875)
+Cluster 2: 1 amostras (targets: 232663.7812 - 232663.7812)
+Cluster 3: 16 amostras (targets: 80.0224 - 293.6097)
+Cluster 4: 1 amostras (targets: 799.5881 - 799.5881)
+Clusters KMeans criados com sucesso!
+[2025-10-06 22:21:50] ⚡ Limitando cluster 0 de 133866 para 500 amostras
+
+============================================================
+RESUMO DOS CLUSTERS
+============================================================
+Total de clusters: 5
+Total de amostras: 519
+------------------------------------------------------------
+
+Cluster 0:
+  Intervalo: [0.0000, 73.8472]
+  Amostras: 133866
+  Target - Min: 0.0000
+  Target - Max: 73.8472
+  Target - Média: 3.4229
+  Target - Desvio Padrão: 1.5131
+
+Cluster 1:
+  Intervalo: [619867.6875, 619867.6875]
+  Amostras: 1
+  Target - Min: 619867.6875
+  Target - Max: 619867.6875
+  Target - Média: 619867.6875
+  Target - Desvio Padrão: 0.0000
+
+Cluster 2:
+  Intervalo: [232663.7812, 232663.7812]
+  Amostras: 1
+  Target - Min: 232663.7812
+  Target - Max: 232663.7812
+  Target - Média: 232663.7812
+  Target - Desvio Padrão: 0.0000
+
+Cluster 3:
+  Intervalo: [80.0224, 293.6097]
+  Amostras: 16
+  Target - Min: 80.0224
+  Target - Max: 293.6097
+  Target - Média: 153.9686
+  Target - Desvio Padrão: 60.9915
+
+Cluster 4:
+  Intervalo: [799.5881, 799.5881]
+  Amostras: 1
+  Target - Min: 799.5881
+  Target - Max: 799.5881
+  Target - Média: 799.5881
+  Target - Desvio Padrão: 0.0000
+[2025-10-06 22:21:50] 🔍 Procurando modelos compatíveis...
+[2025-10-06 22:21:50] ✅ Modelo encontrado: mlp_qm9_Physicochemical_att10.pth
+[2025-10-06 22:21:50] ✅ Modelo encontrado: mlp_qm9_Physicochemical_att0.pth
+[2025-10-06 22:21:50] 📊 2 modelos compatíveis encontrados
+[2025-10-06 22:21:50] 🎯 Usando modelo: mlp_qm9_Physicochemical_att10.pth
+[2025-10-06 22:21:50] 📦 Carregando modelo para análise de clusters...
+[2025-10-06 22:21:50] 🚀 Modelo otimizado com JIT para GPU
+[2025-10-06 22:21:50] ⚡ Usando Automatic Mixed Precision (AMP)
+[2025-10-06 22:21:50] 🧠 Analisando cluster 0...
+[2025-10-06 22:21:50] 🚀 Dados do cluster 0 otimizados para GPU
+[2025-10-06 22:21:50] 🔍 Executando SHAP no cluster 0 (100 amostras)...
+[2025-10-06 22:21:50] ⚡ Usando GPU para SHAP no cluster 0
+Background shape: (50, 9)
+Test data shape: (25, 9)
+  0%|          | 0/25 [00:00<?, ?it/s] 40%|████      | 10/25 [00:00<00:00, 96.08it/s] 80%|████████  | 20/25 [00:00<00:00, 98.14it/s]100%|██████████| 25/25 [00:00<00:00, 98.08it/s]
+[2025-10-06 22:21:50] ✅ SHAP concluído para cluster 0
+[2025-10-06 22:21:50] 🧠 Analisando cluster 1...
+[2025-10-06 22:21:50] 🚀 Dados do cluster 1 otimizados para GPU
+[2025-10-06 22:21:50] 🔍 Executando SHAP no cluster 1 (1 amostras)...
+[2025-10-06 22:21:50] ⚡ Usando GPU para SHAP no cluster 1
+Background shape: (0, 9)
+Test data shape: (1, 9)
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 1100.00it/s]
+[2025-10-06 22:21:50] ✅ SHAP concluído para cluster 1
+[2025-10-06 22:21:50] 🧠 Analisando cluster 2...
+[2025-10-06 22:21:50] 🚀 Dados do cluster 2 otimizados para GPU
+[2025-10-06 22:21:50] 🔍 Executando SHAP no cluster 2 (1 amostras)...
+[2025-10-06 22:21:50] ⚡ Usando GPU para SHAP no cluster 2
+Background shape: (0, 9)
+Test data shape: (1, 9)
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 1111.96it/s]
+[2025-10-06 22:21:50] ✅ SHAP concluído para cluster 2
+[2025-10-06 22:21:50] 🧠 Analisando cluster 3...
+[2025-10-06 22:21:50] 🚀 Dados do cluster 3 otimizados para GPU
+[2025-10-06 22:21:50] 🔍 Executando SHAP no cluster 3 (16 amostras)...
+[2025-10-06 22:21:50] ⚡ Usando GPU para SHAP no cluster 3
+Background shape: (8, 9)
+Test data shape: (16, 9)
+  0%|          | 0/16 [00:00<?, ?it/s] 94%|█████████▍| 15/16 [00:00<00:00, 144.34it/s]100%|██████████| 16/16 [00:00<00:00, 147.21it/s]
+[2025-10-06 22:21:50] ✅ SHAP concluído para cluster 3
+[2025-10-06 22:21:50] 🧠 Analisando cluster 4...
+[2025-10-06 22:21:50] 🚀 Dados do cluster 4 otimizados para GPU
+[2025-10-06 22:21:50] 🔍 Executando SHAP no cluster 4 (1 amostras)...
+[2025-10-06 22:21:50] ⚡ Usando GPU para SHAP no cluster 4
+Background shape: (0, 9)
+Test data shape: (1, 9)
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 1143.80it/s]
+[2025-10-06 22:21:50] ✅ SHAP concluído para cluster 4
+[2025-10-06 22:21:50] 📊 Gerando plots por cluster...
+[2025-10-06 22:21:50] 💾 Explicações salvas em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_Physicochemical_att10/cluster_explanations.json
+[2025-10-06 22:21:51] 📈 Plots gerados para cluster 0
+[2025-10-06 22:21:51] ❌ Erro ao gerar plots do cluster 1: too many indices for array: array is 0-dimensional, but 1 were indexed
+[2025-10-06 22:21:51] ❌ Erro ao gerar plots do cluster 2: too many indices for array: array is 0-dimensional, but 1 were indexed
+[2025-10-06 22:21:52] 📈 Plots gerados para cluster 3
+[2025-10-06 22:21:52] ❌ Erro ao gerar plots do cluster 4: too many indices for array: array is 0-dimensional, but 1 were indexed
+[2025-10-06 22:21:52] 📊 Gerando plot comparativo entre clusters...
+[2025-10-06 22:21:52] ❌ Erro ao gerar plot comparativo: too many indices for array: array is 0-dimensional, but 1 were indexed
+[2025-10-06 22:21:52] 📄 Resumo da análise salvo em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_Physicochemical_att10/analysis_summary.json
+[2025-10-06 22:21:52] 🎉 Análise de clusters concluída! Resultados em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_Physicochemical_att10
+[2025-10-06 22:21:52] ✅ Sucesso - Physicochemical (9.34 min)
+[2025-10-06 22:21:52] 🗑️  Cache limpo
+[2025-10-06 22:21:52] 🧹 Limpeza completa realizada
+[2025-10-06 22:21:52] 📊 Progresso: 4/5 - Processando MACCS
+[2025-10-06 22:21:52] 🔥 GPU: NVIDIA RTX A6000 (51.0GB total, 0.0GB livre)
+[2025-10-06 22:21:52] 📁 Análise de clusters será salva em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_MACCS_att10
+[2025-10-06 22:21:52] 💾 Carregando dados MACCS...
+[2025-10-06 22:21:52] 💾 Cache miss - carregando MACCS_10
+Carregando QM9 do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/qm9_dataset_cache.pkl
+Carregando SMILES do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/qm9_smiles_cache.pkl
+Carregando MACCS Keys do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/maccs_keys_cache.npz
+[2025-10-06 22:21:53] ❌ Erro ao carregar dados MACCS: arrays used as indices must be of integer (or boolean) type
+[2025-10-06 22:21:53] ❌ Falha - MACCS
+[2025-10-06 22:21:53] 🗑️  Cache limpo
+[2025-10-06 22:21:53] 🧹 Limpeza completa realizada
+[2025-10-06 22:21:53] 📊 Progresso: 5/5 - Processando Topological
+[2025-10-06 22:21:53] 🔥 GPU: NVIDIA RTX A6000 (51.0GB total, 0.0GB livre)
+[2025-10-06 22:21:53] 📁 Análise de clusters será salva em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_Topological_att10
+[2025-10-06 22:21:53] 💾 Carregando dados Topological...
+[2025-10-06 22:21:53] 💾 Cache miss - carregando Topological_10
+Carregando QM9 do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/qm9_dataset_cache.pkl
+Carregando SMILES do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/qm9_smiles_cache.pkl
+Carregando fingerprints topológicos do cache: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/data/topological_fp_n512_cache.npz
+[2025-10-06 22:21:55] ✅ Dados carregados: 133885 amostras, 512 features
+[2025-10-06 22:21:55] 🔄 Criando clusters com KMeans...
+Iniciando criação de 5 clusters usando KMeans
+Extraindo dados do DataLoader...
+Dados extraídos: 133885 amostras
+Usando apenas targets para clustering
+Cluster 0: 19938 amostras (targets: -483.7516 - -444.7293)
+Cluster 1: 48918 amostras (targets: -407.5541 - -363.5714)
+Cluster 2: 13874 amostras (targets: -363.5713 - -40.4789)
+Cluster 3: 47880 amostras (targets: -443.8893 - -409.3717)
+Cluster 4: 3275 amostras (targets: -714.5681 - -484.7445)
+Clusters KMeans criados com sucesso!
+[2025-10-06 22:21:57] ⚡ Limitando cluster 0 de 19938 para 500 amostras
+[2025-10-06 22:21:57] ⚡ Limitando cluster 1 de 48918 para 500 amostras
+[2025-10-06 22:21:57] ⚡ Limitando cluster 2 de 13874 para 500 amostras
+[2025-10-06 22:21:57] ⚡ Limitando cluster 3 de 47880 para 500 amostras
+[2025-10-06 22:21:57] ⚡ Limitando cluster 4 de 3275 para 500 amostras
+
+============================================================
+RESUMO DOS CLUSTERS
+============================================================
+Total de clusters: 5
+Total de amostras: 2500
+------------------------------------------------------------
+
+Cluster 0:
+  Intervalo: [-483.7516, -444.7293]
+  Amostras: 19938
+  Target - Min: -483.7516
+  Target - Max: -444.7293
+  Target - Média: -461.4102
+  Target - Desvio Padrão: 8.3622
+
+Cluster 1:
+  Intervalo: [-407.5541, -363.5714]
+  Amostras: 48918
+  Target - Min: -407.5541
+  Target - Max: -363.5714
+  Target - Média: -389.9891
+  Target - Desvio Padrão: 12.0819
+
+Cluster 2:
+  Intervalo: [-363.5713, -40.4789]
+  Amostras: 13874
+  Target - Min: -363.5713
+  Target - Max: -40.4789
+  Target - Média: -337.5843
+  Target - Desvio Padrão: 26.4382
+
+Cluster 3:
+  Intervalo: [-443.8893, -409.3717]
+  Amostras: 47880
+  Target - Min: -443.8893
+  Target - Max: -409.3717
+  Target - Média: -427.6957
+  Target - Desvio Padrão: 8.7254
+
+Cluster 4:
+  Intervalo: [-714.5681, -484.7445]
+  Amostras: 3275
+  Target - Min: -714.5681
+  Target - Max: -484.7445
+  Target - Média: -507.1052
+  Target - Desvio Padrão: 26.9940
+[2025-10-06 22:21:57] 🔍 Procurando modelos compatíveis...
+[2025-10-06 22:21:57] ✅ Modelo encontrado: mlp_qm9_Topological_att10.pth
+[2025-10-06 22:21:57] ✅ Modelo encontrado: mlp_qm9_Topological_att0.pth
+[2025-10-06 22:21:57] 📊 2 modelos compatíveis encontrados
+[2025-10-06 22:21:57] 🎯 Usando modelo: mlp_qm9_Topological_att10.pth
+[2025-10-06 22:21:57] 📦 Carregando modelo para análise de clusters...
+[2025-10-06 22:21:57] 🚀 Modelo otimizado com JIT para GPU
+[2025-10-06 22:21:57] ⚡ Usando Automatic Mixed Precision (AMP)
+[2025-10-06 22:21:57] 🧠 Analisando cluster 0...
+[2025-10-06 22:21:57] 🚀 Dados do cluster 0 otimizados para GPU
+[2025-10-06 22:21:57] 🔍 Executando SHAP no cluster 0 (100 amostras)...
+[2025-10-06 22:21:57] ⚡ Usando GPU para SHAP no cluster 0
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:15,  1.59it/s]  8%|▊         | 2/25 [00:01<00:14,  1.58it/s] 12%|█▏        | 3/25 [00:01<00:13,  1.59it/s] 16%|█▌        | 4/25 [00:02<00:13,  1.59it/s] 20%|██        | 5/25 [00:03<00:12,  1.59it/s] 24%|██▍       | 6/25 [00:03<00:11,  1.59it/s] 28%|██▊       | 7/25 [00:04<00:11,  1.60it/s] 32%|███▏      | 8/25 [00:05<00:10,  1.61it/s] 36%|███▌      | 9/25 [00:05<00:10,  1.52it/s] 40%|████      | 10/25 [00:06<00:09,  1.52it/s] 44%|████▍     | 11/25 [00:07<00:09,  1.53it/s] 48%|████▊     | 12/25 [00:07<00:08,  1.54it/s] 52%|█████▏    | 13/25 [00:08<00:07,  1.56it/s] 56%|█████▌    | 14/25 [00:08<00:07,  1.57it/s] 60%|██████    | 15/25 [00:09<00:06,  1.58it/s] 64%|██████▍   | 16/25 [00:10<00:05,  1.58it/s] 68%|██████▊   | 17/25 [00:10<00:05,  1.47it/s] 72%|███████▏  | 18/25 [00:11<00:04,  1.47it/s] 76%|███████▌  | 19/25 [00:12<00:04,  1.35it/s] 80%|████████  | 20/25 [00:13<00:03,  1.29it/s] 84%|████████▍ | 21/25 [00:14<00:03,  1.23it/s] 88%|████████▊ | 22/25 [00:15<00:02,  1.20it/s] 92%|█████████▏| 23/25 [00:16<00:01,  1.19it/s] 96%|█████████▌| 24/25 [00:16<00:00,  1.18it/s]100%|██████████| 25/25 [00:17<00:00,  1.17it/s]100%|██████████| 25/25 [00:17<00:00,  1.41it/s]
+[2025-10-06 22:22:15] ✅ SHAP concluído para cluster 0
+[2025-10-06 22:22:15] 🧠 Analisando cluster 1...
+[2025-10-06 22:22:15] 🚀 Dados do cluster 1 otimizados para GPU
+[2025-10-06 22:22:15] 🔍 Executando SHAP no cluster 1 (100 amostras)...
+[2025-10-06 22:22:15] ⚡ Usando GPU para SHAP no cluster 1
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:19,  1.20it/s]  8%|▊         | 2/25 [00:01<00:19,  1.20it/s] 12%|█▏        | 3/25 [00:02<00:18,  1.18it/s] 16%|█▌        | 4/25 [00:03<00:17,  1.17it/s] 20%|██        | 5/25 [00:04<00:17,  1.17it/s] 24%|██▍       | 6/25 [00:05<00:16,  1.18it/s] 28%|██▊       | 7/25 [00:05<00:15,  1.17it/s] 32%|███▏      | 8/25 [00:06<00:14,  1.17it/s] 36%|███▌      | 9/25 [00:07<00:13,  1.18it/s] 40%|████      | 10/25 [00:08<00:12,  1.18it/s] 44%|████▍     | 11/25 [00:09<00:11,  1.18it/s] 48%|████▊     | 12/25 [00:10<00:11,  1.17it/s] 52%|█████▏    | 13/25 [00:11<00:10,  1.18it/s] 56%|█████▌    | 14/25 [00:11<00:09,  1.18it/s] 60%|██████    | 15/25 [00:12<00:08,  1.17it/s] 64%|██████▍   | 16/25 [00:13<00:07,  1.21it/s] 68%|██████▊   | 17/25 [00:14<00:06,  1.18it/s] 72%|███████▏  | 18/25 [00:15<00:06,  1.07it/s] 76%|███████▌  | 19/25 [00:16<00:05,  1.06it/s] 80%|████████  | 20/25 [00:17<00:04,  1.03it/s] 84%|████████▍ | 21/25 [00:18<00:03,  1.05it/s] 88%|████████▊ | 22/25 [00:19<00:02,  1.05it/s] 92%|█████████▏| 23/25 [00:20<00:01,  1.08it/s] 96%|█████████▌| 24/25 [00:21<00:00,  1.03it/s]100%|██████████| 25/25 [00:22<00:00,  1.02it/s]100%|██████████| 25/25 [00:22<00:00,  1.12it/s]
+[2025-10-06 22:22:37] ✅ SHAP concluído para cluster 1
+[2025-10-06 22:22:37] 🧠 Analisando cluster 2...
+[2025-10-06 22:22:37] 🚀 Dados do cluster 2 otimizados para GPU
+[2025-10-06 22:22:37] 🔍 Executando SHAP no cluster 2 (100 amostras)...
+[2025-10-06 22:22:37] ⚡ Usando GPU para SHAP no cluster 2
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:15,  1.53it/s]  8%|▊         | 2/25 [00:01<00:16,  1.40it/s] 12%|█▏        | 3/25 [00:02<00:15,  1.39it/s] 16%|█▌        | 4/25 [00:02<00:13,  1.51it/s] 20%|██        | 5/25 [00:03<00:12,  1.60it/s] 24%|██▍       | 6/25 [00:03<00:11,  1.68it/s] 28%|██▊       | 7/25 [00:04<00:10,  1.74it/s] 32%|███▏      | 8/25 [00:04<00:09,  1.81it/s] 36%|███▌      | 9/25 [00:05<00:08,  1.88it/s] 40%|████      | 10/25 [00:05<00:07,  1.95it/s] 44%|████▍     | 11/25 [00:06<00:06,  2.03it/s] 48%|████▊     | 12/25 [00:06<00:06,  2.07it/s] 52%|█████▏    | 13/25 [00:07<00:05,  2.20it/s] 56%|█████▌    | 14/25 [00:07<00:04,  2.29it/s] 60%|██████    | 15/25 [00:07<00:04,  2.35it/s] 64%|██████▍   | 16/25 [00:08<00:03,  2.39it/s] 68%|██████▊   | 17/25 [00:08<00:03,  2.39it/s] 72%|███████▏  | 18/25 [00:09<00:02,  2.35it/s] 76%|███████▌  | 19/25 [00:09<00:02,  2.38it/s] 80%|████████  | 20/25 [00:09<00:02,  2.39it/s] 84%|████████▍ | 21/25 [00:10<00:01,  2.42it/s] 88%|████████▊ | 22/25 [00:10<00:01,  2.44it/s] 92%|█████████▏| 23/25 [00:11<00:00,  2.43it/s] 96%|█████████▌| 24/25 [00:11<00:00,  2.44it/s]100%|██████████| 25/25 [00:11<00:00,  2.45it/s]100%|██████████| 25/25 [00:11<00:00,  2.08it/s]
+[2025-10-06 22:22:49] ✅ SHAP concluído para cluster 2
+[2025-10-06 22:22:49] 🧠 Analisando cluster 3...
+[2025-10-06 22:22:49] 🚀 Dados do cluster 3 otimizados para GPU
+[2025-10-06 22:22:49] 🔍 Executando SHAP no cluster 3 (100 amostras)...
+[2025-10-06 22:22:49] ⚡ Usando GPU para SHAP no cluster 3
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:18,  1.29it/s]  8%|▊         | 2/25 [00:01<00:18,  1.27it/s] 12%|█▏        | 3/25 [00:02<00:17,  1.26it/s] 16%|█▌        | 4/25 [00:03<00:16,  1.25it/s] 20%|██        | 5/25 [00:03<00:15,  1.27it/s] 24%|██▍       | 6/25 [00:04<00:15,  1.26it/s] 28%|██▊       | 7/25 [00:05<00:14,  1.25it/s] 32%|███▏      | 8/25 [00:06<00:13,  1.26it/s] 36%|███▌      | 9/25 [00:07<00:12,  1.24it/s] 40%|████      | 10/25 [00:07<00:12,  1.24it/s] 44%|████▍     | 11/25 [00:08<00:11,  1.25it/s] 48%|████▊     | 12/25 [00:09<00:10,  1.24it/s] 52%|█████▏    | 13/25 [00:10<00:09,  1.24it/s] 56%|█████▌    | 14/25 [00:11<00:08,  1.25it/s] 60%|██████    | 15/25 [00:12<00:08,  1.22it/s] 64%|██████▍   | 16/25 [00:12<00:07,  1.23it/s] 68%|██████▊   | 17/25 [00:13<00:06,  1.25it/s] 72%|███████▏  | 18/25 [00:14<00:05,  1.25it/s] 76%|███████▌  | 19/25 [00:15<00:04,  1.25it/s] 80%|████████  | 20/25 [00:16<00:03,  1.26it/s] 84%|████████▍ | 21/25 [00:16<00:03,  1.24it/s] 88%|████████▊ | 22/25 [00:17<00:02,  1.25it/s] 92%|█████████▏| 23/25 [00:18<00:01,  1.23it/s] 96%|█████████▌| 24/25 [00:19<00:00,  1.21it/s]100%|██████████| 25/25 [00:20<00:00,  1.22it/s]100%|██████████| 25/25 [00:20<00:00,  1.24it/s]
+[2025-10-06 22:23:09] ✅ SHAP concluído para cluster 3
+[2025-10-06 22:23:09] 🧠 Analisando cluster 4...
+[2025-10-06 22:23:09] 🚀 Dados do cluster 4 otimizados para GPU
+[2025-10-06 22:23:09] 🔍 Executando SHAP no cluster 4 (100 amostras)...
+[2025-10-06 22:23:09] ⚡ Usando GPU para SHAP no cluster 4
+Background shape: (50, 512)
+Test data shape: (25, 512)
+  0%|          | 0/25 [00:00<?, ?it/s]  4%|▍         | 1/25 [00:00<00:18,  1.29it/s]  8%|▊         | 2/25 [00:01<00:18,  1.28it/s] 12%|█▏        | 3/25 [00:02<00:17,  1.26it/s] 16%|█▌        | 4/25 [00:03<00:16,  1.27it/s] 20%|██        | 5/25 [00:03<00:15,  1.27it/s] 24%|██▍       | 6/25 [00:04<00:15,  1.24it/s] 28%|██▊       | 7/25 [00:05<00:14,  1.25it/s] 32%|███▏      | 8/25 [00:06<00:13,  1.24it/s] 36%|███▌      | 9/25 [00:07<00:12,  1.24it/s] 40%|████      | 10/25 [00:07<00:12,  1.25it/s] 44%|████▍     | 11/25 [00:08<00:11,  1.25it/s] 48%|████▊     | 12/25 [00:09<00:10,  1.24it/s] 52%|█████▏    | 13/25 [00:10<00:09,  1.24it/s] 56%|█████▌    | 14/25 [00:11<00:08,  1.24it/s] 60%|██████    | 15/25 [00:12<00:08,  1.24it/s] 64%|██████▍   | 16/25 [00:12<00:07,  1.25it/s] 68%|██████▊   | 17/25 [00:13<00:06,  1.25it/s] 72%|███████▏  | 18/25 [00:14<00:05,  1.24it/s] 76%|███████▌  | 19/25 [00:15<00:04,  1.25it/s] 80%|████████  | 20/25 [00:16<00:04,  1.25it/s] 84%|████████▍ | 21/25 [00:16<00:03,  1.24it/s] 88%|████████▊ | 22/25 [00:17<00:02,  1.25it/s] 92%|█████████▏| 23/25 [00:18<00:01,  1.25it/s] 96%|█████████▌| 24/25 [00:19<00:00,  1.25it/s]100%|██████████| 25/25 [00:20<00:00,  1.25it/s]100%|██████████| 25/25 [00:20<00:00,  1.25it/s]
+[2025-10-06 22:23:29] ✅ SHAP concluído para cluster 4
+[2025-10-06 22:23:29] 📊 Gerando plots por cluster...
+[2025-10-06 22:23:29] 💾 Explicações salvas em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_Topological_att10/cluster_explanations.json
+[2025-10-06 22:23:31] 📈 Plots gerados para cluster 0
+[2025-10-06 22:23:32] 📈 Plots gerados para cluster 1
+[2025-10-06 22:23:33] 📈 Plots gerados para cluster 2
+[2025-10-06 22:23:34] 📈 Plots gerados para cluster 3
+[2025-10-06 22:23:35] 📈 Plots gerados para cluster 4
+[2025-10-06 22:23:35] 📊 Gerando plot comparativo entre clusters...
+[2025-10-06 22:23:37] 📈 Plot comparativo salvo
+[2025-10-06 22:23:37] 📄 Resumo da análise salvo em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_Topological_att10/analysis_summary.json
+[2025-10-06 22:23:37] 🎉 Análise de clusters concluída! Resultados em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_Topological_att10
+[2025-10-06 22:23:37] ✅ Sucesso - Topological (1.73 min)
+[2025-10-06 22:23:37] 🗑️  Cache limpo
+[2025-10-06 22:23:38] 🧹 Limpeza completa realizada
+[2025-10-06 22:23:38] 🏁 Análise completa finalizada: 4 sucessos, 1 falhas
+[2025-10-06 22:23:38] 📄 Relatório completo salvo em: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251006_220928/cluster_analysis_report.json
+[2025-10-06 22:23:38] 
+============================================================
+[2025-10-06 22:23:38] RESUMO DA ANÁLISE DE CLUSTERS
+[2025-10-06 22:23:38] ============================================================
+[2025-10-06 22:23:38] ✅ AtomPair: success (1.62 min)
+[2025-10-06 22:23:38] ✅ Morgan: success (1.44 min)
+[2025-10-06 22:23:38] ✅ Physicochemical: success (9.34 min)
+[2025-10-06 22:23:38] ❌ MACCS: failed (0.01 min)
+[2025-10-06 22:23:38] ✅ Topological: success (1.73 min)
+[2025-10-06 22:23:38] ============================================================

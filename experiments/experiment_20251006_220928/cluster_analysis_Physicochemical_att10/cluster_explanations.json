@@ -1,0 +1,92 @@
+{
+  "model_info": {
+    "model_file": "mlp_qm9_Physicochemical_att10.pth",
+    "descriptor_type": "Physicochemical",
+    "att_index": 10,
+    "input_dim": 9
+  },
+  "cluster_explanations": {
+    "0": {
+      "shap_global": [
+        7.269892519151594,
+        0.3047682729987511,
+        10.182754560600774,
+        0.06709597738901885,
+        0.4744374186191845,
+        0.03729482366168273,
+        0.029080815962536664,
+        0.09129727743300049,
+        0.004713887807451945
+      ],
+      "cluster_info": {
+        "size": 500,
+        "min_target": 0.0,
+        "max_target": 73.84719848632812,
+        "mean_target": 3.422855598132421
+      },
+      "n_samples_analyzed": 100
+    },
+    "1": {
+      "shap_global": 0.0,
+      "cluster_info": {
+        "size": 1,
+        "min_target": 619867.6875,
+        "max_target": 619867.6875,
+        "mean_target": 619867.6875
+      },
+      "n_samples_analyzed": 1
+    },
+    "2": {
+      "shap_global": 0.0,
+      "cluster_info": {
+        "size": 1,
+        "min_target": 232663.78125,
+        "max_target": 232663.78125,
+        "mean_target": 232663.78125
+      },
+      "n_samples_analyzed": 1
+    },
+    "3": {
+      "shap_global": [
+        29.42894634166289,
+        0.18173719451186413,
+        9.841111014268943,
+        0.02307342086874223,
+        0.5227255811116586,
+        0.0,
+        0.0,
+        0.33660883213438136,
+        0.002713217266965844
+      ],
+      "cluster_info": {
+        "size": 16,
+        "min_target": 80.0223617553711,
+        "max_target": 293.6097412109375,
+        "mean_target": 153.9686484336853
+      },
+      "n_samples_analyzed": 16
+    },
+    "4": {
+      "shap_global": 0.0,
+      "cluster_info": {
+        "size": 1,
+        "min_target": 799.588134765625,
+        "max_target": 799.588134765625,
+        "mean_target": 799.588134765625
+      },
+      "n_samples_analyzed": 1
+    }
+  },
+  "feature_names": [
+    "MolWt",
+    "MolLogP",
+    "TPSA",
+    "NumHDonors",
+    "NumHAcceptors",
+    "NumRotatableBonds",
+    "NumAromaticRings",
+    "BalabanJ",
+    "QED"
+  ],
+  "timestamp": "2025-10-06T22:21:50.568110"
+}
