@@ -996,8 +996,10 @@ def run_all_cluster_analysis():
     safe_log("🚀 Iniciando análise de clusters para múltiplos descriptors...")
     
     # Lista de descriptor types para análise
-    descriptor_types = ['AtomPair', 'Morgan', 'Physicochemical', 'MACCS', 'Topological']
-    att_index = 10  # Usar att_index padrão
+    descriptor_types = ['CM', 'Morgan', 'Physicochemical', '3D', 'MACCS', 'Topological', 
+                        'AtomPair', 'EState', 'Pattern', 'Avalon', 'MorganCount', 'Autocorr']
+    
+    att_index = [0, 10]  # Usar att_index padrão
     
     # Criar diretório principal do experimento
     experiment_dir = create_experiment_directory()
@@ -1006,14 +1008,14 @@ def run_all_cluster_analysis():
     failed = 0
     execution_log = []
     
-    for i, descriptor_type in enumerate(descriptor_types):
+    for i, descriptor_type in enumerate(descriptor_types, att_index):
         safe_log(f"📊 Progresso: {i+1}/{len(descriptor_types)} - Processando {descriptor_type}")
         
         start_time = time.time()
         
         try:
             # Executar análise de cluster para este descriptor
-            result = run_cluster_analysis(experiment_dir=experiment_dir, descriptor_type=descriptor_type, att_index=att_index)
+            result = run_cluster_analysis(experiment_dir=experiment_dir, descriptor_type=descriptor_type, att_index=att_index[0])
             
             duration = round((time.time() - start_time) / 60, 2)
             
