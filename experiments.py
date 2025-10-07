@@ -668,7 +668,7 @@ def run_cluster_analysis(experiment_dir, descriptor_type='AtomPair', att_index=1
     
     # 4. Criar clusters automáticos com otimização
     safe_log("🔄 Criando clusters com KMeans...")
-    clusters = cluster_manager.create_clusters_kmeans(n_clusters=5, use_features=False)
+    clusters = cluster_manager.create_clusters_kmeans(n_clusters=5, use_features=True)
     
     # Otimização: limitar amostras por cluster para acelerar SHAP
     max_samples_per_cluster = 500  # Limite para evitar SHAP muito lento
