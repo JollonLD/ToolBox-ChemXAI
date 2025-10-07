@@ -13,6 +13,7 @@ from torch_geometric.loader import DataLoader as GraphDataLoader
 
 import numpy as np
 import pandas as pd
+from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
 from ase import Atoms
@@ -1932,7 +1933,7 @@ class qm9_tabular:
             cached_data = np.load(cache_file, allow_pickle=True)
             X_normal = cached_data['X_normal']
             Ys = cached_data['Ys']
-            props = cached_data['props']
+            props = cached
         else:
             # Calcular descritores
             X_normal, Ys, props = self.compute_descriptors(
@@ -2340,6 +2341,109 @@ class Cluster:
         self._calculate_cluster_statistics()
         
         print(f"Clusters criados com sucesso!")
+        return self.clusters
+
+    def create_clusters_kmeans(self, n_clusters=5, use_features=True, random_state=42):
+        """
+        Cria clusters usando KMeans, com base nas features, target ou ambos.
+        Args:
+            n_clusters (int): Número de clusters a criar
+            use_features (bool): Se True, usa as features para clusterizar. Se False, usa apenas o target.
+            random_state (int): Semente para reprodutibilidade
+        Returns:
+            dict: Dicionário com os clusters criados
+        """
+        
+        print(f"Iniciando criação de {n_clusters} clusters usando KMeans")
+        
+        # Extrair dados do DataLoader
+        self.features_data, self.target_values = self._extract_data_from_loader()
+        
+        if not self.target_values:
+            print("Nenhum dado foi extraído. Verificar formato do DataLoader.")
+            return {}
+            
+        # Converter para arrays numpy para facilitar manipulação
+        self.target_values = np.array(self.target_values)
+        self.features_data = np.array(self.features_data)
+            
+        X = np.array(self.features_data)
+        y = np.array(self.target_values).reshape(-1, 1)
+
+        # Escolher dados para clusterização
+        if use_features and X.shape[1] > 1:
+            data_for_clustering = X
+            print(f"Usando features para clustering ({X.shape[1]} dimensões)")
+        else:
+            data_for_clustering = y
+            print("Usando apenas targets para clustering")
+
+        # Rodar KMeans
+        kmeans = KMeans(n_clusters=n_clusters, random_state=random_state)
+        cluster_labels = kmeans.fit_predict(data_for_clustering)
+
+        # Inicializar clusters e cluster_stats
+        self.clusters = {}
+        self.cluster_stats = {}
+        
+        for i in range(n_clusters):
+            self.clusters[i] = {
+                'features': [],
+                'targets': [],
+                'indices': [],
+                'size': 0
+            }
+            self.cluster_stats[i] = {
+                'min_target': float('inf'),
+                'max_target': float('-inf'),
+                'mean_target': 0,
+                'count': 0,
+                'interval': (None, None)  # Para KMeans não há intervalos pré-definidos
+            }
+
+        # Organizar dados nos clusters
+        for idx, label in enumerate(cluster_labels):
+            self.clusters[label]['features'].append(X[idx])
+            self.clusters[label]['targets'].append(float(y[idx]))
+            self.clusters[label]['indices'].append(idx)
+            self.clusters[label]['size'] += 1
+
+        # Calcular estatísticas finais para cada cluster
+        for i in range(n_clusters):
+            targets = self.clusters[i]['targets']
+            if targets:
+                targets_array = np.array(targets)
+                self.clusters[i]['min_target'] = float(np.min(targets_array))
+                self.clusters[i]['max_target'] = float(np.max(targets_array))
+                self.clusters[i]['mean_target'] = float(np.mean(targets_array))
+                
+                # Atualizar cluster_stats
+                self.cluster_stats[i].update({
+                    'min_target': float(np.min(targets_array)),
+                    'max_target': float(np.max(targets_array)),
+                    'mean_target': float(np.mean(targets_array)),
+                    'std_target': float(np.std(targets_array)),
+                    'count': len(targets),
+                    'interval': (float(np.min(targets_array)), float(np.max(targets_array)))
+                })
+                
+                print(f"Cluster {i}: {len(targets)} amostras "
+                      f"(targets: {np.min(targets_array):.4f} - {np.max(targets_array):.4f})")
+            else:
+                self.clusters[i]['min_target'] = None
+                self.clusters[i]['max_target'] = None
+                self.clusters[i]['mean_target'] = None
+                
+                self.cluster_stats[i].update({
+                    'min_target': None,
+                    'max_target': None,
+                    'mean_target': None,
+                    'std_target': None,
+                    'count': 0,
+                    'interval': (None, None)
+                })
+
+        print(f"Clusters KMeans criados com sucesso!")
         return self.clusters
 
     def _calculate_intervals(self, num_clusters):

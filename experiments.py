@@ -2,20 +2,23 @@
 import os
 import torch
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Backend não-interativo para evitar problemas de memória
 import matplotlib.pyplot as plt
+# Configurar matplotlib para evitar warnings de muitas figuras
+plt.rcParams['figure.max_open_warning'] = 0  # Desabilitar warning
 import json
 import time
 import datetime
-from tqdm import tqdm
 import sys
+from torch.utils.data import TensorDataset, DataLoader
 
 from chemxai.data import qm9_tabular
 from chemxai.models import MLP
-from chemxai.train import train_mlp_qm9
 from chemxai.explainers import Shap, LIME
-from chemxai.evaluate import TabularAnalyzer
 from chemxai.plots import radar_plot, horizontal_bar_plot
 from chemxai.data import Cluster
+
 
 # Classe de cache para otimização de dados
 class DataCache:
@@ -172,101 +175,6 @@ def validate_parameters(att_index, descriptor_type):
     
     return is_valid, validation_info
 
-def run_cluster_fidelity_experiment(att_index=0, descriptor_type='Physicochemical', num_clusters=5, cluster_size=100):
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    print(f"[{timestamp}] Starting cluster fidelity experiment...")
-
-    # 1. Carregar dados
-    qm9 = qm9_tabular()
-    loaders = qm9.get_paired_dataloaders(
-        att_index=att_index,
-        batch_size=32,
-        descriptor_type=descriptor_type,
-        n_noise=0,
-        add_noise=False
-    )
-    train_loader, val_loader, test_loader = loaders
-
-    # 2. Criar clusters usando o train_loader
-    cluster_manager = Cluster(train_loader)
-    clusters = cluster_manager.create_clusters(num_clusters=num_clusters, size_cluster=cluster_size)
-    print(f"Clusters criados: {len(clusters)}")
-
-    # 3. Carregar modelo treinado
-    input_dim = next(iter(train_loader))[0].shape[1]
-    output_dim = 1
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model_name = f'Large/mlp_qm9_{descriptor_type}_att{att_index}'
-    model_path = os.path.join(os.getcwd(), 'models', f'{model_name}.pth')
-    model = MLP(input_dim, output_dim, layers=[128, 64, 32], device=device)
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model.eval()
-    model.to(device)
-
-    # 4. Avaliar fidelidade por cluster
-    cluster_results = {}
-    feature_names = qm9.get_descriptor_names(descriptor_type)
-    for cluster_id, cluster_data in clusters.items():
-        # Extrair X e y do cluster
-        X_cluster = []
-        y_cluster = []
-        for xb, yb in cluster_data:
-            X_cluster.append(xb)
-            y_cluster.append(yb)
-        if not X_cluster:
-            continue
-        X_cluster = torch.cat(X_cluster, dim=0)
-        y_cluster = torch.cat(y_cluster, dim=0)
-
-        # Limitar tamanho para explicação
-        X_cluster = X_cluster[:100]
-        y_cluster = y_cluster[:100]
-
-        # Rodar explicadores
-        shap_explainer = Shap(model, X_cluster, X_cluster, device)
-        shap_explanation = shap_explainer.explain_global()
-        lime_explainer = LIME(model, X_cluster, X_cluster, device)
-        lime_explanation = lime_explainer.explain_local(index=0)
-
-        # Predições
-        with torch.no_grad():
-            y_pred = model(X_cluster.to(device)).cpu().numpy()
-
-        # Calcular fidelidade
-        analyzer_shap = TabularAnalyzer(
-            model=model,
-            explainer=shap_explainer,
-            explanation=shap_explanation,
-            data=X_cluster,
-            y_true=y_cluster.numpy(),
-            y_pred=y_pred,
-            device=device
-        )
-        fidelity_shap = analyzer_shap.get_metrics()
-
-        analyzer_lime = TabularAnalyzer(
-            model=model,
-            explainer=lime_explainer,
-            explanation=lime_explanation,
-            data=X_cluster,
-            y_true=y_cluster.numpy(),
-            y_pred=y_pred,
-            device=device
-        )
-        fidelity_lime = analyzer_lime.get_metrics()
-
-        cluster_results[cluster_id] = {
-            "shap_fidelity": fidelity_shap,
-            "lime_fidelity": fidelity_lime
-        }
-        print(f"Cluster {cluster_id}: SHAP {fidelity_shap}, LIME {fidelity_lime}")
-
-    # 5. Salvar resultados
-    results_path = f"experiments/cluster_fidelity_{timestamp}.json"
-    with open(results_path, 'w') as f:
-        json.dump(cluster_results, f, indent=2)
-    print(f"Resultados salvos em {results_path}")
-
 def load_model_optimized(descriptor_type, att_index, device):
     """
     Carrega modelo de forma otimizada com cache e verificações
@@ -299,46 +207,6 @@ def load_model_optimized(descriptor_type, att_index, device):
     if device.type == 'cuda':
         model = model.to(device)
         torch.cuda.empty_cache()  # Limpar cache após carregamento
-    
-    return model, input_dim
-
-def create_model_and_load_data(qm9, descriptor_type, att_index, device):
-    """
-    Função auxiliar simplificada para criar modelo e carregar dados
-    """
-    # CORREÇÃO: Usar att_index=0 se o original for problemático
-    safe_att_index = 0 if att_index >= 10 else att_index
-    
-    # Obter dimensões dos dados - SEM list_mols para usar dataset completo
-    X_sample, _, _ = qm9.compute_descriptors(
-        descriptor_type=descriptor_type, 
-        att_index=safe_att_index,  # Usar índice seguro
-        list_mols=[]  # Lista vazia = usar todos os dados
-    )
-    
-    input_dim = X_sample.shape[1]
-    model_path = os.path.join(os.getcwd(), 'models', f'Large/mlp_qm9_{descriptor_type}_att{att_index}.pth')
-    
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Modelo não encontrado: {model_path}")
-    
-    # Verificar compatibilidade e carregar modelo
-    state_dict = torch.load(model_path, map_location=device)
-    checkpoint_input_dim = state_dict['layers.0.weight'].shape[1]
-    
-    # Auto-correção para matriz de Coulomb se necessário
-    if checkpoint_input_dim != input_dim:
-        if descriptor_type == 'CM':
-            # Para CM, sempre usar a dimensão do modelo para evitar incompatibilidades
-            input_dim = checkpoint_input_dim  # Usar dimensão do modelo
-        else:
-            raise ValueError(f"Incompatibilidade: modelo={checkpoint_input_dim}, dados={input_dim}")
-    
-    # Criar e carregar modelo
-    model = MLP(input_dim, 1, layers=[128, 64, 32], device=device)
-    model.load_state_dict(state_dict)
-    model.eval()
-    model.to(device)
     
     return model, input_dim
 
@@ -385,36 +253,6 @@ def prepare_data_optimized(descriptor_type, att_index, input_dim, device, batch_
             X_test_tensor = X_test_tensor[:len(X_test_tensor)//reduction_factor]
     
     return X_train_tensor.to(device), X_test_tensor.to(device)
-
-def prepare_explanation_data(qm9, descriptor_type, att_index, input_dim):
-    """
-    Prepara dados para explicação de forma simplificada
-    """
-    # CORREÇÃO: Usar att_index=0 se o original for problemático
-    safe_att_index = 0 if att_index >= 10 else att_index
-    
-    # Carregar dados completos - SEM list_mols
-    X_all, Y_all, _ = qm9.compute_descriptors(
-        descriptor_type=descriptor_type, 
-        att_index=safe_att_index,  # Usar índice seguro
-        list_mols=[]  # Lista vazia = usar todos os dados
-    )
-    
-    # Verificar compatibilidade dimensional
-    if X_all.shape[1] != input_dim:
-        raise ValueError(f"Dimensões incompatíveis: dados={X_all.shape[1]}, modelo={input_dim}")
-    
-    # Dividir dados para explicação
-    from sklearn.model_selection import train_test_split
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_all, Y_all, test_size=0.2, random_state=42
-    )
-    
-    # Limitar amostras
-    X_train = torch.from_numpy(X_train[:500]).float()
-    X_test = torch.from_numpy(X_test[:100]).float()
-    
-    return X_train, X_test
 
 def run_explanations_optimized(model, X_train, X_test, device, experiment_dir, descriptor_type, att_index):
     """
@@ -763,93 +601,482 @@ def test_single_model():
     result = run_single_model_safe(0, 'Physicochemical')
     safe_log(f"Teste concluído: {result}")
 
+def run_cluster_analysis(experiment_dir, descriptor_type='AtomPair', att_index=10):
+    """
+    Função para análise por cluster das explicações
+    """
+    # Configurar dispositivo
+    device = optimize_for_gpu()
+    
+    # Criar diretório para salvar resultados dos clusters
+    cluster_dir = os.path.join(experiment_dir, f"cluster_analysis_{descriptor_type}_att{att_index}")
+    os.makedirs(cluster_dir, exist_ok=True)
+    
+    safe_log(f"📁 Análise de clusters será salva em: {cluster_dir}")
+
+    # 1. Obter os dados (features e targets) com otimização para descriptors lentos
+    try:
+        safe_log(f"💾 Carregando dados {descriptor_type}...")
+        
+        # Para descriptors que sabemos que são lentos, usar att_index menor se disponível
+        safe_att_index = att_index
+        if descriptor_type in ['Physicochemical', '3D', 'Autocorr'] and att_index >= 10:
+            safe_att_index = 0  # Usar att_index 0 que tem cache mais rápido
+            safe_log(f"⚡ Otimização: usando att_index {safe_att_index} para {descriptor_type}")
+        
+        X_all, Y_all = data_cache.get_data(descriptor_type, safe_att_index)
+        safe_log(f"✅ Dados carregados: {X_all.shape[0]} amostras, {X_all.shape[1]} features")
+        
+    except Exception as e:
+        safe_log(f"❌ Erro ao carregar dados {descriptor_type}: {e}")
+        return False
+    
+    # 2. Criar um Dataset e DataLoader
+    dataset = TensorDataset(torch.from_numpy(X_all).float(), torch.from_numpy(Y_all).float())
+    dataloader = DataLoader(dataset, batch_size=128, shuffle=False)
+    
+    # 3. Instanciar o Cluster
+    cluster_manager = Cluster(dataloader)
+    
+    # 4. Criar clusters automáticos com otimização
+    safe_log("🔄 Criando clusters com KMeans...")
+    clusters = cluster_manager.create_clusters_kmeans(n_clusters=5, use_features=False)
+    
+    # Otimização: limitar amostras por cluster para acelerar SHAP
+    max_samples_per_cluster = 500  # Limite para evitar SHAP muito lento
+    for cluster_id in clusters.keys():
+        if clusters[cluster_id]['size'] > max_samples_per_cluster:
+            safe_log(f"⚡ Limitando cluster {cluster_id} de {clusters[cluster_id]['size']} para {max_samples_per_cluster} amostras")
+            # Manter apenas as primeiras amostras
+            clusters[cluster_id]['features'] = clusters[cluster_id]['features'][:max_samples_per_cluster]
+            clusters[cluster_id]['targets'] = clusters[cluster_id]['targets'][:max_samples_per_cluster]
+            clusters[cluster_id]['indices'] = clusters[cluster_id]['indices'][:max_samples_per_cluster]
+            clusters[cluster_id]['size'] = max_samples_per_cluster
+    
+    # 5. Imprimir resumo detalhado dos clusters
+    cluster_manager.print_cluster_info()
+    
+    # 6. Carregar todos os modelos de models/Large compatíveis com o descriptor_type
+    safe_log("🔍 Procurando modelos compatíveis...")
+    models_dir = os.path.join(os.getcwd(), "models", "Large")
+    compatible_models = []
+    
+    if os.path.exists(models_dir):
+        for fname in os.listdir(models_dir):
+            if fname.startswith(f"mlp_qm9_{descriptor_type}_") and fname.endswith(".pth"):
+                try:
+                    # Parse do nome do arquivo
+                    parts = fname.split("_")
+                    if len(parts) >= 4:
+                        model_att_part = parts[-1].replace("att", "").replace(".pth", "")
+                        model_att_index = int(model_att_part)
+                        
+                        # Verificar se o modelo pode ser carregado
+                        model_path = os.path.join(models_dir, fname)
+                        state_dict = torch.load(model_path, map_location='cpu')
+                        
+                        if 'layers.0.weight' in state_dict:
+                            input_dim = state_dict['layers.0.weight'].shape[1]
+                            compatible_models.append((fname, model_att_index, input_dim, model_path))
+                            safe_log(f"✅ Modelo encontrado: {fname}")
+                        
+                except Exception as e:
+                    safe_log(f"❌ Erro ao verificar {fname}: {e}")
+    
+    if not compatible_models:
+        safe_log(f"❌ Nenhum modelo compatível encontrado para {descriptor_type}")
+        return
+    
+    safe_log(f"📊 {len(compatible_models)} modelos compatíveis encontrados")
+    
+    # Selecionar o primeiro modelo compatível para análise
+    selected_model = compatible_models[0]
+    model_fname, model_att_index, model_input_dim, model_path = selected_model
+    safe_log(f"🎯 Usando modelo: {model_fname}")
+    
+    # 7. Fazer explicação com SHAP para cada cluster do modelo selecionado
+    try:
+        # Carregar o modelo
+        safe_log("📦 Carregando modelo para análise de clusters...")
+        model = MLP(model_input_dim, 1, layers=[128, 64, 32], device=device)
+        state_dict = torch.load(model_path, map_location='cpu')
+        model.load_state_dict(state_dict)
+        model.eval()
+        
+        if device.type == 'cuda':
+            model = model.to(device)
+        
+        # Obter nomes das features
+        try:
+            qm9 = data_cache.get_qm9()
+            feature_names = qm9.get_descriptor_names(descriptor_type)
+        except:
+            feature_names = [f"feature_{i}" for i in range(model_input_dim)]
+        
+        # Analisar cada cluster
+        cluster_explanations = {}
+        
+        for cluster_id in clusters.keys():
+            safe_log(f"🧠 Analisando cluster {cluster_id}...")
+            
+            cluster_data = clusters[cluster_id]
+            if cluster_data['size'] == 0:
+                safe_log(f"⚠️ Cluster {cluster_id} vazio, pulando...")
+                continue
+            
+            # Preparar dados do cluster
+            cluster_features = np.array(cluster_data['features'])
+            cluster_targets = np.array(cluster_data['targets'])
+            
+            # Verificar compatibilidade dimensional
+            if cluster_features.shape[1] != model_input_dim:
+                if descriptor_type == 'CM':
+                    # Para CM, ajustar dimensões
+                    cluster_features = cluster_features[:, :model_input_dim]
+                else:
+                    safe_log(f"❌ Incompatibilidade dimensional no cluster {cluster_id}: {cluster_features.shape[1]} vs {model_input_dim}")
+                    continue
+            
+            # Limitar amostras para SHAP (performance)
+            max_samples = min(100, cluster_features.shape[0])
+            cluster_features_sample = cluster_features[:max_samples]
+            
+            # Converter para tensors
+            X_cluster = torch.from_numpy(cluster_features_sample).float().to(device)
+            
+            try:
+                # Executar SHAP no cluster
+                safe_log(f"🔍 Executando SHAP no cluster {cluster_id} ({max_samples} amostras)...")
+                
+                # Usar uma pequena amostra como background
+                background_size = min(50, max_samples // 2)
+                X_background = X_cluster[:background_size]
+                X_test_cluster = X_cluster[:min(25, max_samples)]
+                
+                explainer = Shap(model, X_background, X_test_cluster, device)
+                shap_global_cluster = explainer.explain_global()
+                
+                # Salvar explicações do cluster
+                cluster_explanations[cluster_id] = {
+                    'shap_global': shap_global_cluster.tolist() if isinstance(shap_global_cluster, np.ndarray) else shap_global_cluster,
+                    'cluster_info': {
+                        'size': cluster_data['size'],
+                        'min_target': cluster_data.get('min_target'),
+                        'max_target': cluster_data.get('max_target'),
+                        'mean_target': cluster_data.get('mean_target')
+                    },
+                    'n_samples_analyzed': max_samples
+                }
+                
+                safe_log(f"✅ SHAP concluído para cluster {cluster_id}")
+                
+            except Exception as e:
+                safe_log(f"❌ Erro SHAP no cluster {cluster_id}: {e}")
+                continue
+            
+            # Limpeza de memória
+            if device.type == 'cuda':
+                torch.cuda.empty_cache()
+        
+        # 8. Fazer plots das explicações globais por cluster e salvar
+        safe_log("📊 Gerando plots por cluster...")
+        
+        # Salvar explicações em JSON
+        explanations_file = os.path.join(cluster_dir, 'cluster_explanations.json')
+        with open(explanations_file, 'w') as f:
+            json.dump({
+                'model_info': {
+                    'model_file': model_fname,
+                    'descriptor_type': descriptor_type,
+                    'att_index': model_att_index,
+                    'input_dim': model_input_dim
+                },
+                'cluster_explanations': cluster_explanations,
+                'feature_names': feature_names,
+                'timestamp': datetime.datetime.now().isoformat()
+            }, f, indent=2)
+        
+        safe_log(f"💾 Explicações salvas em: {explanations_file}")
+        
+        # Gerar plots comparativos
+        for cluster_id, explanation_data in cluster_explanations.items():
+            try:
+                shap_values = np.array(explanation_data['shap_global'])
+                cluster_info = explanation_data['cluster_info']
+                
+                # Top 15 features mais importantes
+                top_indices = np.argsort(np.abs(shap_values))[-15:]
+                top_values = shap_values[top_indices]
+                top_names = [feature_names[i] for i in top_indices]
+                
+                # Plot individual do cluster
+                cluster_plot_dir = os.path.join(cluster_dir, f"cluster_{cluster_id}")
+                os.makedirs(cluster_plot_dir, exist_ok=True)
+                
+                # Bar plot usando horizontal_bar_plot
+                try:
+                    horizontal_bar_plot(
+                        values=top_values,
+                        feature_names=top_names,
+                        title=f'Cluster {cluster_id} - SHAP Horizontal Top 15',
+                        save_path=os.path.join(cluster_plot_dir),
+                        filename=f'cluster_{cluster_id}_shap.png'
+                    )
+                except Exception as bar_e:
+                    safe_log(f"⚠️ Erro no horizontal bar plot cluster {cluster_id}: {bar_e}")
+                
+                # Radar plot
+                try:
+                    plt.figure(figsize=(10, 10))
+                    radar_plot(
+                        top_values, 
+                        top_names, 
+                        title=f"Cluster {cluster_id} - SHAP Radar (Size: {cluster_info['size']})"
+                    )
+                    plt.savefig(os.path.join(cluster_plot_dir, f'cluster_{cluster_id}_radar.png'), 
+                               dpi=300, bbox_inches='tight')
+                    plt.close()  # Fechar figura explicitamente
+                except Exception as radar_e:
+                    safe_log(f"⚠️ Erro no radar plot cluster {cluster_id}: {radar_e}")
+                finally:
+                    # Garantir que todas as figuras sejam fechadas
+                    plt.close('all')
+                
+                safe_log(f"📈 Plots gerados para cluster {cluster_id}")
+                
+            except Exception as e:
+                safe_log(f"❌ Erro ao gerar plots do cluster {cluster_id}: {e}")
+        
+        # Plot comparativo entre clusters
+        try:
+            safe_log("📊 Gerando plot comparativo entre clusters...")
+            
+            fig, axes = plt.subplots(len(cluster_explanations), 1, 
+                                   figsize=(15, 5 * len(cluster_explanations)))
+            
+            if len(cluster_explanations) == 1:
+                axes = [axes]
+            
+            for i, (cluster_id, explanation_data) in enumerate(cluster_explanations.items()):
+                shap_values = np.array(explanation_data['shap_global'])
+                cluster_info = explanation_data['cluster_info']
+                
+                # Top 10 para comparação
+                top_indices = np.argsort(np.abs(shap_values))[-10:]
+                top_values = shap_values[top_indices]
+                top_names = [feature_names[j] for j in top_indices]
+                
+                colors = ['red' if v < 0 else 'blue' for v in top_values]
+                axes[i].barh(range(len(top_values)), top_values, color=colors)
+                axes[i].set_yticks(range(len(top_values)))
+                axes[i].set_yticklabels(top_names)
+                axes[i].set_xlabel('SHAP Global Importance')
+                axes[i].set_title(f'Cluster {cluster_id} (Size: {cluster_info["size"]})')
+                axes[i].grid(True, alpha=0.3)
+            
+            plt.tight_layout()
+            plt.savefig(os.path.join(cluster_dir, 'clusters_comparison.png'), 
+                       dpi=300, bbox_inches='tight')
+            plt.close()  # Fechar figura explicitamente
+            
+            safe_log("📈 Plot comparativo salvo")
+            
+        except Exception as e:
+            safe_log(f"❌ Erro ao gerar plot comparativo: {e}")
+        finally:
+            # Garantir limpeza completa de figuras
+            plt.close('all')
+        
+        # Salvar resumo final
+        summary = {
+            'analysis_summary': {
+                'descriptor_type': descriptor_type,
+                'att_index': att_index,
+                'model_used': model_fname,
+                'total_clusters': len(clusters),
+                'clusters_analyzed': len(cluster_explanations),
+                'total_samples': sum(c['size'] for c in clusters.values()),
+                'analysis_timestamp': datetime.datetime.now().isoformat()
+            },
+            'cluster_summary': {
+                cluster_id: {
+                    'size': clusters[cluster_id]['size'],
+                    'target_stats': {
+                        'min': clusters[cluster_id].get('min_target'),
+                        'max': clusters[cluster_id].get('max_target'),
+                        'mean': clusters[cluster_id].get('mean_target')
+                    },
+                    'shap_analyzed': cluster_id in cluster_explanations
+                }
+                for cluster_id in clusters.keys()
+            }
+        }
+        
+        summary_file = os.path.join(cluster_dir, 'analysis_summary.json')
+        with open(summary_file, 'w') as f:
+            json.dump(summary, f, indent=2)
+        
+        safe_log(f"📄 Resumo da análise salvo em: {summary_file}")
+        safe_log(f"🎉 Análise de clusters concluída! Resultados em: {cluster_dir}")
+        
+    except Exception as e:
+        safe_log(f"❌ Erro na análise de clusters: {e}")
+        return False
+    
+    finally:
+        # Limpeza final
+        if device.type == 'cuda':
+            torch.cuda.empty_cache()
+        
+        # Fechar todas as figuras do matplotlib
+        plt.close('all')
+        
+        # Limpeza adicional de memória
+        import gc
+        gc.collect()
+    
+    return True
+
+def run_all_cluster_analysis():
+    """
+    Executa análise de clusters para múltiplos descriptor types
+    """
+    safe_log("🚀 Iniciando análise de clusters para múltiplos descriptors...")
+    
+    # Lista de descriptor types para análise
+    descriptor_types = ['AtomPair', 'Morgan', 'Physicochemical', 'MACCS', 'Topological']
+    att_index = 10  # Usar att_index padrão
+    
+    # Criar diretório principal do experimento
+    experiment_dir = create_experiment_directory()
+    
+    successful = 0
+    failed = 0
+    execution_log = []
+    
+    for i, descriptor_type in enumerate(descriptor_types):
+        safe_log(f"📊 Progresso: {i+1}/{len(descriptor_types)} - Processando {descriptor_type}")
+        
+        start_time = time.time()
+        
+        try:
+            # Executar análise de cluster para este descriptor
+            result = run_cluster_analysis(experiment_dir=experiment_dir, descriptor_type=descriptor_type, att_index=att_index)
+            
+            duration = round((time.time() - start_time) / 60, 2)
+            
+            if result:
+                successful += 1
+                execution_log.append({
+                    'descriptor_type': descriptor_type,
+                    'att_index': att_index,
+                    'status': 'success',
+                    'duration_minutes': duration
+                })
+                safe_log(f"✅ Sucesso - {descriptor_type} ({duration} min)")
+            else:
+                failed += 1
+                execution_log.append({
+                    'descriptor_type': descriptor_type,
+                    'att_index': att_index,
+                    'status': 'failed',
+                    'duration_minutes': duration,
+                    'error': 'Função retornou False'
+                })
+                safe_log(f"❌ Falha - {descriptor_type}")
+                
+        except KeyboardInterrupt:
+            safe_log("🛑 Interrompido pelo usuário")
+            execution_log.append({
+                'descriptor_type': descriptor_type,
+                'att_index': att_index,
+                'status': 'interrupted',
+                'duration_minutes': round((time.time() - start_time) / 60, 2)
+            })
+            break
+            
+        except Exception as e:
+            duration = round((time.time() - start_time) / 60, 2)
+            failed += 1
+            execution_log.append({
+                'descriptor_type': descriptor_type,
+                'att_index': att_index,
+                'status': 'error',
+                'duration_minutes': duration,
+                'error': str(e)
+            })
+            safe_log(f"❌ Erro fatal em {descriptor_type}: {str(e)}")
+        
+        # Limpeza periódica e agressiva
+        if i % 1 == 0:  # Limpeza após cada análise
+            data_cache.clear_cache()
+            
+            # Limpeza completa de matplotlib
+            plt.close('all')
+            
+            # Garbage collection agressivo
+            import gc
+            gc.collect()
+            
+            safe_log("🧹 Limpeza completa realizada")
+    
+    # Salvar log de execução da análise completa
+    final_report = {
+        'experiment_info': {
+            'experiment_type': 'cluster_analysis_multiple_descriptors',
+            'timestamp': datetime.datetime.now().isoformat(),
+            'total_descriptors': len(descriptor_types),
+            'successful': successful,
+            'failed': failed,
+            'experiment_directory': experiment_dir,
+            'att_index_used': att_index
+        },
+        'descriptor_types_analyzed': descriptor_types,
+        'execution_log': execution_log,
+        'summary': {
+            'total_time_minutes': sum(log.get('duration_minutes', 0) for log in execution_log),
+            'success_rate': f"{(successful / len(descriptor_types) * 100):.1f}%" if descriptor_types else "0%"
+        }
+    }
+    
+    report_file = os.path.join(experiment_dir, 'cluster_analysis_report.json')
+    with open(report_file, 'w') as f:
+        json.dump(final_report, f, indent=2)
+    
+    safe_log(f"🏁 Análise completa finalizada: {successful} sucessos, {failed} falhas")
+    safe_log(f"📄 Relatório completo salvo em: {report_file}")
+    
+    # Mostrar resumo dos resultados
+    safe_log("\n" + "="*60)
+    safe_log("RESUMO DA ANÁLISE DE CLUSTERS")
+    safe_log("="*60)
+    for log in execution_log:
+        status_emoji = "✅" if log['status'] == 'success' else "❌"
+        safe_log(f"{status_emoji} {log['descriptor_type']}: {log['status']} ({log['duration_minutes']} min)")
+    safe_log("="*60)
+    
+    return successful, failed
+
 if __name__ == "__main__":
     import sys
     
-    # Modo rápido - processar apenas alguns modelos
-    if len(sys.argv) > 1 and sys.argv[1] == "--fast":
-        safe_log("⚡ Modo rápido ativado")
-        # Testar apenas um modelo
-        test_single_model()
+    # Experimentos Explicações
+    # if len(sys.argv) > 1 and sys.argv[1] == "--fast":
+    #     safe_log("⚡ Modo rápido ativado")
+    #     # Testar apenas um modelo
+    #     test_single_model()
+    # else:
+    #     compatible = quick_compatibility_check()        
+    #     if len(compatible) > 0:
+    #         safe_log("🚀 Iniciando análise dos modelos compatíveis...")
+    #         run_all_large_models()
+    #     else:
+    #         safe_log("❌ Nenhum modelo compatível encontrado!")
+
+    # Experimentos Clusters
+    if len(sys.argv) > 1 and sys.argv[1] == "--all-clusters":
+        safe_log("🔬 Modo análise completa de clusters ativado")
+        run_all_cluster_analysis()
     else:
-        # Modo normal
-        compatible = quick_compatibility_check()
-        
-        if len(compatible) > 0:
-            safe_log("🚀 Iniciando análise dos modelos compatíveis...")
-            run_all_large_models()
-        else:
-            safe_log("❌ Nenhum modelo compatível encontrado!")
-
-def quick_compatibility_check():
-    """
-    Função simples para verificar compatibilidade dos modelos sem carregar dados
-    """
-    models_dir = os.path.join(os.getcwd(), "models", "Large")
-    if not os.path.exists(models_dir):
-        safe_log(f"❌ Diretório não encontrado: {models_dir}")
-        return []
-
-    safe_log("🔍 Verificação rápida de compatibilidade...")
-    
-    compatible_models = []
-    
-    for fname in os.listdir(models_dir):
-        if fname.startswith("mlp_qm9_") and fname.endswith(".pth"):
-            try:
-                # Parse básico do nome
-                parts = fname.split("_")
-                if len(parts) < 4:
-                    continue
-                    
-                descriptor_type = parts[2]
-                att_part = parts[-1].replace("att", "").replace(".pth", "")
-                att_index = int(att_part)
-                
-                # Verificar se arquivo existe e pode ser carregado
-                model_path = os.path.join(models_dir, fname)
-                state_dict = torch.load(model_path, map_location='cpu')
-                
-                # Verificar estrutura básica
-                if 'layers.0.weight' in state_dict:
-                    input_dim = state_dict['layers.0.weight'].shape[1]
-                    compatible_models.append((fname, descriptor_type, att_index, input_dim))
-                    safe_log(f"✅ {fname}: {input_dim} features")
-                else:
-                    safe_log(f"❌ {fname}: Estrutura inválida")
-                    
-            except Exception as e:
-                safe_log(f"❌ {fname}: Erro - {str(e)}")
-    
-    safe_log(f"📊 Modelos compatíveis: {len(compatible_models)}")
-    return compatible_models
-
-def create_experiment_directory():
-    """
-    Cria diretório único para o experimento
-    """
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    experiment_dir = os.path.join(os.getcwd(), "experiments", f"experiment_{timestamp}")
-    os.makedirs(experiment_dir, exist_ok=True)
-    
-    safe_log(f"📁 Experimento criado: {experiment_dir}")
-    return experiment_dir
-
-
-# Função para testar um modelo específico  
-def test_single_model():
-    """Função de teste para um modelo específico"""
-    result = run_single_model_safe(0, 'Physicochemical')
-    safe_log(f"Teste concluído: {result}")
-
-if __name__ == "__main__":
-    # Teste rápido de compatibilidade primeiro
-    compatible = quick_compatibility_check()
-    
-    if len(compatible) > 0:
-        safe_log("🚀 Iniciando análise dos modelos compatíveis...")
-        # Para executar todos os modelos: run_all_large_models()
-        run_all_large_models()
-    else:
-        safe_log("❌ Nenhum modelo compatível encontrado!")
-        safe_log("💡 Verifique se os arquivos .pth estão no diretório models/Large/")
+        # Análise de cluster individual (padrão)
+        run_cluster_analysis()
