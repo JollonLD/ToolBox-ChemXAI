@@ -637,14 +637,14 @@ def main():
     
     for att_index in att_indices:
         for descriptor_type in all_descriptors:
-            for layer_name, layers, prop in zip(layer_configs.items(), properties):
+            for layer_name, layers, prop in layer_configs.items():
                 config = {
                     'name': f"MLP_att{att_index}_{descriptor_type}_{layer_name}",
                     'att_index': att_index,
                     'descriptor_type': descriptor_type,
                     'layers': layers,
                     'cache_descriptors': True,
-                    'prop': prop 
+                    'prop': properties[att_index]
                 }
                 all_configs.append(config)
     
