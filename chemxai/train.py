@@ -14,8 +14,8 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
-from .models import GCN, MLP
-from .data import graph_datasets, qm9_tabular
+from models import GCN, MLP
+from data import graph_datasets, qm9_tabular
 
 # Configure logging system
 def setup_logging(log_dir="logs"):
@@ -594,12 +594,19 @@ def main():
     ]
     
     # Propriedades de interesse (índices de atributos)
-    att_indices = [0, 10]  # Rotational constant A, Internal energy at 0K
+    properties = [
+            'Rotational constant A: GHz', 'Rotational constant B: GHz', 'Rotational constant C: GHz',
+            'Dipole moment (μ): Debye (D)', 'Isotropic polarizability (α): atomic units (a.u.)',
+            'Energy of HOMO (ϵHOMO): Hartree (Ha)', 'Energy of LUMO (ϵLUMO): Hartree (Ha)',
+            'Gap (ϵgap): Hartree (Ha)', 'Electronic spatial extent: atomic units (a.u.)',
+            'Zero point vibrational energy (zpve): Hartree (Ha)', 'Internal energy at 0 K (U0): Hartree (Ha)',
+            'Internal energy at 298.15 K (U): Hartree (Ha)', 'Enthalpy at 298.15 K (H): Hartree (Ha)',
+            'Free energy at 298.15 K (G): Hartree (Ha)', 'Heat capacity at 298.15 K (Cv): cal/mol·K'
+            ]
+    att_indices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
     
     # Configurações de camadas para diferentes modelos
     layer_configs = {
-        'small': [32, 16],
-        'medium': [64, 32, 16],
         'large': [128, 64, 32]
     }
     
@@ -627,15 +634,17 @@ def main():
     logging.info(f"  Arquiteturas: {layer_configs}")
     
     # Criar todas as combinações de configuração
+    
     for att_index in att_indices:
         for descriptor_type in all_descriptors:
-            for layer_name, layers in layer_configs.items():
+            for layer_name, layers, prop in zip(layer_configs.items(), properties):
                 config = {
                     'name': f"MLP_att{att_index}_{descriptor_type}_{layer_name}",
                     'att_index': att_index,
                     'descriptor_type': descriptor_type,
                     'layers': layers,
-                    'cache_descriptors': True
+                    'cache_descriptors': True,
+                    'prop': prop 
                 }
                 all_configs.append(config)
     
@@ -649,11 +658,13 @@ def main():
         att_index = config['att_index']
         descriptor_type = config['descriptor_type']
         layers = config['layers']
+        prop = config['prop']
         
         logging.info(f"[{i}/{total_models}] Iniciando treino: {model_name}")
         logging.info(f"  Propriedade: {att_index}")
         logging.info(f"  Descritor: {descriptor_type}")
         logging.info(f"  Arquitetura: {layers}")
+        logging.info(f"  Propriedade: {prop}")
         
         # Treinar o modelo com tratamento de exceção
         try:
@@ -669,7 +680,7 @@ def main():
                 cache_descriptors=config['cache_descriptors'],
                 num_workers=num_workers,
                 log_dir=log_dir,
-                layer_name=config['name'].split('_')[-1] # pega o tipo do modelo (small, medium, large) a partir do nome do modelo
+                layer_name=config['name'].split('_')[-1]
             )
             model_time = time.time() - model_start_time
             

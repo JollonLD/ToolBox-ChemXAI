@@ -1,0 +1,13 @@
+2025-10-09 14:23:33,906 [INFO] ================================================================================
+2025-10-09 14:23:33,907 [INFO] INICIANDO TREINAMENTO DE MODELOS MLP COM DIFERENTES DESCRITORES
+2025-10-09 14:23:33,907 [INFO] ================================================================================
+2025-10-09 14:23:33,907 [INFO] Log global: /home/pierrot/Documents/ToolBox-ChemXAI/logs/training_20251009_142333.log
+2025-10-09 14:23:33,908 [INFO] Arquivo de sumário: /home/pierrot/Documents/ToolBox-ChemXAI/logs/training_summary_20251009_142333.txt
+2025-10-09 14:23:33,908 [INFO] Arquivo de resultados: /home/pierrot/Documents/ToolBox-ChemXAI/logs/training_results_20251009_142333.json
+2025-10-09 14:23:33,908 [INFO] Parâmetros de treinamento:
+2025-10-09 14:23:33,908 [INFO]   Épocas: 30
+2025-10-09 14:23:33,908 [INFO]   Learning Rate: 0.001
+2025-10-09 14:23:33,908 [INFO]   Batch Size: 32
+2025-10-09 14:23:33,908 [INFO]   Descritores: ['Morgan', 'CM', 'Physicochemical', '3D', 'MACCS', 'Topological', 'AtomPair', 'EState', 'Pattern', 'Avalon', 'MorganCount', 'Autocorr']
+2025-10-09 14:23:33,908 [INFO]   Propriedades: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+2025-10-09 14:23:33,908 [INFO]   Arquiteturas: {'large': [128, 64, 32]}

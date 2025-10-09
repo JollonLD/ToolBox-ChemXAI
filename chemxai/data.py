@@ -1933,7 +1933,7 @@ class qm9_tabular:
             cached_data = np.load(cache_file, allow_pickle=True)
             X_normal = cached_data['X_normal']
             Ys = cached_data['Ys']
-            props = cached
+            props = cached_data['props']
         else:
             # Calcular descritores
             X_normal, Ys, props = self.compute_descriptors(

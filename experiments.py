@@ -1008,7 +1008,7 @@ def run_all_cluster_analysis():
     failed = 0
     execution_log = []
     
-    for i, descriptor_type in enumerate(descriptor_types, att_index):
+    for i, descriptor_type in enumerate(descriptor_types):
         safe_log(f"📊 Progresso: {i+1}/{len(descriptor_types)} - Processando {descriptor_type}")
         
         start_time = time.time()
