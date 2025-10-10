@@ -1,0 +1,17 @@
+{
+  "model": "mlp_att11_EState",
+  "descriptor_type": "EState",
+  "att_index": 11,
+  "layers": [
+    128,
+    64,
+    32
+  ],
+  "train_loss": 0.3694705939083222,
+  "val_loss": 0.25704478096046623,
+  "test_loss": 0.596296256099463,
+  "test_rmse": 0.7722022119234463,
+  "test_mae": 0.5395140051841736,
+  "training_time_seconds": 268.7467863559723,
+  "timestamp": "2025-10-10 09:06:59"
+}

@@ -1,0 +1,17 @@
+{
+  "model": "mlp_att8_Avalon",
+  "descriptor_type": "Avalon",
+  "att_index": 8,
+  "layers": [
+    128,
+    64,
+    32
+  ],
+  "train_loss": 0.1944649434527174,
+  "val_loss": 0.5607910010399375,
+  "test_loss": 1.0725350170026564,
+  "test_rmse": 1.035632665090599,
+  "test_mae": 0.8273043036460876,
+  "training_time_seconds": 216.5760998725891,
+  "timestamp": "2025-10-10 04:58:43"
+}

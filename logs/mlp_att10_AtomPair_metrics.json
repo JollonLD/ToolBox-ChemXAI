@@ -12,6 +12,6 @@
   "test_loss": 0.3927346304957528,
   "test_rmse": 0.6266854318521796,
   "test_mae": 0.3812902271747589,
-  "training_time_seconds": 603.6446874141693,
-  "timestamp": "2025-09-29 04:10:45"
+  "training_time_seconds": 592.249017238617,
+  "timestamp": "2025-10-10 07:32:07"
 }

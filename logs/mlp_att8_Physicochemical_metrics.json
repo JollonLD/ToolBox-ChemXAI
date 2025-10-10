@@ -1,0 +1,17 @@
+{
+  "model": "mlp_att8_Physicochemical",
+  "descriptor_type": "Physicochemical",
+  "att_index": 8,
+  "layers": [
+    128,
+    64,
+    32
+  ],
+  "train_loss": 0.24238112680264798,
+  "val_loss": 0.3252415382082084,
+  "test_loss": 0.304912478339092,
+  "test_rmse": 0.5521888067854074,
+  "test_mae": 0.3704812228679657,
+  "training_time_seconds": 587.0370275974274,
+  "timestamp": "2025-10-10 04:20:24"
+}

@@ -1,0 +1,17 @@
+{
+  "model": "mlp_att9_3D",
+  "descriptor_type": "3D",
+  "att_index": 9,
+  "layers": [
+    128,
+    64,
+    32
+  ],
+  "train_loss": 0.5655335939108794,
+  "val_loss": 0.6798749240920726,
+  "test_loss": 0.6979810488887713,
+  "test_rmse": 0.8354526012220989,
+  "test_mae": 0.6568321585655212,
+  "training_time_seconds": 339.24380135536194,
+  "timestamp": "2025-10-10 05:59:16"
+}

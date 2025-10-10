@@ -1,0 +1,562 @@
+================================================================================
+RESUMO DO TREINAMENTO
+================================================================================
+
+Data de execução: 2025-10-10 12:22:29
+Total de modelos: 168
+Sucessos: 140
+Falhas: 28
+Taxa de sucesso: 83.3%
+Tempo total: 21.22 horas
+
+MELHORES MODELOS POR PROPRIEDADE E TIPO DE DESCRITOR:
+--------------------------------------------------------------------------------
+
+PROPRIEDADE 0:
+  3D: MLP_att0_3D_large
+    Val Loss: 0.0003
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att0_AtomPair_large
+    Val Loss: 0.0003
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att0_Avalon_large
+    Val Loss: 0.0003
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att0_CM_large
+    Val Loss: 0.0003
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att0_EState_large
+    Val Loss: 0.0005
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att0_Morgan_large
+    Val Loss: 0.0003
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att0_MorganCount_large
+    Val Loss: 0.0003
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att0_Pattern_large
+    Val Loss: 0.0002
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att0_Physicochemical_large
+    Val Loss: 0.0004
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att0_Topological_large
+    Val Loss: 0.0003
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att0_Pattern_large
+    Val Loss: 0.0002
+    Descritor: Pattern
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 1:
+  3D: MLP_att1_3D_large
+    Val Loss: 0.0807
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att1_AtomPair_large
+    Val Loss: 0.0845
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att1_Avalon_large
+    Val Loss: 0.1459
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att1_CM_large
+    Val Loss: 0.0611
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att1_EState_large
+    Val Loss: 0.2018
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att1_Morgan_large
+    Val Loss: 0.1329
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att1_MorganCount_large
+    Val Loss: 0.0891
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att1_Pattern_large
+    Val Loss: 0.0841
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att1_Physicochemical_large
+    Val Loss: 0.0922
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att1_Topological_large
+    Val Loss: 0.1194
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att1_CM_large
+    Val Loss: 0.0611
+    Descritor: CM
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 2:
+  3D: MLP_att2_3D_large
+    Val Loss: 0.0736
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att2_AtomPair_large
+    Val Loss: 0.0790
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att2_Avalon_large
+    Val Loss: 0.1353
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att2_CM_large
+    Val Loss: 0.0389
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att2_EState_large
+    Val Loss: 0.1866
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att2_Morgan_large
+    Val Loss: 0.1331
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att2_MorganCount_large
+    Val Loss: 0.0780
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att2_Pattern_large
+    Val Loss: 0.0725
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att2_Physicochemical_large
+    Val Loss: 0.0837
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att2_Topological_large
+    Val Loss: 0.1321
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att2_CM_large
+    Val Loss: 0.0389
+    Descritor: CM
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 3:
+  3D: MLP_att3_3D_large
+    Val Loss: 0.6597
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att3_AtomPair_large
+    Val Loss: 0.3819
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att3_Avalon_large
+    Val Loss: 0.3320
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att3_CM_large
+    Val Loss: 0.3713
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att3_EState_large
+    Val Loss: 0.4266
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att3_Morgan_large
+    Val Loss: 0.3983
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att3_MorganCount_large
+    Val Loss: 0.3877
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att3_Pattern_large
+    Val Loss: 0.3654
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att3_Physicochemical_large
+    Val Loss: 0.4108
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att3_Topological_large
+    Val Loss: 0.3655
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att3_Avalon_large
+    Val Loss: 0.3320
+    Descritor: Avalon
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 4:
+  3D: MLP_att4_3D_large
+    Val Loss: 0.5644
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att4_AtomPair_large
+    Val Loss: 0.1522
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att4_Avalon_large
+    Val Loss: 0.4633
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att4_CM_large
+    Val Loss: 0.1076
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att4_EState_large
+    Val Loss: 0.4498
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att4_Morgan_large
+    Val Loss: 0.5340
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att4_MorganCount_large
+    Val Loss: 0.1416
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att4_Pattern_large
+    Val Loss: 0.3434
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att4_Physicochemical_large
+    Val Loss: 0.1545
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att4_Topological_large
+    Val Loss: 0.2703
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att4_CM_large
+    Val Loss: 0.1076
+    Descritor: CM
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 5:
+  3D: MLP_att5_3D_large
+    Val Loss: 0.5442
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att5_AtomPair_large
+    Val Loss: 0.2878
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att5_Avalon_large
+    Val Loss: 0.1852
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att5_CM_large
+    Val Loss: 0.3592
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att5_EState_large
+    Val Loss: 0.3748
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att5_Morgan_large
+    Val Loss: 0.3066
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att5_MorganCount_large
+    Val Loss: 0.2944
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att5_Pattern_large
+    Val Loss: 0.2359
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att5_Physicochemical_large
+    Val Loss: 0.3334
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att5_Topological_large
+    Val Loss: 0.1919
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att5_Avalon_large
+    Val Loss: 0.1852
+    Descritor: Avalon
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 6:
+  3D: MLP_att6_3D_large
+    Val Loss: 0.7620
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att6_AtomPair_large
+    Val Loss: 0.1330
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att6_Avalon_large
+    Val Loss: 0.0977
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att6_CM_large
+    Val Loss: 0.2444
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att6_EState_large
+    Val Loss: 0.2408
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att6_Morgan_large
+    Val Loss: 0.1781
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att6_MorganCount_large
+    Val Loss: 0.1531
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att6_Pattern_large
+    Val Loss: 0.1569
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att6_Physicochemical_large
+    Val Loss: 0.2046
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att6_Topological_large
+    Val Loss: 0.1148
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att6_Avalon_large
+    Val Loss: 0.0977
+    Descritor: Avalon
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 7:
+  3D: MLP_att7_3D_large
+    Val Loss: 0.7461
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att7_AtomPair_large
+    Val Loss: 0.1800
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att7_Avalon_large
+    Val Loss: 0.1239
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att7_CM_large
+    Val Loss: 0.3034
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att7_EState_large
+    Val Loss: 0.2993
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att7_Morgan_large
+    Val Loss: 0.2271
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att7_MorganCount_large
+    Val Loss: 0.2107
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att7_Pattern_large
+    Val Loss: 0.1580
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att7_Physicochemical_large
+    Val Loss: 0.2554
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att7_Topological_large
+    Val Loss: 0.1307
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att7_Avalon_large
+    Val Loss: 0.1239
+    Descritor: Avalon
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 8:
+  3D: MLP_att8_3D_large
+    Val Loss: 0.3186
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att8_AtomPair_large
+    Val Loss: 0.2946
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att8_Avalon_large
+    Val Loss: 0.5608
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att8_CM_large
+    Val Loss: 0.1121
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att8_EState_large
+    Val Loss: 0.7506
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att8_Morgan_large
+    Val Loss: 0.6123
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att8_MorganCount_large
+    Val Loss: 0.2685
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att8_Pattern_large
+    Val Loss: 0.2966
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att8_Physicochemical_large
+    Val Loss: 0.3252
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att8_Topological_large
+    Val Loss: 0.4739
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att8_CM_large
+    Val Loss: 0.1121
+    Descritor: CM
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 9:
+  3D: MLP_att9_3D_large
+    Val Loss: 0.6799
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att9_AtomPair_large
+    Val Loss: 0.0802
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att9_Avalon_large
+    Val Loss: 0.2934
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att9_CM_large
+    Val Loss: 0.0321
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att9_EState_large
+    Val Loss: 0.4059
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att9_Morgan_large
+    Val Loss: 0.3955
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att9_MorganCount_large
+    Val Loss: 0.1150
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att9_Pattern_large
+    Val Loss: 0.2987
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att9_Physicochemical_large
+    Val Loss: 0.0499
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att9_Topological_large
+    Val Loss: 0.2450
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att9_CM_large
+    Val Loss: 0.0321
+    Descritor: CM
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 10:
+  3D: MLP_att10_3D_large
+    Val Loss: 0.6128
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att10_AtomPair_large
+    Val Loss: 0.1056
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att10_Avalon_large
+    Val Loss: 0.3476
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att10_CM_large
+    Val Loss: 0.0062
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att10_EState_large
+    Val Loss: 0.2551
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att10_Morgan_large
+    Val Loss: 0.4586
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att10_MorganCount_large
+    Val Loss: 0.0496
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att10_Pattern_large
+    Val Loss: 0.2671
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att10_Physicochemical_large
+    Val Loss: 0.0453
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att10_Topological_large
+    Val Loss: 0.1456
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att10_CM_large
+    Val Loss: 0.0062
+    Descritor: CM
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 11:
+  3D: MLP_att11_3D_large
+    Val Loss: 0.6208
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att11_AtomPair_large
+    Val Loss: 0.1062
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att11_Avalon_large
+    Val Loss: 0.3763
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att11_CM_large
+    Val Loss: 0.0168
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att11_EState_large
+    Val Loss: 0.2570
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att11_Morgan_large
+    Val Loss: 0.4558
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att11_MorganCount_large
+    Val Loss: 0.0521
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att11_Pattern_large
+    Val Loss: 0.2619
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att11_Physicochemical_large
+    Val Loss: 0.0454
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att11_Topological_large
+    Val Loss: 0.1389
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att11_CM_large
+    Val Loss: 0.0168
+    Descritor: CM
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 12:
+  3D: MLP_att12_3D_large
+    Val Loss: 0.6208
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att12_AtomPair_large
+    Val Loss: 0.1029
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att12_Avalon_large
+    Val Loss: 0.3763
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att12_CM_large
+    Val Loss: 0.0104
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att12_EState_large
+    Val Loss: 0.2570
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att12_Morgan_large
+    Val Loss: 0.4558
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att12_MorganCount_large
+    Val Loss: 0.0508
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att12_Pattern_large
+    Val Loss: 0.2619
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att12_Physicochemical_large
+    Val Loss: 0.0454
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att12_Topological_large
+    Val Loss: 0.1389
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att12_CM_large
+    Val Loss: 0.0104
+    Descritor: CM
+    Arquitetura: [128, 64, 32]
+
+PROPRIEDADE 13:
+  3D: MLP_att13_3D_large
+    Val Loss: 0.6259
+    Arquitetura: [128, 64, 32]
+  AtomPair: MLP_att13_AtomPair_large
+    Val Loss: 0.1022
+    Arquitetura: [128, 64, 32]
+  Avalon: MLP_att13_Avalon_large
+    Val Loss: 0.2970
+    Arquitetura: [128, 64, 32]
+  CM: MLP_att13_CM_large
+    Val Loss: 0.0105
+    Arquitetura: [128, 64, 32]
+  EState: MLP_att13_EState_large
+    Val Loss: 0.2622
+    Arquitetura: [128, 64, 32]
+  Morgan: MLP_att13_Morgan_large
+    Val Loss: 0.4573
+    Arquitetura: [128, 64, 32]
+  MorganCount: MLP_att13_MorganCount_large
+    Val Loss: 0.0590
+    Arquitetura: [128, 64, 32]
+  Pattern: MLP_att13_Pattern_large
+    Val Loss: 0.2624
+    Arquitetura: [128, 64, 32]
+  Physicochemical: MLP_att13_Physicochemical_large
+    Val Loss: 0.0470
+    Arquitetura: [128, 64, 32]
+  Topological: MLP_att13_Topological_large
+    Val Loss: 0.1591
+    Arquitetura: [128, 64, 32]
+
+  Melhor geral: MLP_att13_CM_large
+    Val Loss: 0.0105
+    Descritor: CM
+    Arquitetura: [128, 64, 32]
+
+
+MODELOS FALHOS:
+  - MLP_att0_MACCS_large: Dados de entrada X_normal vazios ou inválidos
+  - MLP_att0_Autocorr_large: Dados de entrada X_normal vazios ou inválidos
+  - MLP_att1_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att1_Autocorr_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att2_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att2_Autocorr_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att3_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att3_Autocorr_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att4_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att4_Autocorr_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att5_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att5_Autocorr_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att6_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att6_Autocorr_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att7_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att7_Autocorr_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att8_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att8_Autocorr_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att9_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att9_Autocorr_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att10_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att10_Autocorr_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att11_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att11_Autocorr_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att12_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att12_Autocorr_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att13_MACCS_large: arrays used as indices must be of integer (or boolean) type
+  - MLP_att13_Autocorr_large: arrays used as indices must be of integer (or boolean) type

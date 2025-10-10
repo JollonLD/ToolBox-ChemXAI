@@ -1,0 +1,55 @@
+{
+  "experiment_info": {
+    "experiment_type": "cluster_analysis_multiple_descriptors",
+    "timestamp": "2025-10-07T15:59:09.731276",
+    "total_descriptors": 5,
+    "successful": 4,
+    "failed": 1,
+    "experiment_directory": "/mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251007_154701",
+    "att_index_used": 10
+  },
+  "descriptor_types_analyzed": [
+    "AtomPair",
+    "Morgan",
+    "Physicochemical",
+    "MACCS",
+    "Topological"
+  ],
+  "execution_log": [
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 10,
+      "status": "success",
+      "duration_minutes": 0.76
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 10,
+      "status": "success",
+      "duration_minutes": 0.9
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 10,
+      "status": "success",
+      "duration_minutes": 9.16
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 10,
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 10,
+      "status": "success",
+      "duration_minutes": 1.28
+    }
+  ],
+  "summary": {
+    "total_time_minutes": 12.11,
+    "success_rate": "80.0%"
+  }
+}

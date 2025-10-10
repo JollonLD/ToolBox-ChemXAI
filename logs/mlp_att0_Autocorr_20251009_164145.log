@@ -1,0 +1,6 @@
+2025-10-09 16:41:45,371 [INFO] Iniciando treinamento do modelo mlp_att0_Autocorr
+2025-10-09 16:41:45,371 [INFO] Configuração: att_index=0, epochs=30, layers=[128, 64, 32], lr=0.001, batch_size=32, descriptor_type=Autocorr
+2025-10-09 16:41:45,372 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
+2025-10-09 16:41:45,372 [INFO] Carregando dados...
+2025-10-09 16:41:45,449 [INFO] Preparando dataloaders sem ruído...
+2025-10-09 16:41:45,462 [ERROR] Erro ao carregar dados: Dados de entrada X_normal vazios ou inválidos

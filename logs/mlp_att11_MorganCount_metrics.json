@@ -1,0 +1,17 @@
+{
+  "model": "mlp_att11_MorganCount",
+  "descriptor_type": "MorganCount",
+  "att_index": 11,
+  "layers": [
+    128,
+    64,
+    32
+  ],
+  "train_loss": 0.03618911807042559,
+  "val_loss": 0.05207504748336443,
+  "test_loss": 0.23431615961074387,
+  "test_rmse": 0.48406214436861705,
+  "test_mae": 0.2594946324825287,
+  "training_time_seconds": 591.598922252655,
+  "timestamp": "2025-10-10 09:27:05"
+}

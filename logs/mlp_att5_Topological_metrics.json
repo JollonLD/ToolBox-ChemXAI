@@ -1,0 +1,17 @@
+{
+  "model": "mlp_att5_Topological",
+  "descriptor_type": "Topological",
+  "att_index": 5,
+  "layers": [
+    128,
+    64,
+    32
+  ],
+  "train_loss": 0.14154144611494693,
+  "val_loss": 0.19188498400211834,
+  "test_loss": 0.4191279348852129,
+  "test_rmse": 0.6474009073867698,
+  "test_mae": 0.45082351565361023,
+  "training_time_seconds": 590.4338009357452,
+  "timestamp": "2025-10-09 23:41:50"
+}

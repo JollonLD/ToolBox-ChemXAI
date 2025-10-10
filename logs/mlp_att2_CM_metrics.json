@@ -1,0 +1,17 @@
+{
+  "model": "mlp_att2_CM",
+  "descriptor_type": "CM",
+  "att_index": 2,
+  "layers": [
+    128,
+    64,
+    32
+  ],
+  "train_loss": 0.0464784326448129,
+  "val_loss": 0.03893285545664899,
+  "test_loss": 0.004707011146016964,
+  "test_rmse": 0.06860766098634294,
+  "test_mae": 0.04548236355185509,
+  "training_time_seconds": 598.1897573471069,
+  "timestamp": "2025-10-09 18:33:22"
+}

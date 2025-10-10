@@ -1,0 +1,17 @@
+{
+  "model": "mlp_att7_Morgan",
+  "descriptor_type": "Morgan",
+  "att_index": 7,
+  "layers": [
+    128,
+    64,
+    32
+  ],
+  "train_loss": 0.11105537692267646,
+  "val_loss": 0.22709252329808688,
+  "test_loss": 0.18462681244126408,
+  "test_rmse": 0.42968222262651745,
+  "test_mae": 0.3020603358745575,
+  "training_time_seconds": 572.0986361503601,
+  "timestamp": "2025-10-10 02:10:49"
+}

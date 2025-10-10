@@ -1,0 +1,17 @@
+{
+  "model": "mlp_att12_Pattern",
+  "descriptor_type": "Pattern",
+  "att_index": 12,
+  "layers": [
+    128,
+    64,
+    32
+  ],
+  "train_loss": 0.11397804790093499,
+  "val_loss": 0.26187095985435394,
+  "test_loss": 0.4830306300476369,
+  "test_rmse": 0.6950040503821808,
+  "test_mae": 0.5304726362228394,
+  "training_time_seconds": 312.3458261489868,
+  "timestamp": "2025-10-10 10:38:29"
+}
