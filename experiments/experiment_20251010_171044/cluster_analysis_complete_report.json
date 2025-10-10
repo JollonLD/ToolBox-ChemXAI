@@ -1,0 +1,63 @@
+{
+  "experiment_info": {
+    "experiment_type": "cluster_analysis_multiple_descriptors_all_att_index",
+    "timestamp": "2025-10-10T17:10:47.795172",
+    "total_descriptor_types": 12,
+    "total_att_indices": 19,
+    "total_combinations": 228,
+    "combinations_completed": 1,
+    "successful": 0,
+    "failed": 0,
+    "experiment_directory": "/home/pierrot/Documents/ToolBox-ChemXAI/experiments/experiment_20251010_171044"
+  },
+  "descriptor_types_analyzed": [
+    "CM",
+    "Morgan",
+    "Physicochemical",
+    "3D",
+    "MACCS",
+    "Topological",
+    "AtomPair",
+    "EState",
+    "Pattern",
+    "Avalon",
+    "MorganCount",
+    "Autocorr"
+  ],
+  "att_indices_analyzed": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+  ],
+  "execution_log": [
+    {
+      "descriptor_type": "CM",
+      "att_index": 0,
+      "combination": "CM_att0",
+      "status": "interrupted",
+      "duration_minutes": 0.06
+    }
+  ],
+  "summary": {
+    "total_time_minutes": 0.06,
+    "success_rate": "0.0%",
+    "completed_combinations": 1,
+    "remaining_combinations": 227
+  }
+}

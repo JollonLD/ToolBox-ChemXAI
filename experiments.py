@@ -191,9 +191,10 @@ def validate_parameters(att_index, descriptor_type):
 def load_model_optimized(descriptor_type, att_index, device):
     """
     Carrega modelo de forma otimizada com cache e verificações
+    ATUALIZADO: Usa formato real dos modelos (com 'att')
     """
-    # ATUALIZADO: Novo formato do nome do modelo
-    model_path = os.path.join(os.getcwd(), 'models', f'mlp_qm9_{descriptor_type}_{att_index}_large.pth')
+    # CORRIGIDO: Usar formato real dos modelos existentes
+    model_path = os.path.join(os.getcwd(), 'models', f'mlp_qm9_{descriptor_type}_att{att_index}_large.pth')
     
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Modelo não encontrado: {model_path}")
@@ -588,6 +589,7 @@ def run_all_large_models():
 def quick_compatibility_check():
     """
     Função simples para verificar compatibilidade dos modelos sem carregar dados
+    ATUALIZADO: Usa parse_model_filename para novo formato
     """
     models_dir = os.path.join(os.getcwd(), "models")
     if not os.path.exists(models_dir):
@@ -601,14 +603,12 @@ def quick_compatibility_check():
     for fname in os.listdir(models_dir):
         if fname.startswith("mlp_qm9_") and fname.endswith(".pth"):
             try:
-                # Parse básico do nome
-                parts = fname.split("_")
-                if len(parts) < 4:
+                # ATUALIZADO: Usar parse_model_filename para parsing correto
+                descriptor_type, att_index, model_type = parse_model_filename(fname)
+                
+                if descriptor_type is None or att_index is None:
+                    safe_log(f"❌ {fname}: Formato de nome inválido")
                     continue
-                    
-                descriptor_type = parts[2]
-                att_part = parts[-1].replace("att", "").replace(".pth", "")
-                att_index = int(att_part)
                 
                 # Verificar se arquivo existe e pode ser carregado
                 model_path = os.path.join(models_dir, fname)
@@ -618,7 +618,7 @@ def quick_compatibility_check():
                 if 'layers.0.weight' in state_dict:
                     input_dim = state_dict['layers.0.weight'].shape[1]
                     compatible_models.append((fname, descriptor_type, att_index, input_dim))
-                    safe_log(f"✅ {fname}: {input_dim} features")
+                    safe_log(f"✅ {fname}: {input_dim} features ({model_type} format)")
                 else:
                     safe_log(f"❌ {fname}: Estrutura inválida")
                     
@@ -640,17 +640,29 @@ def parse_model_filename(filename):
     
     Formatos suportados:
     - Novo: mlp_qm9_{descriptor_type}_{att_index}_large.pth
+    - Antigo com large: mlp_qm9_{descriptor_type}_att{att_index}_large.pth
     - Antigo: mlp_qm9_{descriptor_type}_att{att_index}.pth (para compatibilidade)
     """
     try:
         if filename.endswith("_large.pth"):
-            # Novo formato: mlp_qm9_{descriptor_type}_{att_index}_large.pth
+            # Remover prefixo e sufixo
             name_part = filename.replace("mlp_qm9_", "").replace("_large.pth", "")
-            parts = name_part.rsplit("_", 1)
-            if len(parts) == 2:
-                descriptor_type = parts[0]
-                att_index = int(parts[1])
-                return descriptor_type, att_index, "large"
+            
+            # Verificar se é formato antigo com "att" (ex: CM_att12_large.pth)
+            if "_att" in name_part:
+                # Formato: {descriptor_type}_att{att_index}_large.pth
+                parts = name_part.split("_att")
+                if len(parts) == 2:
+                    descriptor_type = parts[0]
+                    att_index = int(parts[1])
+                    return descriptor_type, att_index, "legacy_large"
+            else:
+                # Novo formato: mlp_qm9_{descriptor_type}_{att_index}_large.pth
+                parts = name_part.rsplit("_", 1)
+                if len(parts) == 2:
+                    descriptor_type = parts[0]
+                    att_index = int(parts[1])
+                    return descriptor_type, att_index, "large"
         
         elif filename.startswith("mlp_qm9_") and filename.endswith(".pth"):
             # Formato antigo: mlp_qm9_{descriptor_type}_att{att_index}.pth
@@ -730,10 +742,11 @@ def run_cluster_analysis(experiment_dir, descriptor_type='AtomPair', att_index=1
         for fname in os.listdir(models_dir):
             if fname.startswith(f"mlp_qm9_{descriptor_type}_") and fname.endswith(".pth"):
                 try:
-                    # Parse do nome do arquivo com novo formato
-                    parsed = parse_model_filename(fname)
-                    if parsed and parsed['descriptor_type'] == descriptor_type:
-                        model_att_index = parsed['att_index']
+                    # ATUALIZADO: Parse do nome do arquivo com novo formato
+                    parsed_descriptor, parsed_att_index, parsed_type = parse_model_filename(fname)
+                    
+                    if parsed_descriptor == descriptor_type and parsed_att_index is not None:
+                        model_att_index = parsed_att_index
                         
                         # Verificar se o modelo pode ser carregado
                         model_path = os.path.join(models_dir, fname)

@@ -1,0 +1,10 @@
+{
+  "experiment_info": {
+    "timestamp": "2025-10-10T17:13:53.128758",
+    "total_models": 140,
+    "successful": 0,
+    "failed": 0,
+    "experiment_directory": "/home/pierrot/Documents/ToolBox-ChemXAI/experiments/experiment_20251010_171346"
+  },
+  "execution_log": []
+}
