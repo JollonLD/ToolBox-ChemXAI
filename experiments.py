@@ -192,7 +192,8 @@ def load_model_optimized(descriptor_type, att_index, device):
     """
     Carrega modelo de forma otimizada com cache e verificações
     """
-    model_path = os.path.join(os.getcwd(), 'models', f'Large/mlp_qm9_{descriptor_type}_att{att_index}.pth')
+    # ATUALIZADO: Novo formato do nome do modelo
+    model_path = os.path.join(os.getcwd(), 'models', f'mlp_qm9_{descriptor_type}_{att_index}_large.pth')
     
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Modelo não encontrado: {model_path}")
@@ -220,9 +221,12 @@ def load_model_optimized(descriptor_type, att_index, device):
     if device.type == 'cuda':
         model = model.to(device)
         # Configurar modelo para inferência otimizada
-        model = torch.jit.script(model) if hasattr(torch.jit, 'script') else model
+        try:
+            model = torch.jit.script(model)
+            safe_log(f"🚀 Modelo carregado na GPU com JIT compilation")
+        except:
+            safe_log(f"🚀 Modelo carregado na GPU (JIT não aplicado)")
         torch.cuda.empty_cache()  # Limpar cache após carregamento
-        safe_log(f"🚀 Modelo carregado na GPU com otimizações")
     else:
         safe_log(f"📱 Modelo carregado na CPU")
     
@@ -516,7 +520,8 @@ def run_all_large_models():
     """
     device = optimize_for_gpu()
     
-    models_dir = os.path.join(os.getcwd(), "models", "Large")
+    # ATUALIZADO: Novo diretório de modelos
+    models_dir = os.path.join(os.getcwd(), "models")
     if not os.path.exists(models_dir):
         safe_log(f"❌ Diretório não encontrado: {models_dir}")
         return
@@ -548,7 +553,7 @@ def run_all_large_models():
                 failed += 1
                 
         except KeyboardInterrupt:
-            safe_log("� Interrompido pelo usuário")
+            safe_log("⚠️ Interrompido pelo usuário")
             break
         except Exception as e:
             safe_log(f"❌ Erro fatal em {fname}: {str(e)}")
@@ -584,7 +589,7 @@ def quick_compatibility_check():
     """
     Função simples para verificar compatibilidade dos modelos sem carregar dados
     """
-    models_dir = os.path.join(os.getcwd(), "models", "Large")
+    models_dir = os.path.join(os.getcwd(), "models")
     if not os.path.exists(models_dir):
         safe_log(f"❌ Diretório não encontrado: {models_dir}")
         return []
@@ -628,6 +633,38 @@ def test_single_model():
     """Função de teste para um modelo específico"""
     result = run_single_model_safe(0, 'Physicochemical')
     safe_log(f"Teste concluído: {result}")
+
+def parse_model_filename(filename):
+    """
+    Função auxiliar para fazer parse do nome do modelo
+    
+    Formatos suportados:
+    - Novo: mlp_qm9_{descriptor_type}_{att_index}_large.pth
+    - Antigo: mlp_qm9_{descriptor_type}_att{att_index}.pth (para compatibilidade)
+    """
+    try:
+        if filename.endswith("_large.pth"):
+            # Novo formato: mlp_qm9_{descriptor_type}_{att_index}_large.pth
+            name_part = filename.replace("mlp_qm9_", "").replace("_large.pth", "")
+            parts = name_part.rsplit("_", 1)
+            if len(parts) == 2:
+                descriptor_type = parts[0]
+                att_index = int(parts[1])
+                return descriptor_type, att_index, "large"
+        
+        elif filename.startswith("mlp_qm9_") and filename.endswith(".pth"):
+            # Formato antigo: mlp_qm9_{descriptor_type}_att{att_index}.pth
+            parts = filename.split("_")
+            if len(parts) >= 4:
+                descriptor_type = parts[2]
+                att_part = parts[-1].replace("att", "").replace(".pth", "")
+                att_index = int(att_part)
+                return descriptor_type, att_index, "legacy"
+    
+    except Exception:
+        pass
+    
+    return None, None, None
 
 def run_cluster_analysis(experiment_dir, descriptor_type='AtomPair', att_index=10):
     """
@@ -684,20 +721,19 @@ def run_cluster_analysis(experiment_dir, descriptor_type='AtomPair', att_index=1
     # 5. Imprimir resumo detalhado dos clusters
     cluster_manager.print_cluster_info()
     
-    # 6. Carregar todos os modelos de models/Large compatíveis com o descriptor_type
+    # 6. Carregar todos os modelos de models compatíveis com o descriptor_type
     safe_log("🔍 Procurando modelos compatíveis...")
-    models_dir = os.path.join(os.getcwd(), "models", "Large")
+    models_dir = os.path.join(os.getcwd(), "models")
     compatible_models = []
     
     if os.path.exists(models_dir):
         for fname in os.listdir(models_dir):
             if fname.startswith(f"mlp_qm9_{descriptor_type}_") and fname.endswith(".pth"):
                 try:
-                    # Parse do nome do arquivo
-                    parts = fname.split("_")
-                    if len(parts) >= 4:
-                        model_att_part = parts[-1].replace("att", "").replace(".pth", "")
-                        model_att_index = int(model_att_part)
+                    # Parse do nome do arquivo com novo formato
+                    parsed = parse_model_filename(fname)
+                    if parsed and parsed['descriptor_type'] == descriptor_type:
+                        model_att_index = parsed['att_index']
                         
                         # Verificar se o modelo pode ser carregado
                         model_path = os.path.join(models_dir, fname)
@@ -992,6 +1028,7 @@ def run_cluster_analysis(experiment_dir, descriptor_type='AtomPair', att_index=1
 def run_all_cluster_analysis():
     """
     Executa análise de clusters para múltiplos descriptor types
+    ATUALIZADO: inclui todos os att_index de 0 a 18 (19 valores total)
     """
     safe_log("🚀 Iniciando análise de clusters para múltiplos descriptors...")
     
@@ -999,7 +1036,8 @@ def run_all_cluster_analysis():
     descriptor_types = ['CM', 'Morgan', 'Physicochemical', '3D', 'MACCS', 'Topological', 
                         'AtomPair', 'EState', 'Pattern', 'Avalon', 'MorganCount', 'Autocorr']
     
-    att_index = [0, 10]  # Usar att_index padrão
+    # ATUALIZADO: Todos os att_index de 0 a 18 (19 valores total)
+    att_indices = list(range(19))  # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
     
     # Criar diretório principal do experimento
     experiment_dir = create_experiment_directory()
@@ -1008,106 +1046,144 @@ def run_all_cluster_analysis():
     failed = 0
     execution_log = []
     
-    for i, descriptor_type in enumerate(descriptor_types):
-        safe_log(f"📊 Progresso: {i+1}/{len(descriptor_types)} - Processando {descriptor_type}")
-        
-        start_time = time.time()
-        
-        try:
-            # Executar análise de cluster para este descriptor
-            result = run_cluster_analysis(experiment_dir=experiment_dir, descriptor_type=descriptor_type, att_index=att_index[0])
+    total_combinations = len(descriptor_types) * len(att_indices)
+    current_combination = 0
+    
+    safe_log(f"📊 Total de combinações: {total_combinations}")
+    safe_log(f"🔢 Descriptor types: {len(descriptor_types)} ({descriptor_types})")
+    safe_log(f"🔢 Att indices: {len(att_indices)} ({att_indices})")
+    
+    for descriptor_type in descriptor_types:
+        for att_index in att_indices:
+            current_combination += 1
+            safe_log(f"📊 Progresso: {current_combination}/{total_combinations} - Processando {descriptor_type}_att{att_index}")
             
-            duration = round((time.time() - start_time) / 60, 2)
+            start_time = time.time()
             
-            if result:
-                successful += 1
+            try:
+                # Executar análise de cluster para este descriptor e att_index
+                result = run_cluster_analysis(
+                    experiment_dir=experiment_dir, 
+                    descriptor_type=descriptor_type, 
+                    att_index=att_index
+                )
+                
+                duration = round((time.time() - start_time) / 60, 2)
+                
+                if result:
+                    successful += 1
+                    execution_log.append({
+                        'descriptor_type': descriptor_type,
+                        'att_index': att_index,
+                        'combination': f"{descriptor_type}_att{att_index}",
+                        'status': 'success',
+                        'duration_minutes': duration
+                    })
+                    safe_log(f"✅ Sucesso - {descriptor_type}_att{att_index} ({duration} min)")
+                else:
+                    failed += 1
+                    execution_log.append({
+                        'descriptor_type': descriptor_type,
+                        'att_index': att_index,
+                        'combination': f"{descriptor_type}_att{att_index}",
+                        'status': 'failed',
+                        'duration_minutes': duration,
+                        'error': 'Função retornou False'
+                    })
+                    safe_log(f"❌ Falha - {descriptor_type}_att{att_index}")
+                    
+            except KeyboardInterrupt:
+                safe_log("🛑 Interrompido pelo usuário")
                 execution_log.append({
                     'descriptor_type': descriptor_type,
                     'att_index': att_index,
-                    'status': 'success',
-                    'duration_minutes': duration
+                    'combination': f"{descriptor_type}_att{att_index}",
+                    'status': 'interrupted',
+                    'duration_minutes': round((time.time() - start_time) / 60, 2)
                 })
-                safe_log(f"✅ Sucesso - {descriptor_type} ({duration} min)")
-            else:
+                break
+                
+            except Exception as e:
+                duration = round((time.time() - start_time) / 60, 2)
                 failed += 1
                 execution_log.append({
                     'descriptor_type': descriptor_type,
                     'att_index': att_index,
-                    'status': 'failed',
+                    'combination': f"{descriptor_type}_att{att_index}",
+                    'status': 'error',
                     'duration_minutes': duration,
-                    'error': 'Função retornou False'
+                    'error': str(e)
                 })
-                safe_log(f"❌ Falha - {descriptor_type}")
+                safe_log(f"❌ Erro fatal em {descriptor_type}_att{att_index}: {str(e)}")
+            
+            # Limpeza periódica mais frequente devido ao maior número de análises
+            if current_combination % 2 == 0:  # Limpeza a cada 2 combinações
+                data_cache.clear_cache()
                 
-        except KeyboardInterrupt:
-            safe_log("🛑 Interrompido pelo usuário")
-            execution_log.append({
-                'descriptor_type': descriptor_type,
-                'att_index': att_index,
-                'status': 'interrupted',
-                'duration_minutes': round((time.time() - start_time) / 60, 2)
-            })
-            break
-            
-        except Exception as e:
-            duration = round((time.time() - start_time) / 60, 2)
-            failed += 1
-            execution_log.append({
-                'descriptor_type': descriptor_type,
-                'att_index': att_index,
-                'status': 'error',
-                'duration_minutes': duration,
-                'error': str(e)
-            })
-            safe_log(f"❌ Erro fatal em {descriptor_type}: {str(e)}")
+                # Limpeza completa de matplotlib
+                plt.close('all')
+                
+                # Garbage collection agressivo
+                import gc
+                gc.collect()
+                
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                
+                safe_log("🧹 Limpeza completa realizada")
         
-        # Limpeza periódica e agressiva
-        if i % 1 == 0:  # Limpeza após cada análise
-            data_cache.clear_cache()
-            
-            # Limpeza completa de matplotlib
-            plt.close('all')
-            
-            # Garbage collection agressivo
-            import gc
-            gc.collect()
-            
-            safe_log("🧹 Limpeza completa realizada")
+        # Parar se foi interrompido
+        if execution_log and execution_log[-1]['status'] == 'interrupted':
+            break
     
     # Salvar log de execução da análise completa
     final_report = {
         'experiment_info': {
-            'experiment_type': 'cluster_analysis_multiple_descriptors',
+            'experiment_type': 'cluster_analysis_multiple_descriptors_all_att_index',
             'timestamp': datetime.datetime.now().isoformat(),
-            'total_descriptors': len(descriptor_types),
+            'total_descriptor_types': len(descriptor_types),
+            'total_att_indices': len(att_indices),
+            'total_combinations': total_combinations,
+            'combinations_completed': len(execution_log),
             'successful': successful,
             'failed': failed,
-            'experiment_directory': experiment_dir,
-            'att_index_used': att_index
+            'experiment_directory': experiment_dir
         },
         'descriptor_types_analyzed': descriptor_types,
+        'att_indices_analyzed': att_indices,
         'execution_log': execution_log,
         'summary': {
             'total_time_minutes': sum(log.get('duration_minutes', 0) for log in execution_log),
-            'success_rate': f"{(successful / len(descriptor_types) * 100):.1f}%" if descriptor_types else "0%"
+            'success_rate': f"{(successful / len(execution_log) * 100):.1f}%" if execution_log else "0%",
+            'completed_combinations': len(execution_log),
+            'remaining_combinations': total_combinations - len(execution_log)
         }
     }
     
-    report_file = os.path.join(experiment_dir, 'cluster_analysis_report.json')
+    report_file = os.path.join(experiment_dir, 'cluster_analysis_complete_report.json')
     with open(report_file, 'w') as f:
         json.dump(final_report, f, indent=2)
     
     safe_log(f"🏁 Análise completa finalizada: {successful} sucessos, {failed} falhas")
+    safe_log(f"📊 Combinações processadas: {len(execution_log)}/{total_combinations}")
     safe_log(f"📄 Relatório completo salvo em: {report_file}")
     
-    # Mostrar resumo dos resultados
-    safe_log("\n" + "="*60)
-    safe_log("RESUMO DA ANÁLISE DE CLUSTERS")
-    safe_log("="*60)
-    for log in execution_log:
-        status_emoji = "✅" if log['status'] == 'success' else "❌"
-        safe_log(f"{status_emoji} {log['descriptor_type']}: {log['status']} ({log['duration_minutes']} min)")
-    safe_log("="*60)
+    # Mostrar resumo agrupado por descriptor_type
+    safe_log("\n" + "="*80)
+    safe_log("RESUMO DA ANÁLISE DE CLUSTERS (POR DESCRIPTOR TYPE)")
+    safe_log("="*80)
+    
+    for descriptor_type in descriptor_types:
+        descriptor_logs = [log for log in execution_log if log['descriptor_type'] == descriptor_type]
+        successful_desc = len([log for log in descriptor_logs if log['status'] == 'success'])
+        total_desc = len(descriptor_logs)
+        
+        safe_log(f"📊 {descriptor_type}: {successful_desc}/{total_desc} sucessos")
+        for log in descriptor_logs:
+            status_emoji = "✅" if log['status'] == 'success' else "❌" if log['status'] == 'failed' else "🛑"
+            safe_log(f"   {status_emoji} att{log['att_index']}: {log['status']} ({log['duration_minutes']} min)")
+    
+    safe_log("="*80)
     
     return successful, failed
 
@@ -1115,22 +1191,13 @@ if __name__ == "__main__":
     import sys
     
     # Experimentos Explicações
-    # if len(sys.argv) > 1 and sys.argv[1] == "--fast":
-    #     safe_log("⚡ Modo rápido ativado")
-    #     # Testar apenas um modelo
-    #     test_single_model()
-    # else:
-    #     compatible = quick_compatibility_check()        
-    #     if len(compatible) > 0:
-    #         safe_log("🚀 Iniciando análise dos modelos compatíveis...")
-    #         run_all_large_models()
-    #     else:
-    #         safe_log("❌ Nenhum modelo compatível encontrado!")
-
-    # Experimentos Clusters
-    if len(sys.argv) > 1 and sys.argv[1] == "--all-clusters":
-        safe_log("🔬 Modo análise completa de clusters ativado")
-        run_all_cluster_analysis()
+    compatible = quick_compatibility_check()        
+    if len(compatible) > 0:
+        safe_log("🚀 Iniciando análise dos modelos compatíveis...")
+        run_all_large_models()
     else:
-        # Análise de cluster individual (padrão)
-        run_cluster_analysis()
+        safe_log("❌ Nenhum modelo compatível encontrado!")
+
+    # Experimentos Clusters:
+    safe_log("🔬 Modo análise completa de clusters ativado")
+    run_all_cluster_analysis()
