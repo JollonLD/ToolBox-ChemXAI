@@ -1,0 +1,15 @@
+{
+  "model_info": {
+    "descriptor_type": "Pattern",
+    "att_index": 9,
+    "input_dim": 512,
+    "n_train_samples": 1000,
+    "n_test_samples": 200
+  },
+  "predictions": {
+    "mean_prediction": -0.36104559898376465,
+    "std_prediction": 0.3157947063446045,
+    "min_prediction": -0.9726578593254089,
+    "max_prediction": 0.6939510703086853
+  }
+}

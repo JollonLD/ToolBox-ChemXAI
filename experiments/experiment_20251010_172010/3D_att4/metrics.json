@@ -1,0 +1,15 @@
+{
+  "model_info": {
+    "descriptor_type": "3D",
+    "att_index": 4,
+    "input_dim": 5,
+    "n_train_samples": 1000,
+    "n_test_samples": 200
+  },
+  "predictions": {
+    "mean_prediction": 1.634570598602295,
+    "std_prediction": 0.19459038972854614,
+    "min_prediction": 1.108904242515564,
+    "max_prediction": 2.4420275688171387
+  }
+}

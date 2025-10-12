@@ -1,0 +1,15 @@
+{
+  "model_info": {
+    "descriptor_type": "Morgan",
+    "att_index": 5,
+    "input_dim": 512,
+    "n_train_samples": 1000,
+    "n_test_samples": 200
+  },
+  "predictions": {
+    "mean_prediction": 0.032682958990335464,
+    "std_prediction": 0.24118046462535858,
+    "min_prediction": -0.3827100396156311,
+    "max_prediction": 0.8663834929466248
+  }
+}

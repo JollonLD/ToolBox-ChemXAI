@@ -1,0 +1,15 @@
+{
+  "model_info": {
+    "descriptor_type": "EState",
+    "att_index": 3,
+    "input_dim": 79,
+    "n_train_samples": 1000,
+    "n_test_samples": 200
+  },
+  "predictions": {
+    "mean_prediction": 0.16730283200740814,
+    "std_prediction": 0.21899734437465668,
+    "min_prediction": -0.2150724232196808,
+    "max_prediction": 0.5220757722854614
+  }
+}

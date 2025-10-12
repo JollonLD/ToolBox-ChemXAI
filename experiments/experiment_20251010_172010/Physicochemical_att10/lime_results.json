@@ -1,0 +1,26 @@
+{
+  "local_explanation": [
+    15.1578694340456,
+    -0.6473083257406329,
+    -9.472323103153595,
+    -0.3961413280872757,
+    1.9821027525875716,
+    0.11447570637618892,
+    -0.07754265033836015,
+    -0.5913628707458578,
+    0.080001460092019
+  ],
+  "feature_names": [
+    "MolWt",
+    "MolLogP",
+    "TPSA",
+    "NumHDonors",
+    "NumHAcceptors",
+    "NumRotatableBonds",
+    "NumAromaticRings",
+    "BalabanJ",
+    "QED"
+  ],
+  "model_type": "Physicochemical_att10",
+  "timestamp": "2025-10-10T21:56:38.133653"
+}

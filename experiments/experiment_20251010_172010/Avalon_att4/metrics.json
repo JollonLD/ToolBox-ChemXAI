@@ -1,0 +1,15 @@
+{
+  "model_info": {
+    "descriptor_type": "Avalon",
+    "att_index": 4,
+    "input_dim": 512,
+    "n_train_samples": 1000,
+    "n_test_samples": 200
+  },
+  "predictions": {
+    "mean_prediction": 0.051668863743543625,
+    "std_prediction": 0.19726130366325378,
+    "min_prediction": -0.38415396213531494,
+    "max_prediction": 0.5212072134017944
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "model_info": {
+    "descriptor_type": "Topological",
+    "att_index": 8,
+    "input_dim": 512,
+    "n_train_samples": 1000,
+    "n_test_samples": 200
+  },
+  "predictions": {
+    "mean_prediction": -0.28000107407569885,
+    "std_prediction": 0.2487800419330597,
+    "min_prediction": -0.7716346979141235,
+    "max_prediction": 0.7549961805343628
+  }
+}

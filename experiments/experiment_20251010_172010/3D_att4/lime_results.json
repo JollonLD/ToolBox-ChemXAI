@@ -1,0 +1,18 @@
+{
+  "local_explanation": [
+    0.04409432837848479,
+    -0.004240601418244496,
+    0.4208447092354424,
+    -0.06374406408762907,
+    -0.06794971794542418
+  ],
+  "feature_names": [
+    "NPR1",
+    "NPR2",
+    "RadiusOfGyration",
+    "Asphericity",
+    "SpherocityIndex"
+  ],
+  "model_type": "3D_att4",
+  "timestamp": "2025-10-10T22:09:21.459113"
+}

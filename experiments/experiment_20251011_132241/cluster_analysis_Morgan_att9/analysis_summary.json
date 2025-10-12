@@ -1,0 +1,58 @@
+{
+  "analysis_summary": {
+    "descriptor_type": "Morgan",
+    "att_index": 9,
+    "model_used": "mlp_qm9_Morgan_att1_large.pth",
+    "total_clusters": 5,
+    "clusters_analyzed": 5,
+    "total_samples": 2500,
+    "analysis_timestamp": "2025-10-11T16:41:22.228419"
+  },
+  "cluster_summary": {
+    "0": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.02034899964928627,
+        "max": 0.23142699897289276,
+        "mean": 0.11871036074083315
+      },
+      "shap_analyzed": true
+    },
+    "1": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.040766000747680664,
+        "max": 0.25221601128578186,
+        "mean": 0.13751869820698115
+      },
+      "shap_analyzed": true
+    },
+    "2": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.05247899889945984,
+        "max": 0.25416800379753113,
+        "mean": 0.1610049404410008
+      },
+      "shap_analyzed": true
+    },
+    "3": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.026840999722480774,
+        "max": 0.25628501176834106,
+        "mean": 0.16097007144254274
+      },
+      "shap_analyzed": true
+    },
+    "4": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.015951000154018402,
+        "max": 0.2739439904689789,
+        "mean": 0.15355397199703588
+      },
+      "shap_analyzed": true
+    }
+  }
+}

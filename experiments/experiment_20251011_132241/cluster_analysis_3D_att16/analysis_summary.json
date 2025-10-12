@@ -1,0 +1,58 @@
+{
+  "analysis_summary": {
+    "descriptor_type": "3D",
+    "att_index": 16,
+    "model_used": "mlp_qm9_3D_att1_large.pth",
+    "total_clusters": 5,
+    "clusters_analyzed": 5,
+    "total_samples": 2500,
+    "analysis_timestamp": "2025-10-11T20:36:12.055805"
+  },
+  "cluster_summary": {
+    "0": {
+      "size": 500,
+      "target_stats": {
+        "min": 1.4459099769592285,
+        "max": 799.588134765625,
+        "mean": 2.8743696494621878
+      },
+      "shap_analyzed": true
+    },
+    "1": {
+      "size": 500,
+      "target_stats": {
+        "min": 1.3825000524520874,
+        "max": 80.28765869140625,
+        "mean": 3.794725481069682
+      },
+      "shap_analyzed": true
+    },
+    "2": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.0,
+        "max": 619867.6875,
+        "mean": 72.08899620860656
+      },
+      "shap_analyzed": true
+    },
+    "3": {
+      "size": 500,
+      "target_stats": {
+        "min": 1.2731399536132812,
+        "max": 159.03567504882812,
+        "mean": 3.010913295845101
+      },
+      "shap_analyzed": true
+    },
+    "4": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.0,
+        "max": 285.4884033203125,
+        "mean": 3.6126836331420136
+      },
+      "shap_analyzed": true
+    }
+  }
+}

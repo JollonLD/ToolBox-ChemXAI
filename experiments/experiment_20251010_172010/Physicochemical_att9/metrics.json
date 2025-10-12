@@ -1,0 +1,15 @@
+{
+  "model_info": {
+    "descriptor_type": "Physicochemical",
+    "att_index": 9,
+    "input_dim": 9,
+    "n_train_samples": 1000,
+    "n_test_samples": 200
+  },
+  "predictions": {
+    "mean_prediction": 176.44093322753906,
+    "std_prediction": 20.085594177246094,
+    "min_prediction": 94.04008483886719,
+    "max_prediction": 232.42283630371094
+  }
+}

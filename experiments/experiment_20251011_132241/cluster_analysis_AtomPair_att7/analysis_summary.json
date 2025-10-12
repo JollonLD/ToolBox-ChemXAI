@@ -1,0 +1,58 @@
+{
+  "analysis_summary": {
+    "descriptor_type": "AtomPair",
+    "att_index": 7,
+    "model_used": "mlp_qm9_AtomPair_att4_large.pth",
+    "total_clusters": 5,
+    "clusters_analyzed": 5,
+    "total_samples": 2500,
+    "analysis_timestamp": "2025-10-11T21:05:51.848029"
+  },
+  "cluster_summary": {
+    "0": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.05999999865889549,
+        "max": 0.36399999260902405,
+        "mean": 0.20730333256243655
+      },
+      "shap_analyzed": true
+    },
+    "1": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.07190000265836716,
+        "max": 0.42980000376701355,
+        "mean": 0.29104047789455123
+      },
+      "shap_analyzed": true
+    },
+    "2": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.02459999918937683,
+        "max": 0.6220999956130981,
+        "mean": 0.23505197119673468
+      },
+      "shap_analyzed": true
+    },
+    "3": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.0746999979019165,
+        "max": 0.41499999165534973,
+        "mean": 0.29736259067286913
+      },
+      "shap_analyzed": true
+    },
+    "4": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.03759999945759773,
+        "max": 0.3684999942779541,
+        "mean": 0.23041088985421987
+      },
+      "shap_analyzed": true
+    }
+  }
+}

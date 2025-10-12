@@ -1,0 +1,58 @@
+{
+  "analysis_summary": {
+    "descriptor_type": "Topological",
+    "att_index": 14,
+    "model_used": "mlp_qm9_Topological_att4_large.pth",
+    "total_clusters": 5,
+    "clusters_analyzed": 5,
+    "total_samples": 2500,
+    "analysis_timestamp": "2025-10-11T21:00:38.009185"
+  },
+  "cluster_summary": {
+    "0": {
+      "size": 500,
+      "target_stats": {
+        "min": 15.652000427246094,
+        "max": 43.08100128173828,
+        "mean": 32.559189135104276
+      },
+      "shap_analyzed": true
+    },
+    "1": {
+      "size": 500,
+      "target_stats": {
+        "min": 16.548999786376953,
+        "max": 40.78200149536133,
+        "mean": 29.19811915477527
+      },
+      "shap_analyzed": true
+    },
+    "2": {
+      "size": 500,
+      "target_stats": {
+        "min": 6.001999855041504,
+        "max": 46.96900177001953,
+        "mean": 33.58270674404993
+      },
+      "shap_analyzed": true
+    },
+    "3": {
+      "size": 500,
+      "target_stats": {
+        "min": 18.31100082397461,
+        "max": 41.98699951171875,
+        "mean": 31.369485433070356
+      },
+      "shap_analyzed": true
+    },
+    "4": {
+      "size": 500,
+      "target_stats": {
+        "min": 17.31800079345703,
+        "max": 39.70600128173828,
+        "mean": 29.807862955298127
+      },
+      "shap_analyzed": true
+    }
+  }
+}

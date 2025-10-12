@@ -1,0 +1,1722 @@
+{
+  "experiment_info": {
+    "experiment_type": "cluster_analysis_multiple_descriptors_all_att_index",
+    "timestamp": "2025-10-11T21:54:46.674408",
+    "total_descriptor_types": 12,
+    "total_att_indices": 19,
+    "total_combinations": 228,
+    "combinations_completed": 228,
+    "successful": 158,
+    "failed": 70,
+    "experiment_directory": "/mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251011_132241"
+  },
+  "descriptor_types_analyzed": [
+    "CM",
+    "Morgan",
+    "Physicochemical",
+    "3D",
+    "MACCS",
+    "Topological",
+    "AtomPair",
+    "EState",
+    "Pattern",
+    "Avalon",
+    "MorganCount",
+    "Autocorr"
+  ],
+  "att_indices_analyzed": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+  ],
+  "execution_log": [
+    {
+      "descriptor_type": "CM",
+      "att_index": 0,
+      "combination": "CM_att0",
+      "status": "success",
+      "duration_minutes": 167.33
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 1,
+      "combination": "CM_att1",
+      "status": "success",
+      "duration_minutes": 1.72
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 2,
+      "combination": "CM_att2",
+      "status": "success",
+      "duration_minutes": 1.66
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 3,
+      "combination": "CM_att3",
+      "status": "success",
+      "duration_minutes": 1.66
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 4,
+      "combination": "CM_att4",
+      "status": "success",
+      "duration_minutes": 1.65
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 5,
+      "combination": "CM_att5",
+      "status": "success",
+      "duration_minutes": 1.65
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 6,
+      "combination": "CM_att6",
+      "status": "success",
+      "duration_minutes": 1.65
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 7,
+      "combination": "CM_att7",
+      "status": "success",
+      "duration_minutes": 1.65
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 8,
+      "combination": "CM_att8",
+      "status": "success",
+      "duration_minutes": 1.65
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 9,
+      "combination": "CM_att9",
+      "status": "success",
+      "duration_minutes": 1.66
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 10,
+      "combination": "CM_att10",
+      "status": "success",
+      "duration_minutes": 1.65
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 11,
+      "combination": "CM_att11",
+      "status": "success",
+      "duration_minutes": 1.65
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 12,
+      "combination": "CM_att12",
+      "status": "success",
+      "duration_minutes": 1.64
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 13,
+      "combination": "CM_att13",
+      "status": "success",
+      "duration_minutes": 1.65
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 14,
+      "combination": "CM_att14",
+      "status": "success",
+      "duration_minutes": 1.65
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 15,
+      "combination": "CM_att15",
+      "status": "failed",
+      "duration_minutes": 0.05,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 16,
+      "combination": "CM_att16",
+      "status": "failed",
+      "duration_minutes": 0.05,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 17,
+      "combination": "CM_att17",
+      "status": "failed",
+      "duration_minutes": 0.05,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "CM",
+      "att_index": 18,
+      "combination": "CM_att18",
+      "status": "failed",
+      "duration_minutes": 0.05,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 0,
+      "combination": "Morgan_att0",
+      "status": "success",
+      "duration_minutes": 0.8
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 1,
+      "combination": "Morgan_att1",
+      "status": "success",
+      "duration_minutes": 0.77
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 2,
+      "combination": "Morgan_att2",
+      "status": "success",
+      "duration_minutes": 0.82
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 3,
+      "combination": "Morgan_att3",
+      "status": "success",
+      "duration_minutes": 0.89
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 4,
+      "combination": "Morgan_att4",
+      "status": "success",
+      "duration_minutes": 0.79
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 5,
+      "combination": "Morgan_att5",
+      "status": "success",
+      "duration_minutes": 0.77
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 6,
+      "combination": "Morgan_att6",
+      "status": "success",
+      "duration_minutes": 0.79
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 7,
+      "combination": "Morgan_att7",
+      "status": "success",
+      "duration_minutes": 0.77
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 8,
+      "combination": "Morgan_att8",
+      "status": "success",
+      "duration_minutes": 0.77
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 9,
+      "combination": "Morgan_att9",
+      "status": "success",
+      "duration_minutes": 0.76
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 10,
+      "combination": "Morgan_att10",
+      "status": "success",
+      "duration_minutes": 0.77
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 11,
+      "combination": "Morgan_att11",
+      "status": "success",
+      "duration_minutes": 0.78
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 12,
+      "combination": "Morgan_att12",
+      "status": "success",
+      "duration_minutes": 0.78
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 13,
+      "combination": "Morgan_att13",
+      "status": "success",
+      "duration_minutes": 0.76
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 14,
+      "combination": "Morgan_att14",
+      "status": "success",
+      "duration_minutes": 0.77
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 15,
+      "combination": "Morgan_att15",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 16,
+      "combination": "Morgan_att16",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 17,
+      "combination": "Morgan_att17",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Morgan",
+      "att_index": 18,
+      "combination": "Morgan_att18",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 0,
+      "combination": "Physicochemical_att0",
+      "status": "success",
+      "duration_minutes": 9.66
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 1,
+      "combination": "Physicochemical_att1",
+      "status": "success",
+      "duration_minutes": 9.59
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 2,
+      "combination": "Physicochemical_att2",
+      "status": "success",
+      "duration_minutes": 9.64
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 3,
+      "combination": "Physicochemical_att3",
+      "status": "success",
+      "duration_minutes": 9.58
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 4,
+      "combination": "Physicochemical_att4",
+      "status": "success",
+      "duration_minutes": 9.6
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 5,
+      "combination": "Physicochemical_att5",
+      "status": "success",
+      "duration_minutes": 9.64
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 6,
+      "combination": "Physicochemical_att6",
+      "status": "success",
+      "duration_minutes": 9.59
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 7,
+      "combination": "Physicochemical_att7",
+      "status": "success",
+      "duration_minutes": 9.58
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 8,
+      "combination": "Physicochemical_att8",
+      "status": "success",
+      "duration_minutes": 9.61
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 9,
+      "combination": "Physicochemical_att9",
+      "status": "success",
+      "duration_minutes": 9.62
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 10,
+      "combination": "Physicochemical_att10",
+      "status": "success",
+      "duration_minutes": 9.62
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 11,
+      "combination": "Physicochemical_att11",
+      "status": "success",
+      "duration_minutes": 0.16
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 12,
+      "combination": "Physicochemical_att12",
+      "status": "success",
+      "duration_minutes": 9.6
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 13,
+      "combination": "Physicochemical_att13",
+      "status": "success",
+      "duration_minutes": 0.16
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 14,
+      "combination": "Physicochemical_att14",
+      "status": "success",
+      "duration_minutes": 9.6
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 15,
+      "combination": "Physicochemical_att15",
+      "status": "success",
+      "duration_minutes": 0.16
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 16,
+      "combination": "Physicochemical_att16",
+      "status": "success",
+      "duration_minutes": 9.65
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 17,
+      "combination": "Physicochemical_att17",
+      "status": "success",
+      "duration_minutes": 0.16
+    },
+    {
+      "descriptor_type": "Physicochemical",
+      "att_index": 18,
+      "combination": "Physicochemical_att18",
+      "status": "success",
+      "duration_minutes": 9.62
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 0,
+      "combination": "3D_att0",
+      "status": "success",
+      "duration_minutes": 6.1
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 1,
+      "combination": "3D_att1",
+      "status": "success",
+      "duration_minutes": 6.11
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 2,
+      "combination": "3D_att2",
+      "status": "success",
+      "duration_minutes": 6.1
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 3,
+      "combination": "3D_att3",
+      "status": "success",
+      "duration_minutes": 6.1
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 4,
+      "combination": "3D_att4",
+      "status": "success",
+      "duration_minutes": 6.1
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 5,
+      "combination": "3D_att5",
+      "status": "success",
+      "duration_minutes": 6.11
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 6,
+      "combination": "3D_att6",
+      "status": "success",
+      "duration_minutes": 6.11
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 7,
+      "combination": "3D_att7",
+      "status": "success",
+      "duration_minutes": 6.11
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 8,
+      "combination": "3D_att8",
+      "status": "success",
+      "duration_minutes": 6.11
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 9,
+      "combination": "3D_att9",
+      "status": "success",
+      "duration_minutes": 6.1
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 10,
+      "combination": "3D_att10",
+      "status": "success",
+      "duration_minutes": 6.11
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 11,
+      "combination": "3D_att11",
+      "status": "success",
+      "duration_minutes": 6.11
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 12,
+      "combination": "3D_att12",
+      "status": "success",
+      "duration_minutes": 0.14
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 13,
+      "combination": "3D_att13",
+      "status": "success",
+      "duration_minutes": 6.12
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 14,
+      "combination": "3D_att14",
+      "status": "success",
+      "duration_minutes": 0.14
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 15,
+      "combination": "3D_att15",
+      "status": "success",
+      "duration_minutes": 6.1
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 16,
+      "combination": "3D_att16",
+      "status": "success",
+      "duration_minutes": 0.14
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 17,
+      "combination": "3D_att17",
+      "status": "success",
+      "duration_minutes": 6.12
+    },
+    {
+      "descriptor_type": "3D",
+      "att_index": 18,
+      "combination": "3D_att18",
+      "status": "success",
+      "duration_minutes": 0.16
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 0,
+      "combination": "MACCS_att0",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 1,
+      "combination": "MACCS_att1",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 2,
+      "combination": "MACCS_att2",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 3,
+      "combination": "MACCS_att3",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 4,
+      "combination": "MACCS_att4",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 5,
+      "combination": "MACCS_att5",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 6,
+      "combination": "MACCS_att6",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 7,
+      "combination": "MACCS_att7",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 8,
+      "combination": "MACCS_att8",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 9,
+      "combination": "MACCS_att9",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 10,
+      "combination": "MACCS_att10",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 11,
+      "combination": "MACCS_att11",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 12,
+      "combination": "MACCS_att12",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 13,
+      "combination": "MACCS_att13",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 14,
+      "combination": "MACCS_att14",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 15,
+      "combination": "MACCS_att15",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 16,
+      "combination": "MACCS_att16",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 17,
+      "combination": "MACCS_att17",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MACCS",
+      "att_index": 18,
+      "combination": "MACCS_att18",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 0,
+      "combination": "Topological_att0",
+      "status": "success",
+      "duration_minutes": 1.95
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 1,
+      "combination": "Topological_att1",
+      "status": "success",
+      "duration_minutes": 1.12
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 2,
+      "combination": "Topological_att2",
+      "status": "success",
+      "duration_minutes": 1.16
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 3,
+      "combination": "Topological_att3",
+      "status": "success",
+      "duration_minutes": 1.11
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 4,
+      "combination": "Topological_att4",
+      "status": "success",
+      "duration_minutes": 1.11
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 5,
+      "combination": "Topological_att5",
+      "status": "success",
+      "duration_minutes": 1.14
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 6,
+      "combination": "Topological_att6",
+      "status": "success",
+      "duration_minutes": 1.4
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 7,
+      "combination": "Topological_att7",
+      "status": "success",
+      "duration_minutes": 1.1
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 8,
+      "combination": "Topological_att8",
+      "status": "success",
+      "duration_minutes": 1.1
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 9,
+      "combination": "Topological_att9",
+      "status": "success",
+      "duration_minutes": 1.11
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 10,
+      "combination": "Topological_att10",
+      "status": "success",
+      "duration_minutes": 1.1
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 11,
+      "combination": "Topological_att11",
+      "status": "success",
+      "duration_minutes": 1.1
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 12,
+      "combination": "Topological_att12",
+      "status": "success",
+      "duration_minutes": 1.1
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 13,
+      "combination": "Topological_att13",
+      "status": "success",
+      "duration_minutes": 1.11
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 14,
+      "combination": "Topological_att14",
+      "status": "success",
+      "duration_minutes": 1.11
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 15,
+      "combination": "Topological_att15",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 16,
+      "combination": "Topological_att16",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 17,
+      "combination": "Topological_att17",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Topological",
+      "att_index": 18,
+      "combination": "Topological_att18",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 0,
+      "combination": "AtomPair_att0",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 1,
+      "combination": "AtomPair_att1",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 2,
+      "combination": "AtomPair_att2",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 3,
+      "combination": "AtomPair_att3",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 4,
+      "combination": "AtomPair_att4",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 5,
+      "combination": "AtomPair_att5",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 6,
+      "combination": "AtomPair_att6",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 7,
+      "combination": "AtomPair_att7",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 8,
+      "combination": "AtomPair_att8",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 9,
+      "combination": "AtomPair_att9",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 10,
+      "combination": "AtomPair_att10",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 11,
+      "combination": "AtomPair_att11",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 12,
+      "combination": "AtomPair_att12",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 13,
+      "combination": "AtomPair_att13",
+      "status": "success",
+      "duration_minutes": 0.63
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 14,
+      "combination": "AtomPair_att14",
+      "status": "success",
+      "duration_minutes": 0.64
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 15,
+      "combination": "AtomPair_att15",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 16,
+      "combination": "AtomPair_att16",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 17,
+      "combination": "AtomPair_att17",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "AtomPair",
+      "att_index": 18,
+      "combination": "AtomPair_att18",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 0,
+      "combination": "EState_att0",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 1,
+      "combination": "EState_att1",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 2,
+      "combination": "EState_att2",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 3,
+      "combination": "EState_att3",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 4,
+      "combination": "EState_att4",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 5,
+      "combination": "EState_att5",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 6,
+      "combination": "EState_att6",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 7,
+      "combination": "EState_att7",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 8,
+      "combination": "EState_att8",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 9,
+      "combination": "EState_att9",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 10,
+      "combination": "EState_att10",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 11,
+      "combination": "EState_att11",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 12,
+      "combination": "EState_att12",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 13,
+      "combination": "EState_att13",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 14,
+      "combination": "EState_att14",
+      "status": "success",
+      "duration_minutes": 0.27
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 15,
+      "combination": "EState_att15",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 16,
+      "combination": "EState_att16",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 17,
+      "combination": "EState_att17",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "EState",
+      "att_index": 18,
+      "combination": "EState_att18",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 0,
+      "combination": "Pattern_att0",
+      "status": "success",
+      "duration_minutes": 0.81
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 1,
+      "combination": "Pattern_att1",
+      "status": "success",
+      "duration_minutes": 0.82
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 2,
+      "combination": "Pattern_att2",
+      "status": "success",
+      "duration_minutes": 0.81
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 3,
+      "combination": "Pattern_att3",
+      "status": "success",
+      "duration_minutes": 0.81
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 4,
+      "combination": "Pattern_att4",
+      "status": "success",
+      "duration_minutes": 0.81
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 5,
+      "combination": "Pattern_att5",
+      "status": "success",
+      "duration_minutes": 0.81
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 6,
+      "combination": "Pattern_att6",
+      "status": "success",
+      "duration_minutes": 0.81
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 7,
+      "combination": "Pattern_att7",
+      "status": "success",
+      "duration_minutes": 0.83
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 8,
+      "combination": "Pattern_att8",
+      "status": "success",
+      "duration_minutes": 0.83
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 9,
+      "combination": "Pattern_att9",
+      "status": "success",
+      "duration_minutes": 0.83
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 10,
+      "combination": "Pattern_att10",
+      "status": "success",
+      "duration_minutes": 0.81
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 11,
+      "combination": "Pattern_att11",
+      "status": "success",
+      "duration_minutes": 0.82
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 12,
+      "combination": "Pattern_att12",
+      "status": "success",
+      "duration_minutes": 0.82
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 13,
+      "combination": "Pattern_att13",
+      "status": "success",
+      "duration_minutes": 0.82
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 14,
+      "combination": "Pattern_att14",
+      "status": "success",
+      "duration_minutes": 0.8
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 15,
+      "combination": "Pattern_att15",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 16,
+      "combination": "Pattern_att16",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 17,
+      "combination": "Pattern_att17",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Pattern",
+      "att_index": 18,
+      "combination": "Pattern_att18",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 0,
+      "combination": "Avalon_att0",
+      "status": "success",
+      "duration_minutes": 0.97
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 1,
+      "combination": "Avalon_att1",
+      "status": "success",
+      "duration_minutes": 0.97
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 2,
+      "combination": "Avalon_att2",
+      "status": "success",
+      "duration_minutes": 0.97
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 3,
+      "combination": "Avalon_att3",
+      "status": "success",
+      "duration_minutes": 0.96
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 4,
+      "combination": "Avalon_att4",
+      "status": "success",
+      "duration_minutes": 0.96
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 5,
+      "combination": "Avalon_att5",
+      "status": "success",
+      "duration_minutes": 0.96
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 6,
+      "combination": "Avalon_att6",
+      "status": "success",
+      "duration_minutes": 0.97
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 7,
+      "combination": "Avalon_att7",
+      "status": "success",
+      "duration_minutes": 0.96
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 8,
+      "combination": "Avalon_att8",
+      "status": "success",
+      "duration_minutes": 0.97
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 9,
+      "combination": "Avalon_att9",
+      "status": "success",
+      "duration_minutes": 0.96
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 10,
+      "combination": "Avalon_att10",
+      "status": "success",
+      "duration_minutes": 0.96
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 11,
+      "combination": "Avalon_att11",
+      "status": "success",
+      "duration_minutes": 0.97
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 12,
+      "combination": "Avalon_att12",
+      "status": "success",
+      "duration_minutes": 0.97
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 13,
+      "combination": "Avalon_att13",
+      "status": "success",
+      "duration_minutes": 0.97
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 14,
+      "combination": "Avalon_att14",
+      "status": "success",
+      "duration_minutes": 0.97
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 15,
+      "combination": "Avalon_att15",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 16,
+      "combination": "Avalon_att16",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 17,
+      "combination": "Avalon_att17",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Avalon",
+      "att_index": 18,
+      "combination": "Avalon_att18",
+      "status": "failed",
+      "duration_minutes": 0.03,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 0,
+      "combination": "MorganCount_att0",
+      "status": "success",
+      "duration_minutes": 0.79
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 1,
+      "combination": "MorganCount_att1",
+      "status": "success",
+      "duration_minutes": 1.64
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 2,
+      "combination": "MorganCount_att2",
+      "status": "success",
+      "duration_minutes": 0.8
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 3,
+      "combination": "MorganCount_att3",
+      "status": "success",
+      "duration_minutes": 0.75
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 4,
+      "combination": "MorganCount_att4",
+      "status": "success",
+      "duration_minutes": 0.74
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 5,
+      "combination": "MorganCount_att5",
+      "status": "success",
+      "duration_minutes": 0.74
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 6,
+      "combination": "MorganCount_att6",
+      "status": "success",
+      "duration_minutes": 0.78
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 7,
+      "combination": "MorganCount_att7",
+      "status": "success",
+      "duration_minutes": 0.77
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 8,
+      "combination": "MorganCount_att8",
+      "status": "success",
+      "duration_minutes": 0.75
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 9,
+      "combination": "MorganCount_att9",
+      "status": "success",
+      "duration_minutes": 0.76
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 10,
+      "combination": "MorganCount_att10",
+      "status": "success",
+      "duration_minutes": 0.79
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 11,
+      "combination": "MorganCount_att11",
+      "status": "success",
+      "duration_minutes": 0.89
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 12,
+      "combination": "MorganCount_att12",
+      "status": "success",
+      "duration_minutes": 0.79
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 13,
+      "combination": "MorganCount_att13",
+      "status": "success",
+      "duration_minutes": 1.17
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 14,
+      "combination": "MorganCount_att14",
+      "status": "success",
+      "duration_minutes": 0.74
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 15,
+      "combination": "MorganCount_att15",
+      "status": "failed",
+      "duration_minutes": 0.02,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 16,
+      "combination": "MorganCount_att16",
+      "status": "failed",
+      "duration_minutes": 0.02,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 17,
+      "combination": "MorganCount_att17",
+      "status": "failed",
+      "duration_minutes": 0.02,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "MorganCount",
+      "att_index": 18,
+      "combination": "MorganCount_att18",
+      "status": "failed",
+      "duration_minutes": 0.02,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 0,
+      "combination": "Autocorr_att0",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 1,
+      "combination": "Autocorr_att1",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 2,
+      "combination": "Autocorr_att2",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 3,
+      "combination": "Autocorr_att3",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 4,
+      "combination": "Autocorr_att4",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 5,
+      "combination": "Autocorr_att5",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 6,
+      "combination": "Autocorr_att6",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 7,
+      "combination": "Autocorr_att7",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 8,
+      "combination": "Autocorr_att8",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 9,
+      "combination": "Autocorr_att9",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 10,
+      "combination": "Autocorr_att10",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 11,
+      "combination": "Autocorr_att11",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 12,
+      "combination": "Autocorr_att12",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 13,
+      "combination": "Autocorr_att13",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 14,
+      "combination": "Autocorr_att14",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 15,
+      "combination": "Autocorr_att15",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 16,
+      "combination": "Autocorr_att16",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 17,
+      "combination": "Autocorr_att17",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    },
+    {
+      "descriptor_type": "Autocorr",
+      "att_index": 18,
+      "combination": "Autocorr_att18",
+      "status": "failed",
+      "duration_minutes": 0.01,
+      "error": "Fun\u00e7\u00e3o retornou False"
+    }
+  ],
+  "summary": {
+    "total_time_minutes": 511.73,
+    "success_rate": "69.3%",
+    "completed_combinations": 228,
+    "remaining_combinations": 0
+  }
+}

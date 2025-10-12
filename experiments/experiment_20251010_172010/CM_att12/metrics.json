@@ -1,0 +1,15 @@
+{
+  "model_info": {
+    "descriptor_type": "CM",
+    "att_index": 12,
+    "input_dim": 841,
+    "n_train_samples": 1000,
+    "n_test_samples": 200
+  },
+  "predictions": {
+    "mean_prediction": -61.760555267333984,
+    "std_prediction": 8.363383293151855,
+    "min_prediction": -94.7947006225586,
+    "max_prediction": -39.08547592163086
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "analysis_summary": {
+    "descriptor_type": "Physicochemical",
+    "att_index": 4,
+    "model_used": "mlp_qm9_Physicochemical_att0_large.pth",
+    "total_clusters": 5,
+    "clusters_analyzed": 5,
+    "total_samples": 2500,
+    "analysis_timestamp": "2025-10-11T17:33:25.346029"
+  },
+  "cluster_summary": {
+    "0": {
+      "size": 500,
+      "target_stats": {
+        "min": 37.93000030517578,
+        "max": 106.66000366210938,
+        "mean": 71.7003979618853
+      },
+      "shap_analyzed": true
+    },
+    "1": {
+      "size": 500,
+      "target_stats": {
+        "min": 27.489999771118164,
+        "max": 143.52999877929688,
+        "mean": 81.80311872263005
+      },
+      "shap_analyzed": true
+    },
+    "2": {
+      "size": 500,
+      "target_stats": {
+        "min": 6.309999942779541,
+        "max": 130.86000061035156,
+        "mean": 65.44534413975585
+      },
+      "shap_analyzed": true
+    },
+    "3": {
+      "size": 500,
+      "target_stats": {
+        "min": 38.130001068115234,
+        "max": 107.30000305175781,
+        "mean": 76.36093910697302
+      },
+      "shap_analyzed": true
+    },
+    "4": {
+      "size": 500,
+      "target_stats": {
+        "min": 30.020000457763672,
+        "max": 196.6199951171875,
+        "mean": 68.87036950579049
+      },
+      "shap_analyzed": true
+    }
+  }
+}

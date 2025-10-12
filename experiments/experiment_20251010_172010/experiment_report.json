@@ -1,0 +1,10 @@
+{
+  "experiment_info": {
+    "timestamp": "2025-10-11T13:22:41.020171",
+    "total_models": 140,
+    "successful": 140,
+    "failed": 0,
+    "experiment_directory": "/mnt/hdd/home/jdurao/ToolBox-ChemXAI/experiments/experiment_20251010_172010"
+  },
+  "execution_log": []
+}

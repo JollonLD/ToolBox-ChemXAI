@@ -1,0 +1,58 @@
+{
+  "analysis_summary": {
+    "descriptor_type": "Pattern",
+    "att_index": 9,
+    "model_used": "mlp_qm9_Pattern_att9_large.pth",
+    "total_clusters": 5,
+    "clusters_analyzed": 5,
+    "total_samples": 2500,
+    "analysis_timestamp": "2025-10-11T21:22:42.688126"
+  },
+  "cluster_summary": {
+    "0": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.029436999931931496,
+        "max": 0.2739439904689789,
+        "mean": 0.16116914368097746
+      },
+      "shap_analyzed": true
+    },
+    "1": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.03319700062274933,
+        "max": 0.25354599952697754,
+        "mean": 0.12722526815104646
+      },
+      "shap_analyzed": true
+    },
+    "2": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.07091599702835083,
+        "max": 0.25179699063301086,
+        "mean": 0.15516405527535995
+      },
+      "shap_analyzed": true
+    },
+    "3": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.015951000154018402,
+        "max": 0.2737939953804016,
+        "mean": 0.146265555532306
+      },
+      "shap_analyzed": true
+    },
+    "4": {
+      "size": 500,
+      "target_stats": {
+        "min": 0.07090699672698975,
+        "max": 0.2298170030117035,
+        "mean": 0.15153736997237252
+      },
+      "shap_analyzed": true
+    }
+  }
+}

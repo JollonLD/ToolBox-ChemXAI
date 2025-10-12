@@ -1,0 +1,122 @@
+{
+  "model_info": {
+    "model_file": "mlp_qm9_Physicochemical_att0_large.pth",
+    "descriptor_type": "Physicochemical",
+    "att_index": 0,
+    "input_dim": 9
+  },
+  "cluster_explanations": {
+    "0": {
+      "shap_global": [
+        0.011026027758924688,
+        2.5879094115839888e-05,
+        0.006703081816690032,
+        3.620773089561744e-05,
+        0.00096369233713908,
+        0.000282383052146637,
+        0.0003181679690030952,
+        0.0009047284286456963,
+        2.708432080080516e-05
+      ],
+      "cluster_info": {
+        "size": 500,
+        "min_target": 0.0,
+        "max_target": 18.43829917907715,
+        "mean_target": 3.2908141244675306
+      },
+      "n_samples_analyzed": 100
+    },
+    "1": {
+      "shap_global": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "cluster_info": {
+        "size": 500,
+        "min_target": 0.0,
+        "max_target": 8.842700004577637,
+        "mean_target": 1.7194780060436827
+      },
+      "n_samples_analyzed": 100
+    },
+    "2": {
+      "shap_global": [
+        0.014291656943694431,
+        0.00034367908618007913,
+        0.03300763538867839,
+        0.0001036593061029751,
+        0.0004609411759436322,
+        6.610415905335087e-05,
+        0.0,
+        0.002936448034706416,
+        0.0
+      ],
+      "cluster_info": {
+        "size": 500,
+        "min_target": 0.0,
+        "max_target": 8.173100471496582,
+        "mean_target": 2.6659444808404515
+      },
+      "n_samples_analyzed": 100
+    },
+    "3": {
+      "shap_global": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "cluster_info": {
+        "size": 500,
+        "min_target": 0.0,
+        "max_target": 15.535200119018555,
+        "mean_target": 2.8495012139253646
+      },
+      "n_samples_analyzed": 100
+    },
+    "4": {
+      "shap_global": [
+        0.033997006825513064,
+        0.0008387286632335101,
+        0.046098797691040166,
+        0.00025221929450696854,
+        0.003033223146818549,
+        0.001136865773661902,
+        0.0012349374372198478,
+        0.0023945498422113616,
+        0.0001405051048898254
+      ],
+      "cluster_info": {
+        "size": 500,
+        "min_target": 9.999999747378752e-05,
+        "max_target": 29.556400299072266,
+        "mean_target": 3.7535719173618647
+      },
+      "n_samples_analyzed": 100
+    }
+  },
+  "feature_names": [
+    "MolWt",
+    "MolLogP",
+    "TPSA",
+    "NumHDonors",
+    "NumHAcceptors",
+    "NumRotatableBonds",
+    "NumAromaticRings",
+    "BalabanJ",
+    "QED"
+  ],
+  "timestamp": "2025-10-11T17:23:30.259627"
+}

@@ -1,0 +1,58 @@
+{
+  "analysis_summary": {
+    "descriptor_type": "Avalon",
+    "att_index": 10,
+    "model_used": "mlp_qm9_Avalon_att10_large.pth",
+    "total_clusters": 5,
+    "clusters_analyzed": 5,
+    "total_samples": 2500,
+    "analysis_timestamp": "2025-10-11T21:37:31.465555"
+  },
+  "cluster_summary": {
+    "0": {
+      "size": 500,
+      "target_stats": {
+        "min": -548.2757568359375,
+        "max": -248.01856994628906,
+        "mean": -402.0314554428759
+      },
+      "shap_analyzed": true
+    },
+    "1": {
+      "size": 500,
+      "target_stats": {
+        "min": -605.3038940429688,
+        "max": -231.0930938720703,
+        "mean": -405.7396054124724
+      },
+      "shap_analyzed": true
+    },
+    "2": {
+      "size": 500,
+      "target_stats": {
+        "min": -714.5680541992188,
+        "max": -40.47893142700195,
+        "mean": -409.5713149949674
+      },
+      "shap_analyzed": true
+    },
+    "3": {
+      "size": 500,
+      "target_stats": {
+        "min": -568.15380859375,
+        "max": -269.12957763671875,
+        "mean": -414.6362312367442
+      },
+      "shap_analyzed": true
+    },
+    "4": {
+      "size": 500,
+      "target_stats": {
+        "min": -615.0980834960938,
+        "max": -226.14437866210938,
+        "mean": -427.86106708999006
+      },
+      "shap_analyzed": true
+    }
+  }
+}
