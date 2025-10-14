@@ -2169,4 +2169,7 @@ def create_fake_dataloader(n_samples=1000, batch_size=64, n_features=50):
 
 if __name__ == '__main__':
 
-    get_moetype()
+    qm9 = qm9_tabular()
+    df = qm9.get_all_mordred_descriptors()
+
+    df.to_csv("all_desc_qm9.csv")
