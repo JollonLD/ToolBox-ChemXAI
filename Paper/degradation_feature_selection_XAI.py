@@ -84,7 +84,7 @@ def dataframe_to_numpy(df):
 
 def get_qm9_desc():
 
-    df = pd.read_csv("desc_mordred_qm9.csv")
+    df = pd.read_csv("Paper/desc_mordred_qm9.csv")
 
     # descritores (1057)
     feats = dataframe_to_numpy(df)
