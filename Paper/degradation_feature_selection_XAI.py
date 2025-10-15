@@ -12,6 +12,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader, random_split
 
+import optuna
+from optuna.trial import TrialState
+
 import sys
 import os
 import gdown
@@ -23,7 +26,7 @@ from chemxai.explainers import Shap
 from chemxai.evaluate import TabularAnalyzer
 
 class MLP(nn.Module):
-    def __init__(self, input_dim, output_dim, layers, device, lr=0.001):
+    def __init__(self, input_dim, output_dim, layers, device, lr=0.001, optimizer_name='Adam', loss_function='L1Loss', dropout_rate=0.0):
         super(MLP, self).__init__()
         all_layers = []
         prev_dim = input_dim
@@ -32,6 +35,8 @@ class MLP(nn.Module):
         for layer_dim in layers:
             all_layers.append(nn.Linear(prev_dim, layer_dim))
             all_layers.append(nn.ReLU())
+            if dropout_rate > 0:
+                all_layers.append(nn.Dropout(dropout_rate))
             prev_dim = layer_dim
 
         # Camada de saída (ativação linear - regressão)
@@ -40,8 +45,28 @@ class MLP(nn.Module):
         # Combinando as camadas
         self.layers = nn.Sequential(*all_layers)
 
-        self.criterion = nn.L1Loss() #nn.MSELoss()
-        self.optimizer = optim.Adam(self.parameters(), lr=lr)
+        # Função de perda
+        if loss_function == 'L1Loss':
+            self.criterion = nn.L1Loss()
+        elif loss_function == 'MSELoss':
+            self.criterion = nn.MSELoss()
+        elif loss_function == 'SmoothL1Loss':
+            self.criterion = nn.SmoothL1Loss()
+        else:
+            self.criterion = nn.L1Loss()
+
+        # Otimizador
+        if optimizer_name == 'Adam':
+            self.optimizer = optim.Adam(self.parameters(), lr=lr)
+        elif optimizer_name == 'RMSprop':
+            self.optimizer = optim.RMSprop(self.parameters(), lr=lr)
+        elif optimizer_name == 'SGD':
+            self.optimizer = optim.SGD(self.parameters(), lr=lr, momentum=0.9)
+        elif optimizer_name == 'AdamW':
+            self.optimizer = optim.AdamW(self.parameters(), lr=lr)
+        else:
+            self.optimizer = optim.Adam(self.parameters(), lr=lr)
+
         self.device = device
 
     def forward(self, x):
@@ -192,10 +217,14 @@ def get_dataloaders(X, y, split=[80, 10, 10], batch_size=512):
     
     return train_loader, val_loader, test_loader
 
-def train(X, y, epochs=100, batch_size=512, lr=0.001, layers=[512, 256, 128], patience=10):
-    
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Usando dispositivo: {device}")
+def train_with_params(X, y, epochs=100, batch_size=512, lr=0.001, layers=[512, 256, 128], 
+                     optimizer_name='Adam', loss_function='L1Loss', dropout_rate=0.0, 
+                     weight_decay=0.0, patience=10, device=None):
+    """
+    Treina modelo com hiperparâmetros específicos
+    """
+    if device is None:
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # Criar DataLoaders
     train_loader, val_loader, test_loader = get_dataloaders(X, y, batch_size=batch_size)
@@ -203,8 +232,13 @@ def train(X, y, epochs=100, batch_size=512, lr=0.001, layers=[512, 256, 128], pa
     # Criar modelo
     input_dim = X.shape[1]
     output_dim = 1
-    model = MLP(input_dim, output_dim, layers, device, lr)
+    model = MLP(input_dim, output_dim, layers, device, lr, optimizer_name, loss_function, dropout_rate)
     model.to(device)
+    
+    # Ajustar weight decay se aplicável
+    if weight_decay > 0 and optimizer_name in ["Adam", "AdamW"]:
+        for param_group in model.optimizer.param_groups:
+            param_group['weight_decay'] = weight_decay
     
     # Variáveis de controle
     history = []
@@ -212,7 +246,6 @@ def train(X, y, epochs=100, batch_size=512, lr=0.001, layers=[512, 256, 128], pa
     early_stop_counter = 0
     
     for epoch in range(epochs):
-        
         # Treinamento
         model.train()
         train_loss = 0.0
@@ -266,8 +299,6 @@ def train(X, y, epochs=100, batch_size=512, lr=0.001, layers=[512, 256, 128], pa
             
         if early_stop_counter >= patience:
             break
-
-        print(f'Epoch {epoch+1}/{epochs} - Train: {avg_train_loss:.4f}, Val: {avg_val_loss:.4f}, Test: {avg_test_loss:.4f}')
 
     return model, history
 
@@ -384,22 +415,237 @@ def normalize_prop(y):
     
     return y_normalized
 
-def run_train_degradation():
-    """
-    Executa treinamento com degradação progressiva de features baseada em SHAP
-    """
-    # Configurar dispositivo
+
+def objective(trial, property_idx=10, max_epochs=50):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    # Carregar dados iniciais
+    # Carregar dados
     X, y = get_qm9_desc()
-    y_selected = y[:, 10]  # mu (momento dipolar)
-
+    y_selected = y[:, property_idx]  # Propriedade selecionada
     y_selected = normalize_prop(y_selected)
+    
+    # Hiperparâmetros a serem otimizados
+    # Arquitetura da rede
+    n_layers = trial.suggest_int("n_layers", 1, 4)
+    layers = []
+    for i in range(n_layers):
+        layer_size = trial.suggest_int(f"layer_{i}_size", 64, 1024, step=64)
+        layers.append(layer_size)
+    
+    # Otimizador e taxa de aprendizado
+    optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD", "AdamW"])
+    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
+    
+    # Função de perda
+    loss_function = trial.suggest_categorical("loss_function", ["L1Loss", "MSELoss", "SmoothL1Loss"])
+    
+    # Dropout
+    dropout_rate = trial.suggest_float("dropout_rate", 0.0, 0.5, step=0.1)
+    
+    # Batch size
+    batch_size = trial.suggest_categorical("batch_size", [128, 256, 512, 1024])
+    
+    # Weight decay (apenas para Adam e AdamW)
+    if optimizer_name in ["Adam", "AdamW"]:
+        weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-2, log=True)
+    else:
+        weight_decay = 0.0
+    
+    try:
+        # Criar DataLoaders
+        train_loader, val_loader, test_loader = get_dataloaders(X, y_selected, batch_size=batch_size)
+        
+        # Criar modelo
+        input_dim = X.shape[1]  # 1057 descritores Mordred
+        output_dim = 1
+        model = MLP(input_dim, output_dim, layers, device, lr, optimizer_name, loss_function, dropout_rate)
+        model.to(device)
+        
+        # Ajustar weight decay se aplicável
+        if weight_decay > 0 and optimizer_name in ["Adam", "AdamW"]:
+            for param_group in model.optimizer.param_groups:
+                param_group['weight_decay'] = weight_decay
+        
+        # Variáveis de controle
+        best_val_loss = float('inf')
+        patience = 10
+        early_stop_counter = 0
+        
+        # Treinamento
+        for epoch in range(max_epochs):
+            # Fase de treinamento
+            model.train()
+            train_loss = 0.0
+            n_train_batches = 0
+            
+            for batch in train_loader:
+                inputs = batch[0].to(device)
+                targets = batch[1].to(device)
+                
+                model.optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = model.criterion(outputs.squeeze(), targets)
+                loss.backward()
+                model.optimizer.step()
+                
+                train_loss += loss.item()
+                n_train_batches += 1
+                
+                # Limitar batches para acelerar otimização
+                if n_train_batches >= 50:  # Máximo 50 batches por época
+                    break
+            
+            avg_train_loss = train_loss / n_train_batches
+            
+            # Fase de validação
+            model.eval()
+            val_loss = 0.0
+            n_val_batches = 0
+            
+            with torch.no_grad():
+                for batch in val_loader:
+                    inputs = batch[0].to(device)
+                    targets = batch[1].to(device)
+                    outputs = model(inputs)
+                    loss = model.criterion(outputs.squeeze(), targets)
+                    val_loss += loss.item()
+                    n_val_batches += 1
+                    
+                    # Limitar batches para acelerar otimização
+                    if n_val_batches >= 20:  # Máximo 20 batches de validação
+                        break
+            
+            avg_val_loss = val_loss / n_val_batches
+            
+            # Early stopping e pruning
+            if avg_val_loss < best_val_loss:
+                best_val_loss = avg_val_loss
+                early_stop_counter = 0
+            else:
+                early_stop_counter += 1
+            
+            # Reportar resultado intermediário
+            trial.report(avg_val_loss, epoch)
+            
+            # Verificar se deve fazer pruning
+            if trial.should_prune():
+                raise optuna.exceptions.TrialPruned()
+            
+            # Early stopping
+            if early_stop_counter >= patience:
+                break
+        
+        return best_val_loss
+        
+    except Exception as e:
+        print(f"Erro durante o trial: {e}")
+        return float('inf')
 
+
+def run_optuna(property_idx=10, n_trials=100, timeout=3600, study_name=None):
+    """
+    Executa otimização de hiperparâmetros usando Optuna
+    
+    Args:
+        property_idx: Índice da propriedade QM9 (0-14)
+        n_trials: Número de trials para otimização
+        timeout: Tempo limite em segundos
+        study_name: Nome do estudo (opcional)
+    
+    Returns:
+        study: Objeto do estudo Optuna com resultados
+    """
+    
+    # Nomes das propriedades QM9 para referência
+    properties = [
+        'Rotational constant A: GHz', 'Rotational constant B: GHz', 'Rotational constant C: GHz',
+        'Dipole moment (μ): Debye (D)', 'Isotropic polarizability (α): atomic units (a.u.)',
+        'Energy of HOMO (ϵHOMO): Hartree (Ha)', 'Energy of LUMO (ϵLUMO): Hartree (Ha)',
+        'Gap (ϵgap): Hartree (Ha)', 'Electronic spatial extent: atomic units (a.u.)',
+        'Zero point vibrational energy (zpve): Hartree (Ha)', 'Internal energy at 0 K (U0): Hartree (Ha)',
+        'Internal energy at 298.15 K (U): Hartree (Ha)', 'Enthalpy at 298.15 K (H): Hartree (Ha)',
+        'Free energy at 298.15 K (G): Hartree (Ha)', 'Heat capacity at 298.15 K (Cv): cal/mol·K'
+    ]
+    
+    property_name = properties[property_idx] if property_idx < len(properties) else f"prop_{property_idx}"
+    
+    if study_name is None:
+        study_name = f"mlp_optimization_{property_name.replace(' ', '_').replace(':', '').replace('(', '').replace(')', '')}"
+    
+    print(f"Iniciando otimização para propriedade: {property_name} (índice: {property_idx})")
+    print(f"Configuração: {n_trials} trials, timeout: {timeout}s")
+    
+    # Criar estudo com direção de minimização
+    study = optuna.create_study(
+        direction="minimize",
+        study_name=study_name,
+        pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10)
+    )
+    
+    # Função objetivo com propriedade fixa
+    objective_with_property = lambda trial: objective(trial, property_idx=property_idx)
+    
+    # Executar otimização
+    study.optimize(objective_with_property, n_trials=n_trials, timeout=timeout)
+    
+    # Obter estatísticas dos trials
+    pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
+    complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+    
+    print(f"\n{'='*50}")
+    print(f"RESULTADOS DA OTIMIZAÇÃO")
+    print(f"Propriedade: {property_name}")
+    print(f"{'='*50}")
+    print(f"Número total de trials: {len(study.trials)}")
+    print(f"Trials completos: {len(complete_trials)}")
+    print(f"Trials podados: {len(pruned_trials)}")
+    
+    if len(complete_trials) > 0:
+        print(f"\nMelhor trial:")
+        trial = study.best_trial
+        print(f"  Valor (loss de validação): {trial.value:.6f}")
+        print(f"  Parâmetros:")
+        for key, value in trial.params.items():
+            print(f"    {key}: {value}")
+        
+        # Salvar resultados
+        safe_property_name = property_name.replace(' ', '_').replace(':', '').replace('(', '').replace(')', '').replace('μ', 'mu').replace('α', 'alpha').replace('ϵ', 'epsilon')
+        results_file = f"optuna_results_{safe_property_name}.csv"
+        df_results = study.trials_dataframe()
+        df_results.to_csv(results_file, index=False)
+        print(f"\nResultados salvos em: {results_file}")
+        
+        # Criar visualizações (se disponível)
+        try:
+            import plotly
+            
+            # Gráfico de otimização
+            fig1 = optuna.visualization.plot_optimization_history(study)
+            fig1.write_html(f"optimization_history_{safe_property_name}.html")
+            
+            # Importância dos parâmetros
+            fig2 = optuna.visualization.plot_param_importances(study)
+            fig2.write_html(f"param_importances_{safe_property_name}.html")
+            
+            print(f"Gráficos salvos como HTML")
+            
+        except ImportError:
+            print("Plotly não disponível - gráficos não foram gerados")
+    
+    else:
+        print("Nenhum trial foi completado com sucesso!")
+    
+    return study
+
+
+def run_degradation_with_params(X, y, best_params, property_name, property_idx, device):
+    """
+    Executa degradação de features usando hiperparâmetros otimizados
+    """
     df_desc = pd.read_csv('Paper/desc_mordred_qm9.csv')
     df_desc.drop(['Unnamed: 0'], axis=1, inplace=True)
     
+    print(f"Iniciando degradação para {property_name}")
     print(f"Dados iniciais - Features: {X.shape[1]}, Amostras: {X.shape[0]}")
     
     # Lista para armazenar resultados de cada iteração
@@ -413,13 +659,23 @@ def run_train_degradation():
     # Loop de degradação - continua até ter no mínimo 20 features
     while current_X.shape[1] > 20:
         iteration += 1
-        print(f"\n{'='*50}")
-        print(f"ITERAÇÃO {iteration} - Features: {current_X.shape[1]}")
-        print(f"{'='*50}")
+        print(f"Iteração {iteration} - Features: {current_X.shape[1]}")
         
-        # Treinar modelo com features atuais
-        print("Treinando modelo...")
-        model, history = train(current_X, y_selected, epochs=100)
+        # Treinar modelo com hiperparâmetros otimizados
+        model, history = train_with_params(
+            X=current_X, 
+            y=y,
+            epochs=100,
+            batch_size=best_params['batch_size'],
+            lr=best_params['lr'],
+            layers=[best_params[f'layer_{i}_size'] for i in range(best_params['n_layers'])],
+            optimizer_name=best_params['optimizer'],
+            loss_function=best_params['loss_function'],
+            dropout_rate=best_params['dropout_rate'],
+            weight_decay=best_params.get('weight_decay', 0.0),
+            patience=10,
+            device=device
+        )
         
         # Extrair métricas finais
         final_epoch = history[-1]
@@ -427,11 +683,12 @@ def run_train_degradation():
         val_loss = final_epoch[2] 
         test_loss = final_epoch[3]
         
-        print(f"Resultado final - Train: {train_loss:.4f}, Val: {val_loss:.4f}, Test: {test_loss:.4f}")
+        print(f"Resultado - Train: {train_loss:.4f}, Val: {val_loss:.4f}, Test: {test_loss:.4f}")
         
-
         # Armazenar resultados
         degradation_results.append({
+            'property': property_name,
+            'property_idx': property_idx,
             'iteration': iteration,
             'n_features': current_X.shape[1],
             'train_loss': train_loss,
@@ -440,175 +697,220 @@ def run_train_degradation():
             'n_epochs': len(history)
         })
 
-        # Mostrar progresso do erro de teste
-        if iteration == 1:
-            print(f"Erro de teste inicial: {test_loss:.4f}")
-        else:
-            prev_test_loss = degradation_results[-2]['test_loss']
-            change = test_loss - prev_test_loss
-            change_pct = (change / prev_test_loss) * 100
-            direction = "↑" if change > 0 else "↓"
-            print(f"Mudança no erro de teste: {direction} {abs(change):.4f} ({change_pct:+.1f}%)")
-        
         # Verificar se deve continuar
         if current_X.shape[1] <= 20:
-            print(f"\nParando: Atingiu o limite mínimo de 20 features")
+            print(f"Atingiu o limite mínimo de 20 features")
             break
         
         # Selecionar features para próxima iteração
-        print("Selecionando features com SHAP...")
         try:
-            
             prev_X = current_X.copy()
-            
             current_X, selected_indices_relative, shap_explanation = select_features(model, current_X, device)
             
+            # Calcular fidelidade (opcional)
             pos_fidel, neg_fidel = None, None
             if shap_explanation is not None:
                 try:
-                    print("Calculando fidelidade das explicações...")
-                    pos_fidel, neg_fidel = get_fidelity(prev_X, y_selected, model, shap_explanation)
-                    print(f"Fidelidade - Positiva: {pos_fidel:.4f}, Negativa: {neg_fidel:.4f}")
+                    pos_fidel, neg_fidel = get_fidelity(prev_X, y, model, shap_explanation)
                 except Exception as e:
                     print(f"Erro ao calcular fidelidade: {e}")
-                    pos_fidel, neg_fidel = None, None
             
             selected_original_indices = current_feature_indices[selected_indices_relative]
-            
             current_feature_indices = selected_original_indices
             
             explanation_results.append({
+                'property': property_name,
+                'property_idx': property_idx,
                 'iteration': iteration,
                 'n_features': current_X.shape[1],
                 'features_selected': df_desc.columns[selected_original_indices].tolist(),
                 'original_indices': selected_original_indices.tolist(),
                 'test_loss': test_loss,
-                'shap_explanation': shap_explanation if shap_explanation is not None else None,
+                'shap_explanation': shap_explanation.tolist() if shap_explanation is not None else None,
                 'positive_fidelity': float(pos_fidel) if pos_fidel is not None else None,
                 'negative_fidelity': float(neg_fidel) if neg_fidel is not None else None
             })
-            
-            print(f"Features selecionadas: {len(selected_original_indices)}")
             
         except Exception as e:
             print(f"Erro na seleção de features: {e}")
             break
     
-    # Exibir resumo final
-    print(f"\n{'='*50}")
-    print("RESUMO DA DEGRADAÇÃO")
-    print(f"{'='*50}")
-    
-    for result in degradation_results:
-        print(f"Iteração {result['iteration']}: {result['n_features']} features -> "
-              f"Train: {result['train_loss']:.4f}, Val: {result['val_loss']:.4f}, Test: {result['test_loss']:.4f}")
-    
     return degradation_results, explanation_results
 
 
+def optimize_and_degrade_all_properties(n_trials=50, timeout_per_property=1800):
+    """
+    Otimiza hiperparâmetros e executa degradação para todas as propriedades do QM9
+    """
+    properties = [
+        'Rotational constant A: GHz', 'Rotational constant B: GHz', 'Rotational constant C: GHz',
+        'Dipole moment (μ): Debye (D)', 'Isotropic polarizability (α): atomic units (a.u.)',
+        'Energy of HOMO (ϵHOMO): Hartree (Ha)', 'Energy of LUMO (ϵLUMO): Hartree (Ha)',
+        'Gap (ϵgap): Hartree (Ha)', 'Electronic spatial extent: atomic units (a.u.)',
+        'Zero point vibrational energy (zpve): Hartree (Ha)', 'Internal energy at 0 K (U0): Hartree (Ha)',
+        'Internal energy at 298.15 K (U): Hartree (Ha)', 'Enthalpy at 298.15 K (H): Hartree (Ha)',
+        'Free energy at 298.15 K (G): Hartree (Ha)', 'Heat capacity at 298.15 K (Cv): cal/mol·K'
+    ]
+    
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Usando dispositivo: {device}")
+    
+    # Carregar dados uma vez
+    X, y = get_qm9_desc()
+    
+    all_degradation_results = []
+    all_explanation_results = []
+    optimization_summary = {}
+    
+    print(f"Iniciando processamento de {len(properties)} propriedades do QM9")
+    print(f"Configuração: {n_trials} trials por propriedade, {timeout_per_property}s timeout")
+    
+    for idx, prop_name in enumerate(properties):
+        print(f"\n{'='*80}")
+        print(f"PROCESSANDO PROPRIEDADE {idx+1}/{len(properties)}: {prop_name}")
+        print(f"{'='*80}")
+        
+        try:
+            # Preparar dados para esta propriedade
+            y_selected = y[:, idx]
+            y_normalized = normalize_prop(y_selected)
+            
+            # ETAPA 1: Otimização de hiperparâmetros
+            print(f"\n--- ETAPA 1: Otimizando hiperparâmetros ---")
+            study = run_optuna(
+                property_idx=idx,
+                n_trials=n_trials,
+                timeout=timeout_per_property,
+                study_name=f"mlp_qm9_{prop_name.replace(' ', '_').replace(':', '').replace('(', '').replace(')', '')}"
+            )
+            
+            if study.best_trial is None:
+                print(f"ERRO: Nenhum trial foi completado para {prop_name}")
+                optimization_summary[prop_name] = {'error': 'Nenhum trial completado'}
+                continue
+            
+            best_params = study.best_trial.params
+            best_value = study.best_trial.value
+            
+            print(f"Melhor loss de validação: {best_value:.6f}")
+            print(f"Melhores parâmetros: {best_params}")
+            
+            optimization_summary[prop_name] = {
+                'best_value': best_value,
+                'best_params': best_params,
+                'n_trials': len(study.trials)
+            }
+            
+            # ETAPA 2: Degradação usando hiperparâmetros otimizados
+            print(f"\n--- ETAPA 2: Executando degradação ---")
+            degradation_results, explanation_results = run_degradation_with_params(
+                X=X,
+                y=y_normalized,
+                best_params=best_params,
+                property_name=prop_name,
+                property_idx=idx,
+                device=device
+            )
+            
+            # Armazenar resultados
+            all_degradation_results.extend(degradation_results)
+            all_explanation_results.extend(explanation_results)
+            
+            print(f"Degradação concluída: {len(degradation_results)} iterações")
+            
+        except Exception as e:
+            print(f"ERRO ao processar propriedade {prop_name}: {e}")
+            optimization_summary[prop_name] = {'error': str(e)}
+            continue
+    
+    # Salvar todos os resultados
+    print(f"\n{'='*80}")
+    print("SALVANDO RESULTADOS FINAIS")
+    print(f"{'='*80}")
+    
+    # Salvar resultados de degradação
+    if all_degradation_results:
+        degradation_df = pd.DataFrame(all_degradation_results)
+        degradation_df.to_csv('all_properties_degradation_results.csv', index=False, float_format='%.8f')
+        print(f"Resultados de degradação salvos: {len(all_degradation_results)} registros")
+    
+    # Salvar resultados de explicação
+    if all_explanation_results:
+        explanation_df = pd.DataFrame(all_explanation_results)
+        explanation_df.to_csv('all_properties_explanation_results.csv', index=False)
+        print(f"Resultados de explicação salvos: {len(all_explanation_results)} registros")
+    
+    # Salvar resumo de otimização
+    with open('optimization_summary_all_properties.txt', 'w') as f:
+        f.write("RESUMO DA OTIMIZAÇÃO E DEGRADAÇÃO - TODAS AS PROPRIEDADES QM9\n")
+        f.write("="*80 + "\n\n")
+        
+        for prop_name, result in optimization_summary.items():
+            f.write(f"Propriedade: {prop_name}\n")
+            if 'error' in result:
+                f.write(f"  ERRO: {result['error']}\n")
+            else:
+                f.write(f"  Melhor loss de validação: {result['best_value']:.6f}\n")
+                f.write(f"  Número de trials: {result['n_trials']}\n")
+                f.write(f"  Melhores parâmetros:\n")
+                for param, value in result['best_params'].items():
+                    f.write(f"    {param}: {value}\n")
+            f.write("\n")
+    
+    print("Resumo de otimização salvo em: optimization_summary_all_properties.txt")
+    
+    # Estatísticas finais
+    successful_properties = len([r for r in optimization_summary.values() if 'error' not in r])
+    print(f"\nESTATÍSTICAS FINAIS:")
+    print(f"Propriedades processadas com sucesso: {successful_properties}/{len(properties)}")
+    print(f"Total de iterações de degradação: {len(all_degradation_results)}")
+    print(f"Total de explicações geradas: {len(all_explanation_results)}")
+    
+    return {
+        'degradation_results': all_degradation_results,
+        'explanation_results': all_explanation_results,
+        'optimization_summary': optimization_summary
+    }
+
+
 if __name__ == '__main__':
+    # Executar otimização e degradação para todas as propriedades
+    print("Iniciando otimização de hiperparâmetros e análise de degradação para todas as propriedades QM9...")
     
-    # Executar degradação progressiva de features
-    print("Iniciando análise de degradação de features...")
-    results, explanation_results = run_train_degradation()
+    # Configurar parâmetros
+    n_trials = 30  # Número de trials para otimização por propriedade
+    timeout_per_property = 1200  # 20 minutos por propriedade
     
-    # Plotar resultados (opcional)
-    if results:
+    # Executar processo completo
+    results = optimize_and_degrade_all_properties(
+        n_trials=n_trials,
+        timeout_per_property=timeout_per_property
+    )
+    
+    print(f"\nProcesso completo finalizado!")
+    print(f"Resultados salvos em:")
+    print(f"  - all_properties_degradation_results.csv")
+    print(f"  - all_properties_explanation_results.csv")
+    print(f"  - optimization_summary_all_properties.txt")
 
-        iterations = [r['iteration'] for r in results]
-        n_features = [r['n_features'] for r in results]
-        train_losses = [r['train_loss'] for r in results]
-        val_losses = [r['val_loss'] for r in results]
-        test_losses = [r['test_loss'] for r in results]
-        
-        pos_fidelities = [r['positive_fidelity'] for r in explanation_results if r['positive_fidelity'] is not None]
-        neg_fidelities = [r['negative_fidelity'] for r in explanation_results if r['negative_fidelity'] is not None]
-        fidelity_iterations = [r['iteration'] for r in explanation_results if r['positive_fidelity'] is not None]
-        
-        plt.figure(figsize=(18, 6))
-        
-        # Plot 1: Número de features vs Iteração
-        plt.subplot(1, 3, 1)
-        plt.plot(iterations, n_features, 'bo-', linewidth=2, markersize=8)
-        plt.xlabel('Iteração')
-        plt.ylabel('Número de Features')
-        plt.title('Degradação de Features')
-        plt.grid(True, alpha=0.3)
-        
-        # Plot 2: Losses vs Número de features
-        plt.subplot(1, 3, 2)
-        plt.plot(n_features, train_losses, 'go-', label='Train Loss', linewidth=2, markersize=6)
-        plt.plot(n_features, val_losses, 'ro-', label='Validation Loss', linewidth=2, markersize=6)
-        plt.plot(n_features, test_losses, 'bo-', label='Test Loss', linewidth=2, markersize=6)
-        plt.xlabel('Número de Features')
-        plt.ylabel('Loss (MAE)')
-        plt.title('Performance vs Número de Features')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
-        
-        # Plot 3: Test Loss vs Iteração com baseline
-        plt.subplot(1, 3, 3)
-        plt.plot(iterations, test_losses, 'mo-', linewidth=2, markersize=8)
 
-        baseline_loss = test_losses[0]  # Erro de teste inicial
-        plt.axhline(y=baseline_loss, color='red', linestyle='--', linewidth=2, alpha=0.7, label=f'Baseline: {baseline_loss:.4f}')
-        plt.xlabel('Iteração')
-        plt.ylabel('Test Loss (MAE)')
-        plt.title('Evolução do Erro de Teste')
-        plt.legend()  # Adicionar legenda para mostrar o baseline
-        plt.grid(True, alpha=0.3)
-
-        # Adicionar anotações nos pontos
-        for i, (iter_num, test_loss, n_feat) in enumerate(zip(iterations, test_losses, n_features)):
-            plt.annotate(f'{n_feat}f', (iter_num, test_loss), 
-                        textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
-        
-        # Plot 4: Fidelidade vs Iteração
-        plt.subplot(2, 2, 4)
-        if pos_fidelities:
-            plt.plot(fidelity_iterations, pos_fidelities, 'go-', label='Fidelidade Positiva', linewidth=2, markersize=6)
-            plt.plot(fidelity_iterations, neg_fidelities, 'ro-', label='Fidelidade Negativa', linewidth=2, markersize=6)
-            plt.xlabel('Iteração')
-            plt.ylabel('Fidelidade')
-            plt.title('Evolução da Fidelidade das Explicações')
-            plt.legend()
-            plt.grid(True, alpha=0.3)
-        else:
-            plt.text(0.5, 0.5, 'Dados de fidelidade\nnão disponíveis', 
-                    ha='center', va='center', transform=plt.gca().transAxes, fontsize=12)
-            plt.title('Fidelidade das Explicações')
-        
-        plt.tight_layout()
-        plt.savefig('feature_degradation_analysis_with_fidelity.png', dpi=300, bbox_inches='tight')
-        plt.show()
-        
-        # Exibir estatísticas adicionais
-        print(f"\n{'='*50}")
-        print("ESTATÍSTICAS DA DEGRADAÇÃO")
-        print(f"{'='*50}")
-        
-        best_test_idx = np.argmin(test_losses)
-        worst_test_idx = np.argmax(test_losses)
-        
-        print(f"Melhor erro de teste: {test_losses[best_test_idx]} (Iteração {iterations[best_test_idx]}, {n_features[best_test_idx]} features)")
-        print(f"Pior erro de teste: {test_losses[worst_test_idx]} (Iteração {iterations[worst_test_idx]}, {n_features[worst_test_idx]} features)")
-        print(f"Variação total do erro de teste: {max(test_losses) - min(test_losses)}")
-        print(f"Features removidas: {n_features[0] - n_features[-1]} ({((n_features[0] - n_features[-1])/n_features[0]*100):.1f}%)")
-        
-        # Estatísticas de fidelidade
-        if pos_fidelities:
-            print(f"\nEstatísticas de Fidelidade:")
-            print(f"Fidelidade positiva média: {np.mean(pos_fidelities):.4f}")
-            print(f"Fidelidade negativa média: {np.mean(neg_fidelities):.4f}")
-            print(f"Diferença média (Pos - Neg): {np.mean(np.array(pos_fidelities) - np.array(neg_fidelities)):.4f}")
-
-        # Salvar resultados em CSV
-        results_df = pd.DataFrame(results)
-        results_df.to_csv('degradation_results.csv', index=False, float_format='%.8f')
-        exp_df = pd.DataFrame(explanation_results)
-        exp_df.to_csv('explanation_results.csv', index=False, float_format='%.8f')
-
-        print(f"Resultados salvos em 'degradation_results.csv' e 'explanation_results.csv'")
-        
-        print(f"\nGráfico salvo como 'feature_degradation_analysis.png'")
+if __name__ == "__main__":
+    # Executar otimização e degradação para todas as propriedades
+    print("Iniciando otimização de hiperparâmetros e análise de degradação para todas as propriedades QM9...")
+    
+    # Configurar parâmetros
+    n_trials = 30  # Número de trials para otimização por propriedade
+    timeout_per_property = 1200  # 20 minutos por propriedade
+    
+    # Executar processo completo
+    results = optimize_and_degrade_all_properties(
+        n_trials=n_trials,
+        timeout_per_property=timeout_per_property
+    )
+    
+    print(f"\nProcesso completo finalizado!")
+    print(f"Resultados salvos em:")
+    print(f"  - all_properties_degradation_results.csv")
+    print(f"  - all_properties_explanation_results.csv")
+    print(f"  - optimization_summary_all_properties.txt")
     
