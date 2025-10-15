@@ -805,23 +805,27 @@ class TabularAnalyzer:
         return mask
 
     def _calculate_fidelity(self, model, explanation, data, y_true):
-
+    
         n_features = len(explanation)//5 if len(explanation) >= 5 else len(explanation)//2
 
         data_mask_pos = self._create_masked_dataset(data=data, explanation=explanation, descending=True, n_features=n_features)
         data_mask_neg = self._create_masked_dataset(data=data, explanation=explanation, descending=False, n_features=n_features)
         
-        pos_fidel, neg_fidel = 0, 0
-
-        for data in data_mask_pos:
-
-            pred = model(data)
-            pos_fidel = torch.sqrt(F.mse_loss(pred, y_true))
-
-        for data in data_mask_neg:
-
-            pred = model(data)
-            neg_fidel = torch.sqrt(F.mse_loss(pred, y_true))
+        model.eval()
+        with torch.no_grad():
+            # CORREÇÃO: Fazer predição em batch, não item por item
+            pred_pos = model(data_mask_pos)
+            pred_neg = model(data_mask_neg)
+            
+            # Garantir que as dimensões estejam corretas
+            if pred_pos.dim() > 1:
+                pred_pos = pred_pos.squeeze()
+            if pred_neg.dim() > 1:
+                pred_neg = pred_neg.squeeze()
+                
+            # Calcular fidelidade usando MSE entre predições e targets
+            pos_fidel = torch.sqrt(F.mse_loss(pred_pos, y_true))
+            neg_fidel = torch.sqrt(F.mse_loss(pred_neg, y_true))
 
         return pos_fidel, neg_fidel
 

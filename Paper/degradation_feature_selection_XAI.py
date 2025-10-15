@@ -309,29 +309,53 @@ def select_features(model, X, device):
     
     return X_new, selected_indices, shap_global
 
-def get_fidelity(X, y, model, explanation):
+def get_fidelity(X, y, model, explanation, sample_size=1000):
+    """
+    Calcula a fidelidade das explicações usando TabularAnalyzer
+    
+    Args:
+        X: Features (numpy array ou tensor)
+        y: Targets (numpy array ou tensor)
+        model: Modelo treinado
+        explanation: Explicação SHAP (numpy array)
+        sample_size: Tamanho da amostra para calcular fidelidade
+    
+    Returns:
+        pos_fidel: Fidelidade positiva
+        neg_fidel: Fidelidade negativa
+    """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    # Converter para tensors se necessário
-    if isinstance(X, np.ndarray):
-        X_tensor = torch.FloatTensor(X).to(device)
+    if len(X) > sample_size:
+        indices = np.random.choice(len(X), sample_size, replace=False)
+        X_sample = X[indices]
+        y_sample = y[indices]
     else:
-        X_tensor = X.to(device)
-        
-    if isinstance(y, np.ndarray):
-        y_tensor = torch.FloatTensor(y).to(device)
-    else:
-        y_tensor = y.to(device)
+        X_sample = X
+        y_sample = y
     
+    # Converter para tensors se necessário
+    if isinstance(X_sample, np.ndarray):
+        X_tensor = torch.FloatTensor(X_sample).to(device)
+    else:
+        X_tensor = X_sample.to(device)
+        
+    if isinstance(y_sample, np.ndarray):
+        y_tensor = torch.FloatTensor(y_sample).to(device)
+    else:
+        y_tensor = y_sample.to(device)
+    
+    # Obter predições do modelo
     model.eval()
     with torch.no_grad():
         y_pred = model(X_tensor)
         if y_pred.dim() > 1:
             y_pred = y_pred.squeeze()
     
+    # Criar analisador tabular
     analyzer = TabularAnalyzer(
         model=model,
-        explainer=None,  # nao precisa do explainer para fidelidade
+        explainer=None,  # Não precisamos do explainer para fidelidade
         explanation=explanation,
         data=X_tensor,
         y_true=y_tensor,
@@ -365,8 +389,7 @@ def run_train_degradation():
     explanation_results = []
 
     current_X = X.copy()
-    # IMPORTANTE: Manter rastreamento dos índices originais
-    current_feature_indices = np.arange(X.shape[1])  # [0, 1, 2, ..., 1056]
+    current_feature_indices = np.arange(X.shape[1])
     iteration = 0
     
     # Loop de degradação - continua até ter no mínimo 20 features
