@@ -482,9 +482,9 @@ if __name__ == '__main__':
         val_losses = [r['val_loss'] for r in results]
         test_losses = [r['test_loss'] for r in results]
         
-        pos_fidelities = [r['positive_fidelity'] for r in results if r['positive_fidelity'] is not None]
-        neg_fidelities = [r['negative_fidelity'] for r in results if r['negative_fidelity'] is not None]
-        fidelity_iterations = [r['iteration'] for r in results if r['positive_fidelity'] is not None]
+        pos_fidelities = [r['positive_fidelity'] for r in explanation_results if r['positive_fidelity'] is not None]
+        neg_fidelities = [r['negative_fidelity'] for r in explanation_results if r['negative_fidelity'] is not None]
+        fidelity_iterations = [r['iteration'] for r in explanation_results if r['positive_fidelity'] is not None]
         
         plt.figure(figsize=(18, 6))
         
