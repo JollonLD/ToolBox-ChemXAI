@@ -14,6 +14,8 @@ from torch.utils.data import Dataset, DataLoader, random_split
 
 import sys
 import os
+import gdown
+import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from chemxai.data import qm9_tabular
@@ -47,13 +49,24 @@ class MLP(nn.Module):
     
 def load_mordred_descriptors():
 
-    df = pd.read_csv("all_desc_qm9.csv")
-    df.drop(['Unnamed: 0'], axis=1, inplace=True)
-    df_valid = df.describe()
-    df_usable = df[df_valid.columns]
-    df_usable.to_csv("desc_mordred_qm9.csv")
+    drive_url = "https://drive.google.com/file/d/1U8mCfVmzDcx30f_7OW1CZzytKJLthB0C/view?usp=sharing"
+    output_path = "Paper/desc_mordred_qm9.csv"
 
-    return df_usable
+    print(f"Tentando baixar o arquivo de: {drive_url}")
+
+    try:
+        # O gdown fará a solicitação e o download.
+        # O 'fuzzy=True' ajuda a resolver problemas de URL ou ID.
+        gdown.download(drive_url, output_path, fuzzy=True, quiet=False)
+        
+        # Verifica se o arquivo foi baixado com sucesso
+        if os.path.exists(output_path):
+            print(f"\n✅ Download concluído! Arquivo salvo como: {output_path}")
+        else:
+            print("\n❌ Falha no download. Verifique se o link está correto e se o arquivo é público ou compartilhado com sua conta.")
+
+    except Exception as e:
+        print(f"\nOcorreu um erro: {e}")
 
 def dataframe_to_numpy(df):
     """
@@ -303,7 +316,7 @@ def run_train_degradation():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # Carregar dados iniciais
-    # load_mordred_descriptors()
+    load_mordred_descriptors()
     X, y = get_qm9_desc()
     y_selected = y[:, 10]  # mu (momento dipolar)
     
