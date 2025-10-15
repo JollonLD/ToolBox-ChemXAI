@@ -316,7 +316,7 @@ def run_train_degradation():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # Carregar dados iniciais
-    load_mordred_descriptors()
+    # load_mordred_descriptors() # Apenas se Necessário Baixar Dataset dos descritores mordred
     X, y = get_qm9_desc()
     y_selected = y[:, 10]  # mu (momento dipolar)
     
