@@ -266,8 +266,8 @@ def train(X, y, epochs=100, batch_size=512, lr=0.001, layers=[512, 256, 128], pa
             
         if early_stop_counter >= patience:
             break
-        if epoch % 20 == 0:
-            print(f'Epoch {epoch+1}/{epochs} - Train: {avg_train_loss:.4f}, Val: {avg_val_loss:.4f}, Test: {avg_test_loss:.4f}')
+
+        print(f'Epoch {epoch+1}/{epochs} - Train: {avg_train_loss:.4f}, Val: {avg_val_loss:.4f}, Test: {avg_test_loss:.4f}')
 
     return model, history
 
@@ -277,11 +277,11 @@ def select_features(model, X, device):
     
     # Converter para tensores se necessário
     if isinstance(X_train, np.ndarray):
-        X_train_tensor = torch.FloatTensor(X_train).to(device)
-        X_test_tensor = torch.FloatTensor(X_test).to(device)
+        X_train_tensor = torch.FloatTensor(X_train[:100]).to(device)
+        X_test_tensor = torch.FloatTensor(X_test[:50]).to(device)
     else:
-        X_train_tensor = X_train.to(device)
-        X_test_tensor = X_test.to(device)
+        X_train_tensor = X_train[:100].to(device)
+        X_test_tensor = X_test[:50].to(device)
     
     # Criar explicador SHAP
     explainer = Shap(model, X_train_tensor, X_test_tensor, device)
