@@ -283,6 +283,7 @@ def select_features(model, X, device):
         X_train_tensor = X_train[:100].to(device)
         X_test_tensor = X_test[:50].to(device)
     
+    print("Iniciando SHAP explanation...")
     # Criar explicador SHAP
     explainer = Shap(model, X_train_tensor, X_test_tensor, device)
     shap_global = explainer.explain_global()
@@ -316,16 +317,20 @@ def run_train_degradation():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # Carregar dados iniciais
-    # load_mordred_descriptors() # Apenas se Necessário Baixar Dataset dos descritores mordred
     X, y = get_qm9_desc()
     y_selected = y[:, 10]  # mu (momento dipolar)
+
+    df_desc = pd.read_csv('Paper/desc_mordred_qm9.csv')
     
     print(f"Dados iniciais - Features: {X.shape[1]}, Amostras: {X.shape[0]}")
     
     # Lista para armazenar resultados de cada iteração
     degradation_results = []
-    
+    explanation_results = []
+
     current_X = X.copy()
+    # IMPORTANTE: Manter rastreamento dos índices originais
+    current_feature_indices = np.arange(X.shape[1])  # [0, 1, 2, ..., 1056]
     iteration = 0
     
     # Loop de degradação - continua até ter no mínimo 20 features
@@ -356,7 +361,7 @@ def run_train_degradation():
             'test_loss': test_loss,
             'n_epochs': len(history)
         })
-        
+
         # Mostrar progresso do erro de teste
         if iteration == 1:
             print(f"Erro de teste inicial: {test_loss:.4f}")
@@ -375,7 +380,25 @@ def run_train_degradation():
         # Selecionar features para próxima iteração
         print("Selecionando features com SHAP...")
         try:
-            current_X, selected_indices = select_features(model, current_X, device)
+            current_X, selected_indices_relative = select_features(model, current_X, device)
+            
+            # CORREÇÃO: Mapear índices relativos para índices originais
+            selected_original_indices = current_feature_indices[selected_indices_relative]
+            
+            # Atualizar índices das features atuais
+            current_feature_indices = selected_original_indices
+            
+            # Salvar com os nomes corretos das features
+            explanation_results.append({
+                'iteration': iteration,
+                'n_features': current_X.shape[1],
+                'features_selected': df_desc.columns[selected_original_indices].tolist(),
+                'original_indices': selected_original_indices.tolist(),
+                'test_loss': test_loss,
+            })
+            
+            print(f"Features selecionadas: {len(selected_original_indices)}")
+            
         except Exception as e:
             print(f"Erro na seleção de features: {e}")
             break
@@ -389,14 +412,14 @@ def run_train_degradation():
         print(f"Iteração {result['iteration']}: {result['n_features']} features -> "
               f"Train: {result['train_loss']:.4f}, Val: {result['val_loss']:.4f}, Test: {result['test_loss']:.4f}")
     
-    return degradation_results
+    return degradation_results, explanation_results
 
 
 if __name__ == '__main__':
     
     # Executar degradação progressiva de features
     print("Iniciando análise de degradação de features...")
-    results = run_train_degradation()
+    results, explanation_results = run_train_degradation()
     
     # Plotar resultados (opcional)
     if results:
@@ -453,15 +476,18 @@ if __name__ == '__main__':
         best_test_idx = np.argmin(test_losses)
         worst_test_idx = np.argmax(test_losses)
         
-        print(f"Melhor erro de teste: {test_losses[best_test_idx]:.4f} (Iteração {iterations[best_test_idx]}, {n_features[best_test_idx]} features)")
-        print(f"Pior erro de teste: {test_losses[worst_test_idx]:.4f} (Iteração {iterations[worst_test_idx]}, {n_features[worst_test_idx]} features)")
-        print(f"Variação total do erro de teste: {max(test_losses) - min(test_losses):.4f}")
+        print(f"Melhor erro de teste: {test_losses[best_test_idx]} (Iteração {iterations[best_test_idx]}, {n_features[best_test_idx]} features)")
+        print(f"Pior erro de teste: {test_losses[worst_test_idx]} (Iteração {iterations[worst_test_idx]}, {n_features[worst_test_idx]} features)")
+        print(f"Variação total do erro de teste: {max(test_losses) - min(test_losses)}")
         print(f"Features removidas: {n_features[0] - n_features[-1]} ({((n_features[0] - n_features[-1])/n_features[0]*100):.1f}%)")
         
         # Salvar resultados em CSV
         results_df = pd.DataFrame(results)
-        results_df.to_csv('degradation_results.csv', index=False)
-        print(f"Resultados salvos em 'degradation_results.csv'")
+        results_df.to_csv('degradation_results.csv', index=False, float_format='%.8f')
+        exp_df = pd.DataFrame(explanation_results)
+        exp_df.to_csv('explanation_results.csv', index=False, float_format='%.8f')
+
+        print(f"Resultados salvos em 'degradation_results.csv' e 'explanation_results.csv'")
         
         print(f"\nGráfico salvo como 'feature_degradation_analysis.png'")
     
