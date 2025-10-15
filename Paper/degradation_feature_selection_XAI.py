@@ -20,7 +20,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from chemxai.data import qm9_tabular
 from chemxai.explainers import Shap
-
+from chemxai.evaluate import TabularAnalyzer
 
 class MLP(nn.Module):
     def __init__(self, input_dim, output_dim, layers, device, lr=0.001):
@@ -307,7 +307,42 @@ def select_features(model, X, device):
     
     print(f"Features reduzidas de {n_features} para {n_features_to_keep} ({(1-n_features_to_keep/n_features)*100:.1f}% removidas)")
     
-    return X_new, selected_indices
+    return X_new, selected_indices, shap_global
+
+def get_fidelity(X, y, model, explanation):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    # Converter para tensors se necessário
+    if isinstance(X, np.ndarray):
+        X_tensor = torch.FloatTensor(X).to(device)
+    else:
+        X_tensor = X.to(device)
+        
+    if isinstance(y, np.ndarray):
+        y_tensor = torch.FloatTensor(y).to(device)
+    else:
+        y_tensor = y.to(device)
+    
+    model.eval()
+    with torch.no_grad():
+        y_pred = model(X_tensor)
+        if y_pred.dim() > 1:
+            y_pred = y_pred.squeeze()
+    
+    analyzer = TabularAnalyzer(
+        model=model,
+        explainer=None,  # nao precisa do explainer para fidelidade
+        explanation=explanation,
+        data=X_tensor,
+        y_true=y_tensor,
+        y_pred=y_pred,
+        device=device
+    )
+    
+    pos_fidel, neg_fidel = analyzer.get_metrics(classification=False)
+    
+    return pos_fidel, neg_fidel
+
 
 def run_train_degradation():
     """
@@ -321,6 +356,7 @@ def run_train_degradation():
     y_selected = y[:, 10]  # mu (momento dipolar)
 
     df_desc = pd.read_csv('Paper/desc_mordred_qm9.csv')
+    df_desc.drop(['Unnamed: 0'], axis=1, inplace=True)
     
     print(f"Dados iniciais - Features: {X.shape[1]}, Amostras: {X.shape[0]}")
     
@@ -352,6 +388,19 @@ def run_train_degradation():
         
         print(f"Resultado final - Train: {train_loss:.4f}, Val: {val_loss:.4f}, Test: {test_loss:.4f}")
         
+        pos_fidel, neg_fidel = None, None
+        if iteration > 1:
+            # Usar explicação da iteração anterior para calcular fidelidade
+            prev_explanation = explanation_results[-1]['shap_explanation'] if explanation_results else None
+            if prev_explanation is not None:
+                try:
+                    print("Calculando fidelidade das explicações...")
+                    pos_fidel, neg_fidel = get_fidelity(current_X, y_selected, model, prev_explanation)
+                    print(f"Fidelidade - Positiva: {pos_fidel:.4f}, Negativa: {neg_fidel:.4f}")
+                except Exception as e:
+                    print(f"Erro ao calcular fidelidade: {e}")
+                    pos_fidel, neg_fidel = None, None
+
         # Armazenar resultados
         degradation_results.append({
             'iteration': iteration,
@@ -380,7 +429,7 @@ def run_train_degradation():
         # Selecionar features para próxima iteração
         print("Selecionando features com SHAP...")
         try:
-            current_X, selected_indices_relative = select_features(model, current_X, device)
+            current_X, selected_indices_relative, shap_explanation = select_features(model, current_X, device)
             
             # CORREÇÃO: Mapear índices relativos para índices originais
             selected_original_indices = current_feature_indices[selected_indices_relative]
@@ -395,6 +444,9 @@ def run_train_degradation():
                 'features_selected': df_desc.columns[selected_original_indices].tolist(),
                 'original_indices': selected_original_indices.tolist(),
                 'test_loss': test_loss,
+                'shap_explanation': shap_explanation.tolist() if shap_explanation is not None else None,
+                'positive_fidelity': float(pos_fidel) if pos_fidel is not None else None,
+                'negative_fidelity': float(neg_fidel) if neg_fidel is not None else None
             })
             
             print(f"Features selecionadas: {len(selected_original_indices)}")
@@ -430,6 +482,10 @@ if __name__ == '__main__':
         val_losses = [r['val_loss'] for r in results]
         test_losses = [r['test_loss'] for r in results]
         
+        pos_fidelities = [r['positive_fidelity'] for r in results if r['positive_fidelity'] is not None]
+        neg_fidelities = [r['negative_fidelity'] for r in results if r['negative_fidelity'] is not None]
+        fidelity_iterations = [r['iteration'] for r in results if r['positive_fidelity'] is not None]
+        
         plt.figure(figsize=(18, 6))
         
         # Plot 1: Número de features vs Iteração
@@ -451,21 +507,40 @@ if __name__ == '__main__':
         plt.legend()
         plt.grid(True, alpha=0.3)
         
-        # Plot 3: Test Loss vs Iteração
+        # Plot 3: Test Loss vs Iteração com baseline
         plt.subplot(1, 3, 3)
         plt.plot(iterations, test_losses, 'mo-', linewidth=2, markersize=8)
+
+        baseline_loss = test_losses[0]  # Erro de teste inicial
+        plt.axhline(y=baseline_loss, color='red', linestyle='--', linewidth=2, alpha=0.7, label=f'Baseline: {baseline_loss:.4f}')
         plt.xlabel('Iteração')
         plt.ylabel('Test Loss (MAE)')
         plt.title('Evolução do Erro de Teste')
+        plt.legend()  # Adicionar legenda para mostrar o baseline
         plt.grid(True, alpha=0.3)
-        
+
         # Adicionar anotações nos pontos
         for i, (iter_num, test_loss, n_feat) in enumerate(zip(iterations, test_losses, n_features)):
             plt.annotate(f'{n_feat}f', (iter_num, test_loss), 
                         textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
         
+        # Plot 4: Fidelidade vs Iteração
+        plt.subplot(2, 2, 4)
+        if pos_fidelities:
+            plt.plot(fidelity_iterations, pos_fidelities, 'go-', label='Fidelidade Positiva', linewidth=2, markersize=6)
+            plt.plot(fidelity_iterations, neg_fidelities, 'ro-', label='Fidelidade Negativa', linewidth=2, markersize=6)
+            plt.xlabel('Iteração')
+            plt.ylabel('Fidelidade')
+            plt.title('Evolução da Fidelidade das Explicações')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+        else:
+            plt.text(0.5, 0.5, 'Dados de fidelidade\nnão disponíveis', 
+                    ha='center', va='center', transform=plt.gca().transAxes, fontsize=12)
+            plt.title('Fidelidade das Explicações')
+        
         plt.tight_layout()
-        plt.savefig('feature_degradation_analysis.png', dpi=300, bbox_inches='tight')
+        plt.savefig('feature_degradation_analysis_with_fidelity.png', dpi=300, bbox_inches='tight')
         plt.show()
         
         # Exibir estatísticas adicionais
@@ -481,6 +556,13 @@ if __name__ == '__main__':
         print(f"Variação total do erro de teste: {max(test_losses) - min(test_losses)}")
         print(f"Features removidas: {n_features[0] - n_features[-1]} ({((n_features[0] - n_features[-1])/n_features[0]*100):.1f}%)")
         
+        # Estatísticas de fidelidade
+        if pos_fidelities:
+            print(f"\nEstatísticas de Fidelidade:")
+            print(f"Fidelidade positiva média: {np.mean(pos_fidelities):.4f}")
+            print(f"Fidelidade negativa média: {np.mean(neg_fidelities):.4f}")
+            print(f"Diferença média (Pos - Neg): {np.mean(np.array(pos_fidelities) - np.array(neg_fidelities)):.4f}")
+
         # Salvar resultados em CSV
         results_df = pd.DataFrame(results)
         results_df.to_csv('degradation_results.csv', index=False, float_format='%.8f')
