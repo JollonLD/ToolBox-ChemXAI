@@ -309,7 +309,7 @@ def select_features(model, X, device):
     
     return X_new, selected_indices, shap_global
 
-def get_fidelity(X, y, model, explanation, sample_size=1000):
+def get_fidelity(X, y, model, explanation, sample_size=250):
     """
     Calcula a fidelidade das explicações usando TabularAnalyzer
     
@@ -368,6 +368,22 @@ def get_fidelity(X, y, model, explanation, sample_size=1000):
     return pos_fidel, neg_fidel
 
 
+def normalize_prop(y):
+    if not isinstance(y, np.ndarray):
+        y = np.array(y)
+    
+    y_reshaped = y.reshape(-1, 1)
+    
+    scaler = StandardScaler()
+    y_normalized = scaler.fit_transform(y_reshaped).flatten()
+    
+    # Exibir estatísticas
+    print(f"Normalização Standard aplicada:")
+    print(f"  Original: min={np.min(y):.4f}, max={np.max(y):.4f}, mean={np.mean(y):.4f}, std={np.std(y):.4f}")
+    print(f"  Normalizado: min={np.min(y_normalized):.4f}, max={np.max(y_normalized):.4f}, mean={np.mean(y_normalized):.4f}, std={np.std(y_normalized):.4f}")
+    
+    return y_normalized
+
 def run_train_degradation():
     """
     Executa treinamento com degradação progressiva de features baseada em SHAP
@@ -378,6 +394,8 @@ def run_train_degradation():
     # Carregar dados iniciais
     X, y = get_qm9_desc()
     y_selected = y[:, 10]  # mu (momento dipolar)
+
+    y_selected = normalize_prop(y_selected)
 
     df_desc = pd.read_csv('Paper/desc_mordred_qm9.csv')
     df_desc.drop(['Unnamed: 0'], axis=1, inplace=True)
@@ -411,18 +429,6 @@ def run_train_degradation():
         
         print(f"Resultado final - Train: {train_loss:.4f}, Val: {val_loss:.4f}, Test: {test_loss:.4f}")
         
-        pos_fidel, neg_fidel = None, None
-        if iteration > 1:
-            # Usar explicação da iteração anterior para calcular fidelidade
-            prev_explanation = explanation_results[-1]['shap_explanation'] if explanation_results else None
-            if prev_explanation is not None:
-                try:
-                    print("Calculando fidelidade das explicações...")
-                    pos_fidel, neg_fidel = get_fidelity(current_X, y_selected, model, prev_explanation)
-                    print(f"Fidelidade - Positiva: {pos_fidel:.4f}, Negativa: {neg_fidel:.4f}")
-                except Exception as e:
-                    print(f"Erro ao calcular fidelidade: {e}")
-                    pos_fidel, neg_fidel = None, None
 
         # Armazenar resultados
         degradation_results.append({
@@ -452,15 +458,25 @@ def run_train_degradation():
         # Selecionar features para próxima iteração
         print("Selecionando features com SHAP...")
         try:
+            
+            prev_X = current_X.copy()
+            
             current_X, selected_indices_relative, shap_explanation = select_features(model, current_X, device)
             
-            # CORREÇÃO: Mapear índices relativos para índices originais
+            pos_fidel, neg_fidel = None, None
+            if shap_explanation is not None:
+                try:
+                    print("Calculando fidelidade das explicações...")
+                    pos_fidel, neg_fidel = get_fidelity(prev_X, y_selected, model, shap_explanation)
+                    print(f"Fidelidade - Positiva: {pos_fidel:.4f}, Negativa: {neg_fidel:.4f}")
+                except Exception as e:
+                    print(f"Erro ao calcular fidelidade: {e}")
+                    pos_fidel, neg_fidel = None, None
+            
             selected_original_indices = current_feature_indices[selected_indices_relative]
             
-            # Atualizar índices das features atuais
             current_feature_indices = selected_original_indices
             
-            # Salvar com os nomes corretos das features
             explanation_results.append({
                 'iteration': iteration,
                 'n_features': current_X.shape[1],
