@@ -726,7 +726,7 @@ def run_degradation_with_params(X, y, best_params, property_name, property_idx, 
                 'features_selected': df_desc.columns[selected_original_indices].tolist(),
                 'original_indices': selected_original_indices.tolist(),
                 'test_loss': test_loss,
-                'shap_explanation': shap_explanation.tolist() if shap_explanation is not None else None,
+                'shap_explanation': shap_explanation if shap_explanation is not None else None,
                 'positive_fidelity': float(pos_fidel) if pos_fidel is not None else None,
                 'negative_fidelity': float(neg_fidel) if neg_fidel is not None else None
             })
