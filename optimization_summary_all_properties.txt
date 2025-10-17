@@ -1,0 +1,203 @@
+RESUMO DA OTIMIZAÇÃO E DEGRADAÇÃO - TODAS AS PROPRIEDADES QM9
+================================================================================
+
+Propriedade: Rotational constant A: GHz
+  Melhor loss de validação: 0.000001
+  Número de trials: 19
+  Melhores parâmetros:
+    n_layers: 3
+    layer_0_size: 384
+    layer_1_size: 320
+    layer_2_size: 128
+    optimizer: AdamW
+    lr: 0.009590708921636314
+    loss_function: SmoothL1Loss
+    dropout_rate: 0.0
+    batch_size: 256
+    weight_decay: 3.4788046600909828e-06
+
+Propriedade: Rotational constant B: GHz
+  Melhor loss de validação: 0.002414
+  Número de trials: 18
+  Melhores parâmetros:
+    n_layers: 3
+    layer_0_size: 1024
+    layer_1_size: 640
+    layer_2_size: 1024
+    optimizer: Adam
+    lr: 0.00024146117821785914
+    loss_function: SmoothL1Loss
+    dropout_rate: 0.0
+    batch_size: 1024
+    weight_decay: 5.2375166352174805e-05
+
+Propriedade: Rotational constant C: GHz
+  Melhor loss de validação: 0.001814
+  Número de trials: 17
+  Melhores parâmetros:
+    n_layers: 2
+    layer_0_size: 448
+    layer_1_size: 384
+    optimizer: Adam
+    lr: 0.00021016467822856566
+    loss_function: SmoothL1Loss
+    dropout_rate: 0.1
+    batch_size: 1024
+    weight_decay: 8.670019127702863e-06
+
+Propriedade: Dipole moment (μ): Debye (D)
+  Melhor loss de validação: 0.144676
+  Número de trials: 13
+  Melhores parâmetros:
+    n_layers: 2
+    layer_0_size: 256
+    layer_1_size: 384
+    optimizer: SGD
+    lr: 0.00276675891907621
+    loss_function: SmoothL1Loss
+    dropout_rate: 0.0
+    batch_size: 512
+
+Propriedade: Isotropic polarizability (α): atomic units (a.u.)
+  Melhor loss de validação: 0.005596
+  Número de trials: 17
+  Melhores parâmetros:
+    n_layers: 2
+    layer_0_size: 192
+    layer_1_size: 640
+    optimizer: Adam
+    lr: 0.00011239835454939752
+    loss_function: SmoothL1Loss
+    dropout_rate: 0.1
+    batch_size: 512
+    weight_decay: 0.0004553735139883558
+
+Propriedade: Energy of HOMO (ϵHOMO): Hartree (Ha)
+  Melhor loss de validação: 0.033605
+  Número de trials: 22
+  Melhores parâmetros:
+    n_layers: 3
+    layer_0_size: 320
+    layer_1_size: 512
+    layer_2_size: 576
+    optimizer: SGD
+    lr: 0.07310934853338558
+    loss_function: SmoothL1Loss
+    dropout_rate: 0.0
+    batch_size: 512
+
+Propriedade: Energy of LUMO (ϵLUMO): Hartree (Ha)
+  Melhor loss de validação: 0.010687
+  Número de trials: 16
+  Melhores parâmetros:
+    n_layers: 2
+    layer_0_size: 448
+    layer_1_size: 64
+    optimizer: SGD
+    lr: 0.07141365352660548
+    loss_function: SmoothL1Loss
+    dropout_rate: 0.2
+    batch_size: 1024
+
+Propriedade: Gap (ϵgap): Hartree (Ha)
+  Melhor loss de validação: 0.018204
+  Número de trials: 17
+  Melhores parâmetros:
+    n_layers: 3
+    layer_0_size: 1024
+    layer_1_size: 640
+    layer_2_size: 832
+    optimizer: Adam
+    lr: 0.00020758142314479416
+    loss_function: SmoothL1Loss
+    dropout_rate: 0.0
+    batch_size: 256
+    weight_decay: 7.150598870473296e-06
+
+Propriedade: Electronic spatial extent: atomic units (a.u.)
+  Melhor loss de validação: 0.016497
+  Número de trials: 19
+  Melhores parâmetros:
+    n_layers: 1
+    layer_0_size: 192
+    optimizer: SGD
+    lr: 0.04804479609558111
+    loss_function: SmoothL1Loss
+    dropout_rate: 0.1
+    batch_size: 128
+
+Propriedade: Zero point vibrational energy (zpve): Hartree (Ha)
+  Melhor loss de validação: 0.000183
+  Número de trials: 20
+  Melhores parâmetros:
+    n_layers: 2
+    layer_0_size: 576
+    layer_1_size: 192
+    optimizer: Adam
+    lr: 1.9237839910773034e-05
+    loss_function: SmoothL1Loss
+    dropout_rate: 0.1
+    batch_size: 1024
+    weight_decay: 1.0428499157006275e-05
+
+Propriedade: Internal energy at 0 K (U0): Hartree (Ha)
+  Melhor loss de validação: 0.000081
+  Número de trials: 21
+  Melhores parâmetros:
+    n_layers: 2
+    layer_0_size: 576
+    layer_1_size: 320
+    optimizer: AdamW
+    lr: 4.134928699294576e-05
+    loss_function: SmoothL1Loss
+    dropout_rate: 0.0
+    batch_size: 512
+    weight_decay: 2.3278311428014216e-05
+
+Propriedade: Internal energy at 298.15 K (U): Hartree (Ha)
+  Melhor loss de validação: 0.000053
+  Número de trials: 21
+  Melhores parâmetros:
+    n_layers: 4
+    layer_0_size: 192
+    layer_1_size: 832
+    layer_2_size: 128
+    layer_3_size: 192
+    optimizer: Adam
+    lr: 0.00010736444323929516
+    loss_function: MSELoss
+    dropout_rate: 0.0
+    batch_size: 1024
+    weight_decay: 0.0005435713049808804
+
+Propriedade: Enthalpy at 298.15 K (H): Hartree (Ha)
+  Melhor loss de validação: 0.000062
+  Número de trials: 22
+  Melhores parâmetros:
+    n_layers: 3
+    layer_0_size: 384
+    layer_1_size: 320
+    layer_2_size: 896
+    optimizer: AdamW
+    lr: 0.000683197636384708
+    loss_function: MSELoss
+    dropout_rate: 0.0
+    batch_size: 1024
+    weight_decay: 0.008441611665728896
+
+Propriedade: Free energy at 298.15 K (G): Hartree (Ha)
+  Melhor loss de validação: 0.000031
+  Número de trials: 17
+  Melhores parâmetros:
+    n_layers: 1
+    layer_0_size: 896
+    optimizer: Adam
+    lr: 0.0014415529370132342
+    loss_function: SmoothL1Loss
+    dropout_rate: 0.0
+    batch_size: 1024
+    weight_decay: 1.2892388869497785e-05
+
+Propriedade: Heat capacity at 298.15 K (Cv): cal/mol·K
+  ERRO: Cannot save file into a non-existent directory: 'optuna_results_Heat_capacity_at_298.15_K_Cv_cal'
+
