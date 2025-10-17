@@ -1,0 +1,505 @@
+property,property_idx,iteration,n_features,train_loss,val_loss,test_loss,n_epochs
+Rotational constant A: GHz,0,1,1057,0.00439124,0.00000053,0.00000114,13
+Rotational constant A: GHz,0,2,951,0.00439161,0.00000065,0.00000126,15
+Rotational constant A: GHz,0,3,855,0.00439130,0.00000056,0.00000116,13
+Rotational constant A: GHz,0,4,769,0.00439148,0.00000055,0.00000116,18
+Rotational constant A: GHz,0,5,692,0.00439166,0.00000071,0.00000132,19
+Rotational constant A: GHz,0,6,622,0.00439138,0.00000105,0.00000166,17
+Rotational constant A: GHz,0,7,559,0.00439130,0.00000053,0.00000114,15
+Rotational constant A: GHz,0,8,503,0.00439143,0.00000199,0.00000260,21
+Rotational constant A: GHz,0,9,452,0.00439190,0.00000059,0.00000119,12
+Rotational constant A: GHz,0,10,406,0.00439171,0.00000095,0.00000155,14
+Rotational constant A: GHz,0,11,365,0.00439146,0.00000056,0.00000117,17
+Rotational constant A: GHz,0,12,328,0.00439131,0.00000090,0.00000151,13
+Rotational constant A: GHz,0,13,295,0.00439149,0.00000084,0.00000145,20
+Rotational constant A: GHz,0,14,265,0.00439157,0.00000056,0.00000117,20
+Rotational constant A: GHz,0,15,238,0.00439138,0.00000337,0.00000397,20
+Rotational constant A: GHz,0,16,214,0.00439145,0.00000055,0.00000116,17
+Rotational constant A: GHz,0,17,192,0.00439176,0.00000055,0.00000116,15
+Rotational constant A: GHz,0,18,172,0.00439137,0.00000061,0.00000122,15
+Rotational constant A: GHz,0,19,154,0.00439167,0.00000055,0.00000116,15
+Rotational constant A: GHz,0,20,138,0.00439137,0.00000056,0.00000117,15
+Rotational constant A: GHz,0,21,124,0.00439150,0.00000171,0.00000232,27
+Rotational constant A: GHz,0,22,111,0.00439160,0.00000086,0.00000147,12
+Rotational constant A: GHz,0,23,99,0.00439121,0.00000047,0.00000109,14
+Rotational constant A: GHz,0,24,89,0.00439144,0.00000056,0.00000117,12
+Rotational constant A: GHz,0,25,80,0.00439165,0.00000202,0.00000262,13
+Rotational constant A: GHz,0,26,72,0.00439130,0.00000055,0.00000115,13
+Rotational constant A: GHz,0,27,64,0.00439132,0.00000056,0.00000116,13
+Rotational constant A: GHz,0,28,57,0.00439132,0.00000059,0.00000119,12
+Rotational constant A: GHz,0,29,51,0.00439171,0.00000055,0.00000116,11
+Rotational constant A: GHz,0,30,45,0.00439190,0.00000056,0.00000116,12
+Rotational constant A: GHz,0,31,40,0.00439149,0.00000055,0.00000116,20
+Rotational constant A: GHz,0,32,36,0.00439164,0.00000045,0.00000106,11
+Rotational constant A: GHz,0,33,32,0.00439126,0.00000055,0.00000116,11
+Rotational constant A: GHz,0,34,28,0.00439149,0.00000065,0.00000126,18
+Rotational constant A: GHz,0,35,25,0.00439155,0.00000066,0.00000127,20
+Rotational constant A: GHz,0,36,22,0.00439161,0.00000066,0.00000126,15
+Rotational constant B: GHz,1,1,1057,0.00293952,0.00249017,0.00245468,42
+Rotational constant B: GHz,1,2,951,0.00500619,0.00323751,0.00307299,23
+Rotational constant B: GHz,1,3,855,0.00408271,0.00236066,0.00224226,40
+Rotational constant B: GHz,1,4,769,0.00307740,0.00243074,0.00244573,62
+Rotational constant B: GHz,1,5,692,0.00300257,0.00239158,0.00225493,47
+Rotational constant B: GHz,1,6,622,0.00392905,0.00275091,0.00237325,74
+Rotational constant B: GHz,1,7,559,0.00336851,0.00411105,0.00333873,60
+Rotational constant B: GHz,1,8,503,0.00349161,0.00275711,0.00261681,42
+Rotational constant B: GHz,1,9,452,0.00324454,0.00300874,0.00241936,45
+Rotational constant B: GHz,1,10,406,0.00316029,0.00255450,0.00218885,48
+Rotational constant B: GHz,1,11,365,0.00759442,0.00405625,0.00358981,22
+Rotational constant B: GHz,1,12,328,0.00428042,0.00343303,0.00265837,42
+Rotational constant B: GHz,1,13,295,0.00492376,0.00322984,0.00266408,28
+Rotational constant B: GHz,1,14,265,0.00337614,0.00261534,0.00241844,31
+Rotational constant B: GHz,1,15,238,0.00521968,0.00299716,0.00269390,30
+Rotational constant B: GHz,1,16,214,0.00576157,0.00337860,0.00297246,20
+Rotational constant B: GHz,1,17,192,0.00546648,0.00313669,0.00290018,23
+Rotational constant B: GHz,1,18,172,0.00442228,0.00273602,0.00270254,42
+Rotational constant B: GHz,1,19,154,0.00516139,0.00365323,0.00353072,50
+Rotational constant B: GHz,1,20,138,0.00602877,0.00403672,0.00375423,29
+Rotational constant B: GHz,1,21,124,0.00553700,0.00302692,0.00292109,41
+Rotational constant B: GHz,1,22,111,0.00573150,0.00299337,0.00286291,43
+Rotational constant B: GHz,1,23,99,0.00477206,0.00276861,0.00273240,42
+Rotational constant B: GHz,1,24,89,0.00903539,0.00409228,0.00362512,19
+Rotational constant B: GHz,1,25,80,0.00583761,0.00310467,0.00300653,31
+Rotational constant B: GHz,1,26,72,0.00474008,0.00308436,0.00303484,47
+Rotational constant B: GHz,1,27,64,0.00587978,0.00292340,0.00292961,40
+Rotational constant B: GHz,1,28,57,0.00552659,0.00298314,0.00282030,67
+Rotational constant B: GHz,1,29,51,0.00487555,0.00343852,0.00323640,51
+Rotational constant B: GHz,1,30,45,0.00649465,0.00401996,0.00401494,21
+Rotational constant B: GHz,1,31,40,0.00507198,0.00316703,0.00303312,85
+Rotational constant B: GHz,1,32,36,0.00562989,0.00323386,0.00327389,36
+Rotational constant B: GHz,1,33,32,0.00522033,0.00399485,0.00339459,67
+Rotational constant B: GHz,1,34,28,0.00610826,0.00349819,0.00348816,47
+Rotational constant B: GHz,1,35,25,0.00536807,0.00402676,0.00389897,64
+Rotational constant B: GHz,1,36,22,0.00618641,0.00351727,0.00360297,42
+Rotational constant C: GHz,2,1,1057,0.00363480,0.00310531,0.00280973,40
+Rotational constant C: GHz,2,2,951,0.00262759,0.00169761,0.00162304,45
+Rotational constant C: GHz,2,3,855,0.00335489,0.00194008,0.00191940,27
+Rotational constant C: GHz,2,4,769,0.00379082,0.00190378,0.00183681,30
+Rotational constant C: GHz,2,5,692,0.00338557,0.00231733,0.00232340,14
+Rotational constant C: GHz,2,6,622,0.00346689,0.00198233,0.00192960,38
+Rotational constant C: GHz,2,7,559,0.00376742,0.00201395,0.00200752,30
+Rotational constant C: GHz,2,8,503,0.00301208,0.00445736,0.00498195,30
+Rotational constant C: GHz,2,9,452,0.00341916,0.00256687,0.00226458,32
+Rotational constant C: GHz,2,10,406,0.00360990,0.00203276,0.00190116,34
+Rotational constant C: GHz,2,11,365,0.00396497,0.00244369,0.00247818,36
+Rotational constant C: GHz,2,12,328,0.00360973,0.00227334,0.00217986,31
+Rotational constant C: GHz,2,13,295,0.00452378,0.00213516,0.00215984,24
+Rotational constant C: GHz,2,14,265,0.00316030,0.00330415,0.00276938,64
+Rotational constant C: GHz,2,15,238,0.00349627,0.00454179,0.00369215,36
+Rotational constant C: GHz,2,16,214,0.00379111,0.00221256,0.00224938,40
+Rotational constant C: GHz,2,17,192,0.00382919,0.00213635,0.00202900,44
+Rotational constant C: GHz,2,18,172,0.00416145,0.00212169,0.00205457,37
+Rotational constant C: GHz,2,19,154,0.00423297,0.00194057,0.00188267,41
+Rotational constant C: GHz,2,20,138,0.00428866,0.00270811,0.00258661,44
+Rotational constant C: GHz,2,21,124,0.00410487,0.00266160,0.00248060,73
+Rotational constant C: GHz,2,22,111,0.00428985,0.00251707,0.00244838,31
+Rotational constant C: GHz,2,23,99,0.00379865,0.00216527,0.00201612,69
+Rotational constant C: GHz,2,24,89,0.00482725,0.00306258,0.00268071,44
+Rotational constant C: GHz,2,25,80,0.00432363,0.00219835,0.00211735,46
+Rotational constant C: GHz,2,26,72,0.00407399,0.00227563,0.00218310,58
+Rotational constant C: GHz,2,27,64,0.00381896,0.00221102,0.00214169,94
+Rotational constant C: GHz,2,28,57,0.00415187,0.00228221,0.00217878,93
+Rotational constant C: GHz,2,29,51,0.00373952,0.00233679,0.00227193,96
+Rotational constant C: GHz,2,30,45,0.00473080,0.00280284,0.00269946,52
+Rotational constant C: GHz,2,31,40,0.00531067,0.00298886,0.00283816,46
+Rotational constant C: GHz,2,32,36,0.00760553,0.00414171,0.00408980,21
+Rotational constant C: GHz,2,33,32,0.00659419,0.00331962,0.00324411,29
+Rotational constant C: GHz,2,34,28,0.00499182,0.00314387,0.00305161,73
+Rotational constant C: GHz,2,35,25,0.00436020,0.00279342,0.00272117,91
+Rotational constant C: GHz,2,36,22,0.00419990,0.00290992,0.00314068,100
+Dipole moment (μ): Debye (D),3,1,1057,0.09132908,0.12360559,0.12569977,70
+Dipole moment (μ): Debye (D),3,2,951,0.08425701,0.12249073,0.12454604,99
+Dipole moment (μ): Debye (D),3,3,855,0.09756096,0.12523160,0.12670676,75
+Dipole moment (μ): Debye (D),3,4,769,0.10423405,0.13245665,0.13224466,77
+Dipole moment (μ): Debye (D),3,5,692,0.09863931,0.13188827,0.13291585,91
+Dipole moment (μ): Debye (D),3,6,622,0.10129616,0.13131021,0.13215480,94
+Dipole moment (μ): Debye (D),3,7,559,0.10263689,0.13432366,0.13546252,92
+Dipole moment (μ): Debye (D),3,8,503,0.10414446,0.13660637,0.13897214,92
+Dipole moment (μ): Debye (D),3,9,452,0.11148806,0.13868673,0.14083802,85
+Dipole moment (μ): Debye (D),3,10,406,0.10920276,0.13866949,0.13690149,100
+Dipole moment (μ): Debye (D),3,11,365,0.11086437,0.13830434,0.13749447,99
+Dipole moment (μ): Debye (D),3,12,328,0.11386296,0.13983108,0.14109760,97
+Dipole moment (μ): Debye (D),3,13,295,0.11831496,0.14628583,0.14564271,100
+Dipole moment (μ): Debye (D),3,14,265,0.12121457,0.14720181,0.14732707,99
+Dipole moment (μ): Debye (D),3,15,238,0.12745169,0.15015425,0.14771768,100
+Dipole moment (μ): Debye (D),3,16,214,0.13967451,0.15749971,0.15445793,100
+Dipole moment (μ): Debye (D),3,17,192,0.14919075,0.16491905,0.16125095,100
+Dipole moment (μ): Debye (D),3,18,172,0.15127670,0.16611838,0.16492945,100
+Dipole moment (μ): Debye (D),3,19,154,0.15177269,0.16486815,0.16387029,100
+Dipole moment (μ): Debye (D),3,20,138,0.15355042,0.16790458,0.16489587,100
+Dipole moment (μ): Debye (D),3,21,124,0.15646175,0.17034512,0.16900693,100
+Dipole moment (μ): Debye (D),3,22,111,0.15571605,0.17313817,0.17097414,100
+Dipole moment (μ): Debye (D),3,23,99,0.15829567,0.17181137,0.16867847,100
+Dipole moment (μ): Debye (D),3,24,89,0.15909468,0.17432948,0.17034580,100
+Dipole moment (μ): Debye (D),3,25,80,0.16617301,0.18298436,0.17673383,100
+Dipole moment (μ): Debye (D),3,26,72,0.17039563,0.18345946,0.17876694,100
+Dipole moment (μ): Debye (D),3,27,64,0.17463706,0.18963977,0.18466733,100
+Dipole moment (μ): Debye (D),3,28,57,0.17707975,0.18996051,0.18443377,100
+Dipole moment (μ): Debye (D),3,29,51,0.17911081,0.19163010,0.18607955,100
+Dipole moment (μ): Debye (D),3,30,45,0.18036424,0.19335564,0.18693562,100
+Dipole moment (μ): Debye (D),3,31,40,0.18312110,0.19363519,0.18922649,100
+Dipole moment (μ): Debye (D),3,32,36,0.18680986,0.20016507,0.19393983,100
+Dipole moment (μ): Debye (D),3,33,32,0.19031684,0.19972084,0.19460543,100
+Dipole moment (μ): Debye (D),3,34,28,0.19650091,0.20659310,0.19992410,100
+Dipole moment (μ): Debye (D),3,35,25,0.19924006,0.20747314,0.20270939,100
+Dipole moment (μ): Debye (D),3,36,22,0.20433910,0.21122924,0.20656667,100
+Isotropic polarizability (α): atomic units (a.u.),4,1,1057,0.00492282,0.00530997,0.00505661,31
+Isotropic polarizability (α): atomic units (a.u.),4,2,951,0.00504498,0.00595956,0.00571961,37
+Isotropic polarizability (α): atomic units (a.u.),4,3,855,0.00494648,0.00683568,0.00637829,44
+Isotropic polarizability (α): atomic units (a.u.),4,4,769,0.00557165,0.00655777,0.00618797,41
+Isotropic polarizability (α): atomic units (a.u.),4,5,692,0.00603630,0.00628695,0.00575466,31
+Isotropic polarizability (α): atomic units (a.u.),4,6,622,0.00577213,0.00701335,0.00674329,49
+Isotropic polarizability (α): atomic units (a.u.),4,7,559,0.00618464,0.00666170,0.00653549,40
+Isotropic polarizability (α): atomic units (a.u.),4,8,503,0.00582336,0.00607006,0.00567136,66
+Isotropic polarizability (α): atomic units (a.u.),4,9,452,0.00638081,0.00672183,0.00612666,47
+Isotropic polarizability (α): atomic units (a.u.),4,10,406,0.00625527,0.00701743,0.00667165,68
+Isotropic polarizability (α): atomic units (a.u.),4,11,365,0.00650146,0.00675133,0.00673864,56
+Isotropic polarizability (α): atomic units (a.u.),4,12,328,0.00643937,0.00668056,0.00618676,74
+Isotropic polarizability (α): atomic units (a.u.),4,13,295,0.00693116,0.00712485,0.00696495,50
+Isotropic polarizability (α): atomic units (a.u.),4,14,265,0.00723532,0.00750186,0.00716392,59
+Isotropic polarizability (α): atomic units (a.u.),4,15,238,0.00759300,0.00737679,0.00686234,64
+Isotropic polarizability (α): atomic units (a.u.),4,16,214,0.00797113,0.00762649,0.00685042,85
+Isotropic polarizability (α): atomic units (a.u.),4,17,192,0.00909490,0.00909609,0.00832084,58
+Isotropic polarizability (α): atomic units (a.u.),4,18,172,0.00913216,0.00846275,0.00767710,72
+Isotropic polarizability (α): atomic units (a.u.),4,19,154,0.00881213,0.00829621,0.00741665,100
+Isotropic polarizability (α): atomic units (a.u.),4,20,138,0.00896123,0.00842367,0.00767937,100
+Isotropic polarizability (α): atomic units (a.u.),4,21,124,0.00927833,0.00852533,0.00760132,100
+Isotropic polarizability (α): atomic units (a.u.),4,22,111,0.00944467,0.00880552,0.00785871,100
+Isotropic polarizability (α): atomic units (a.u.),4,23,99,0.00955320,0.00885800,0.00800197,100
+Isotropic polarizability (α): atomic units (a.u.),4,24,89,0.00989842,0.00898195,0.00807342,100
+Isotropic polarizability (α): atomic units (a.u.),4,25,80,0.01037560,0.01000679,0.00893178,100
+Isotropic polarizability (α): atomic units (a.u.),4,26,72,0.01048062,0.01023660,0.00929345,100
+Isotropic polarizability (α): atomic units (a.u.),4,27,64,0.01092501,0.01006248,0.00915099,100
+Isotropic polarizability (α): atomic units (a.u.),4,28,57,0.01104404,0.01065501,0.00975875,100
+Isotropic polarizability (α): atomic units (a.u.),4,29,51,0.01193439,0.01108660,0.01011426,100
+Isotropic polarizability (α): atomic units (a.u.),4,30,45,0.01232224,0.01130807,0.01028620,100
+Isotropic polarizability (α): atomic units (a.u.),4,31,40,0.01285459,0.01193106,0.01091515,100
+Isotropic polarizability (α): atomic units (a.u.),4,32,36,0.01293306,0.01217324,0.01114749,100
+Isotropic polarizability (α): atomic units (a.u.),4,33,32,0.01323892,0.01238818,0.01135674,100
+Isotropic polarizability (α): atomic units (a.u.),4,34,28,0.01383713,0.01302400,0.01208589,100
+Isotropic polarizability (α): atomic units (a.u.),4,35,25,0.01425038,0.01328554,0.01233547,100
+Isotropic polarizability (α): atomic units (a.u.),4,36,22,0.01445299,0.01351337,0.01256734,100
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,1,1057,0.00660392,0.02990571,0.03115473,62
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,2,951,0.01011873,0.03205216,0.03222746,52
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,3,855,0.01342031,0.03205148,0.03121325,42
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,4,769,0.01017335,0.03231799,0.03272047,55
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,5,692,0.00868031,0.03183863,0.03195100,59
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,6,622,0.01118019,0.04124381,0.04056363,54
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,7,559,0.01130645,0.03348808,0.03453532,54
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,8,503,0.01151689,0.03279656,0.03314871,53
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,9,452,0.01074143,0.03542256,0.03557562,59
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,10,406,0.00712022,0.03598559,0.03682155,79
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,11,365,0.00891104,0.03680894,0.03654164,74
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,12,328,0.01499744,0.03707059,0.03741024,51
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,13,295,0.01243534,0.03734500,0.03731905,62
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,14,265,0.01192187,0.03635842,0.03664822,64
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,15,238,0.01535136,0.03831890,0.03780981,65
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,16,214,0.01556552,0.04217328,0.04068414,75
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,17,192,0.02093800,0.04656222,0.04463158,60
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,18,172,0.01175231,0.04689838,0.04574264,100
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,19,154,0.02482715,0.05064885,0.04781092,56
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,20,138,0.01765174,0.04690899,0.04651480,85
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,21,124,0.03059070,0.04922920,0.04795093,49
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,22,111,0.01706308,0.04761665,0.04721272,92
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,23,99,0.02157493,0.04579272,0.04518599,74
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,24,89,0.02992548,0.04916149,0.04868006,53
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,25,80,0.01692722,0.04565947,0.04526837,100
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,26,72,0.02025184,0.04617529,0.04558191,90
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,27,64,0.02532898,0.05731735,0.05478945,88
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,28,57,0.02471626,0.05961518,0.05700454,90
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,29,51,0.02794366,0.05688060,0.05571107,83
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,30,45,0.02984350,0.05835816,0.05645712,79
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,31,40,0.03940711,0.06225864,0.06110282,58
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,32,36,0.04371855,0.06874920,0.06684093,49
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,33,32,0.03660923,0.06844592,0.06620056,71
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,34,28,0.03237143,0.06283851,0.06119711,79
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,35,25,0.04015258,0.06600236,0.06391258,67
+Energy of HOMO (ϵHOMO): Hartree (Ha),5,36,22,0.04113928,0.06854223,0.06815822,71
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,1,1057,0.01307374,0.00923215,0.00935744,74
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,2,951,0.01283700,0.00899051,0.00876192,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,3,855,0.01374571,0.00980524,0.00978832,82
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,4,769,0.01344665,0.00919336,0.00904601,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,5,692,0.01379328,0.00952277,0.00926221,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,6,622,0.01441186,0.00999845,0.01008143,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,7,559,0.01471292,0.01009714,0.01002325,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,8,503,0.01522685,0.01087201,0.01078241,85
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,9,452,0.01586859,0.01113339,0.01093682,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,10,406,0.01604336,0.01130596,0.01131818,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,11,365,0.01613885,0.01103879,0.01083121,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,12,328,0.01665350,0.01153355,0.01158862,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,13,295,0.01689864,0.01302617,0.01305013,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,14,265,0.01734094,0.01193338,0.01166159,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,15,238,0.01851583,0.01359363,0.01349447,88
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,16,214,0.02094432,0.01474074,0.01468205,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,17,192,0.02204203,0.01634649,0.01576982,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,18,172,0.02337727,0.01742906,0.01675408,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,19,154,0.02380321,0.01760499,0.01707875,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,20,138,0.02436370,0.01833748,0.01778077,97
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,21,124,0.02442437,0.01765354,0.01719328,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,22,111,0.02473547,0.01790751,0.01763756,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,23,99,0.02466806,0.01831671,0.01766967,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,24,89,0.02565795,0.01847819,0.01780203,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,25,80,0.02868643,0.02112443,0.02043707,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,26,72,0.03200171,0.02377671,0.02282549,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,27,64,0.03491377,0.02642185,0.02602992,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,28,57,0.03471995,0.02882825,0.02831197,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,29,51,0.03788467,0.02996830,0.02884036,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,30,45,0.03742557,0.02937992,0.02896806,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,31,40,0.03944851,0.03081052,0.03037633,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,32,36,0.04046804,0.03082704,0.03053175,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,33,32,0.04296682,0.03173716,0.03165042,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,34,28,0.04480109,0.03693928,0.03556098,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,35,25,0.04976987,0.04092049,0.04046064,100
+Energy of LUMO (ϵLUMO): Hartree (Ha),6,36,22,0.05577726,0.04549246,0.04539041,100
+Gap (ϵgap): Hartree (Ha),7,1,1057,0.00338064,0.01321795,0.01388842,81
+Gap (ϵgap): Hartree (Ha),7,2,951,0.00513967,0.01381711,0.01356819,54
+Gap (ϵgap): Hartree (Ha),7,3,855,0.00411027,0.01313410,0.01326590,93
+Gap (ϵgap): Hartree (Ha),7,4,769,0.00602328,0.01418770,0.01413413,46
+Gap (ϵgap): Hartree (Ha),7,5,692,0.00573665,0.01416772,0.01406847,51
+Gap (ϵgap): Hartree (Ha),7,6,622,0.00488249,0.01490206,0.01470201,64
+Gap (ϵgap): Hartree (Ha),7,7,559,0.00510986,0.01465773,0.01492018,60
+Gap (ϵgap): Hartree (Ha),7,8,503,0.00344946,0.01426687,0.01471620,95
+Gap (ϵgap): Hartree (Ha),7,9,452,0.00428487,0.01515120,0.01551661,78
+Gap (ϵgap): Hartree (Ha),7,10,406,0.00588978,0.01695175,0.01663848,58
+Gap (ϵgap): Hartree (Ha),7,11,365,0.00612868,0.01614581,0.01610283,59
+Gap (ϵgap): Hartree (Ha),7,12,328,0.00892017,0.01868636,0.01863097,36
+Gap (ϵgap): Hartree (Ha),7,13,295,0.00507969,0.01761628,0.01870698,76
+Gap (ϵgap): Hartree (Ha),7,14,265,0.00478919,0.01674976,0.01691761,82
+Gap (ϵgap): Hartree (Ha),7,15,238,0.00643554,0.01656647,0.01621652,65
+Gap (ϵgap): Hartree (Ha),7,16,214,0.00589430,0.01743396,0.01694147,77
+Gap (ϵgap): Hartree (Ha),7,17,192,0.00573678,0.01676450,0.01642314,92
+Gap (ϵgap): Hartree (Ha),7,18,172,0.00690463,0.01983613,0.01888358,94
+Gap (ϵgap): Hartree (Ha),7,19,154,0.00767574,0.02093988,0.02053689,80
+Gap (ϵgap): Hartree (Ha),7,20,138,0.00840881,0.02038847,0.01926038,74
+Gap (ϵgap): Hartree (Ha),7,21,124,0.00957211,0.02176272,0.02098067,70
+Gap (ϵgap): Hartree (Ha),7,22,111,0.00730077,0.01996036,0.01959827,100
+Gap (ϵgap): Hartree (Ha),7,23,99,0.00907330,0.02111769,0.02087186,72
+Gap (ϵgap): Hartree (Ha),7,24,89,0.00794698,0.02083823,0.01993223,87
+Gap (ϵgap): Hartree (Ha),7,25,80,0.00981750,0.02348000,0.02276117,74
+Gap (ϵgap): Hartree (Ha),7,26,72,0.00847725,0.02476683,0.02389330,100
+Gap (ϵgap): Hartree (Ha),7,27,64,0.00992457,0.02422813,0.02399546,88
+Gap (ϵgap): Hartree (Ha),7,28,57,0.00970390,0.02546660,0.02499900,87
+Gap (ϵgap): Hartree (Ha),7,29,51,0.01156563,0.02667032,0.02561226,78
+Gap (ϵgap): Hartree (Ha),7,30,45,0.01577923,0.02958434,0.02836574,53
+Gap (ϵgap): Hartree (Ha),7,31,40,0.01275147,0.02815149,0.02720607,71
+Gap (ϵgap): Hartree (Ha),7,32,36,0.01268836,0.02884551,0.02771947,74
+Gap (ϵgap): Hartree (Ha),7,33,32,0.01234487,0.02825235,0.02697303,80
+Gap (ϵgap): Hartree (Ha),7,34,28,0.01094548,0.02991932,0.02865534,100
+Gap (ϵgap): Hartree (Ha),7,35,25,0.01370639,0.03523343,0.03357461,89
+Gap (ϵgap): Hartree (Ha),7,36,22,0.02025518,0.04768822,0.04442931,84
+Electronic spatial extent: atomic units (a.u.),8,1,1057,0.01697830,0.02109535,0.02149531,34
+Electronic spatial extent: atomic units (a.u.),8,2,951,0.01690577,0.01719527,0.01625498,32
+Electronic spatial extent: atomic units (a.u.),8,3,855,0.01740278,0.01584318,0.01523229,36
+Electronic spatial extent: atomic units (a.u.),8,4,769,0.01850212,0.01983998,0.01975891,17
+Electronic spatial extent: atomic units (a.u.),8,5,692,0.01805909,0.01777751,0.01696340,24
+Electronic spatial extent: atomic units (a.u.),8,6,622,0.01735447,0.01704642,0.01625909,38
+Electronic spatial extent: atomic units (a.u.),8,7,559,0.01696021,0.02022171,0.02019404,37
+Electronic spatial extent: atomic units (a.u.),8,8,503,0.01701438,0.01741589,0.01680629,49
+Electronic spatial extent: atomic units (a.u.),8,9,452,0.01820779,0.02034263,0.02054119,23
+Electronic spatial extent: atomic units (a.u.),8,10,406,0.01771331,0.03387208,0.03603719,34
+Electronic spatial extent: atomic units (a.u.),8,11,365,0.01732086,0.01770542,0.01718920,46
+Electronic spatial extent: atomic units (a.u.),8,12,328,0.01851891,0.01892128,0.01840581,22
+Electronic spatial extent: atomic units (a.u.),8,13,295,0.01751266,0.01687139,0.01567005,53
+Electronic spatial extent: atomic units (a.u.),8,14,265,0.01930413,0.02027652,0.01996208,18
+Electronic spatial extent: atomic units (a.u.),8,15,238,0.01807992,0.01903262,0.01855459,54
+Electronic spatial extent: atomic units (a.u.),8,16,214,0.01968020,0.01856076,0.01793030,35
+Electronic spatial extent: atomic units (a.u.),8,17,192,0.01892907,0.01785507,0.01714379,61
+Electronic spatial extent: atomic units (a.u.),8,18,172,0.02067130,0.02043838,0.01980522,37
+Electronic spatial extent: atomic units (a.u.),8,19,154,0.01927484,0.01952266,0.01899728,38
+Electronic spatial extent: atomic units (a.u.),8,20,138,0.01924718,0.01804691,0.01780958,71
+Electronic spatial extent: atomic units (a.u.),8,21,124,0.02153386,0.01996630,0.01944307,29
+Electronic spatial extent: atomic units (a.u.),8,22,111,0.02070930,0.02127953,0.02087288,39
+Electronic spatial extent: atomic units (a.u.),8,23,99,0.01933815,0.01949296,0.01877170,63
+Electronic spatial extent: atomic units (a.u.),8,24,89,0.02010744,0.01985303,0.01930672,47
+Electronic spatial extent: atomic units (a.u.),8,25,80,0.02035967,0.01945763,0.01860542,53
+Electronic spatial extent: atomic units (a.u.),8,26,72,0.02072647,0.02053421,0.01960209,47
+Electronic spatial extent: atomic units (a.u.),8,27,64,0.02018863,0.01942392,0.01886440,60
+Electronic spatial extent: atomic units (a.u.),8,28,57,0.02003284,0.02110376,0.02066535,75
+Electronic spatial extent: atomic units (a.u.),8,29,51,0.02124473,0.02032187,0.01957977,62
+Electronic spatial extent: atomic units (a.u.),8,30,45,0.02105183,0.02177265,0.02127315,60
+Electronic spatial extent: atomic units (a.u.),8,31,40,0.02141809,0.02348009,0.02261184,53
+Electronic spatial extent: atomic units (a.u.),8,32,36,0.02135167,0.02077760,0.01979918,58
+Electronic spatial extent: atomic units (a.u.),8,33,32,0.02252624,0.02189870,0.02148400,48
+Electronic spatial extent: atomic units (a.u.),8,34,28,0.02338880,0.02289294,0.02236265,47
+Electronic spatial extent: atomic units (a.u.),8,35,25,0.02533848,0.02483093,0.02374239,50
+Electronic spatial extent: atomic units (a.u.),8,36,22,0.02522399,0.02440146,0.02387527,69
+Zero point vibrational energy (zpve): Hartree (Ha),9,1,1057,0.00099262,0.00014242,0.00014856,64
+Zero point vibrational energy (zpve): Hartree (Ha),9,2,951,0.00106693,0.00011792,0.00012775,61
+Zero point vibrational energy (zpve): Hartree (Ha),9,3,855,0.00109492,0.00016025,0.00016640,52
+Zero point vibrational energy (zpve): Hartree (Ha),9,4,769,0.00104626,0.00014496,0.00015281,62
+Zero point vibrational energy (zpve): Hartree (Ha),9,5,692,0.00099278,0.00017256,0.00018375,84
+Zero point vibrational energy (zpve): Hartree (Ha),9,6,622,0.00098209,0.00011559,0.00012386,98
+Zero point vibrational energy (zpve): Hartree (Ha),9,7,559,0.00111673,0.00014987,0.00015715,57
+Zero point vibrational energy (zpve): Hartree (Ha),9,8,503,0.00101037,0.00015916,0.00016888,86
+Zero point vibrational energy (zpve): Hartree (Ha),9,9,452,0.00099549,0.00016104,0.00017019,96
+Zero point vibrational energy (zpve): Hartree (Ha),9,10,406,0.00106914,0.00013745,0.00014552,72
+Zero point vibrational energy (zpve): Hartree (Ha),9,11,365,0.00099020,0.00012059,0.00012633,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,12,328,0.00106316,0.00014398,0.00014850,79
+Zero point vibrational energy (zpve): Hartree (Ha),9,13,295,0.00103152,0.00014936,0.00015398,89
+Zero point vibrational energy (zpve): Hartree (Ha),9,14,265,0.00101839,0.00014085,0.00014794,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,15,238,0.00101678,0.00012803,0.00013384,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,16,214,0.00113137,0.00018422,0.00019503,71
+Zero point vibrational energy (zpve): Hartree (Ha),9,17,192,0.00105027,0.00017880,0.00018555,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,18,172,0.00116527,0.00020427,0.00021486,70
+Zero point vibrational energy (zpve): Hartree (Ha),9,19,154,0.00107019,0.00017042,0.00017958,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,20,138,0.00107380,0.00015140,0.00015838,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,21,124,0.00109416,0.00015047,0.00015849,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,22,111,0.00111955,0.00017634,0.00018151,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,23,99,0.00125786,0.00020928,0.00021593,70
+Zero point vibrational energy (zpve): Hartree (Ha),9,24,89,0.00113226,0.00018191,0.00019354,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,25,80,0.00116869,0.00020643,0.00021768,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,26,72,0.00122382,0.00021167,0.00022247,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,27,64,0.00128361,0.00022973,0.00023965,80
+Zero point vibrational energy (zpve): Hartree (Ha),9,28,57,0.00127072,0.00024623,0.00025153,83
+Zero point vibrational energy (zpve): Hartree (Ha),9,29,51,0.00136124,0.00025995,0.00026750,65
+Zero point vibrational energy (zpve): Hartree (Ha),9,30,45,0.00121691,0.00024454,0.00025176,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,31,40,0.00141299,0.00027211,0.00027209,70
+Zero point vibrational energy (zpve): Hartree (Ha),9,32,36,0.00131232,0.00031068,0.00031849,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,33,32,0.00131297,0.00030628,0.00031785,100
+Zero point vibrational energy (zpve): Hartree (Ha),9,34,28,0.00138732,0.00037036,0.00038156,82
+Zero point vibrational energy (zpve): Hartree (Ha),9,35,25,0.00143594,0.00036718,0.00038400,83
+Zero point vibrational energy (zpve): Hartree (Ha),9,36,22,0.00151150,0.00043200,0.00045009,100
+Internal energy at 0 K (U0): Hartree (Ha),10,1,1057,0.00003657,0.00002739,0.00003125,99
+Internal energy at 0 K (U0): Hartree (Ha),10,2,951,0.00002747,0.00003730,0.00003894,75
+Internal energy at 0 K (U0): Hartree (Ha),10,3,855,0.00002737,0.00001426,0.00001666,100
+Internal energy at 0 K (U0): Hartree (Ha),10,4,769,0.00004124,0.00001922,0.00002456,100
+Internal energy at 0 K (U0): Hartree (Ha),10,5,692,0.00002902,0.00001733,0.00002028,100
+Internal energy at 0 K (U0): Hartree (Ha),10,6,622,0.00003214,0.00002282,0.00002551,94
+Internal energy at 0 K (U0): Hartree (Ha),10,7,559,0.00002751,0.00001510,0.00001993,100
+Internal energy at 0 K (U0): Hartree (Ha),10,8,503,0.00004905,0.00003513,0.00003888,81
+Internal energy at 0 K (U0): Hartree (Ha),10,9,452,0.00001653,0.00002046,0.00002506,96
+Internal energy at 0 K (U0): Hartree (Ha),10,10,406,0.00001885,0.00002137,0.00003028,100
+Internal energy at 0 K (U0): Hartree (Ha),10,11,365,0.00001377,0.00001705,0.00002023,100
+Internal energy at 0 K (U0): Hartree (Ha),10,12,328,0.00001260,0.00001739,0.00002287,100
+Internal energy at 0 K (U0): Hartree (Ha),10,13,295,0.00001470,0.00002319,0.00002731,100
+Internal energy at 0 K (U0): Hartree (Ha),10,14,265,0.00001976,0.00002622,0.00002886,82
+Internal energy at 0 K (U0): Hartree (Ha),10,15,238,0.00001809,0.00002255,0.00002748,100
+Internal energy at 0 K (U0): Hartree (Ha),10,16,214,0.00001604,0.00004248,0.00004666,100
+Internal energy at 0 K (U0): Hartree (Ha),10,17,192,0.00001747,0.00002098,0.00002996,88
+Internal energy at 0 K (U0): Hartree (Ha),10,18,172,0.00001881,0.00002154,0.00002535,100
+Internal energy at 0 K (U0): Hartree (Ha),10,19,154,0.00001843,0.00002175,0.00002181,86
+Internal energy at 0 K (U0): Hartree (Ha),10,20,138,0.00001875,0.00002815,0.00002797,100
+Internal energy at 0 K (U0): Hartree (Ha),10,21,124,0.00002115,0.00001844,0.00001843,100
+Internal energy at 0 K (U0): Hartree (Ha),10,22,111,0.00001521,0.00001964,0.00002022,100
+Internal energy at 0 K (U0): Hartree (Ha),10,23,99,0.00001742,0.00001760,0.00001783,100
+Internal energy at 0 K (U0): Hartree (Ha),10,24,89,0.00002266,0.00003075,0.00002936,83
+Internal energy at 0 K (U0): Hartree (Ha),10,25,80,0.00001698,0.00002365,0.00002410,100
+Internal energy at 0 K (U0): Hartree (Ha),10,26,72,0.00001866,0.00001644,0.00001678,100
+Internal energy at 0 K (U0): Hartree (Ha),10,27,64,0.00002269,0.00002293,0.00002321,100
+Internal energy at 0 K (U0): Hartree (Ha),10,28,57,0.00001788,0.00001417,0.00001490,100
+Internal energy at 0 K (U0): Hartree (Ha),10,29,51,0.00001540,0.00002081,0.00002103,100
+Internal energy at 0 K (U0): Hartree (Ha),10,30,45,0.00001593,0.00001606,0.00001627,100
+Internal energy at 0 K (U0): Hartree (Ha),10,31,40,0.00002338,0.00003011,0.00002989,100
+Internal energy at 0 K (U0): Hartree (Ha),10,32,36,0.00002549,0.00002487,0.00002528,100
+Internal energy at 0 K (U0): Hartree (Ha),10,33,32,0.00002533,0.00002568,0.00002528,100
+Internal energy at 0 K (U0): Hartree (Ha),10,34,28,0.00002583,0.00002436,0.00002452,100
+Internal energy at 0 K (U0): Hartree (Ha),10,35,25,0.00003182,0.00003246,0.00003214,81
+Internal energy at 0 K (U0): Hartree (Ha),10,36,22,0.00002949,0.00004402,0.00004459,100
+Internal energy at 298.15 K (U): Hartree (Ha),11,1,1057,0.00008962,0.00017327,0.00016831,62
+Internal energy at 298.15 K (U): Hartree (Ha),11,2,951,0.00007174,0.00006209,0.00005848,40
+Internal energy at 298.15 K (U): Hartree (Ha),11,3,855,0.00007134,0.00005380,0.00006214,42
+Internal energy at 298.15 K (U): Hartree (Ha),11,4,769,0.00007045,0.00005216,0.00005915,49
+Internal energy at 298.15 K (U): Hartree (Ha),11,5,692,0.00007903,0.00004905,0.00006086,52
+Internal energy at 298.15 K (U): Hartree (Ha),11,6,622,0.00011491,0.00010394,0.00010863,66
+Internal energy at 298.15 K (U): Hartree (Ha),11,7,559,0.00009336,0.00009018,0.00009300,58
+Internal energy at 298.15 K (U): Hartree (Ha),11,8,503,0.00065460,0.00013000,0.00014136,48
+Internal energy at 298.15 K (U): Hartree (Ha),11,9,452,0.00010014,0.00007186,0.00008722,98
+Internal energy at 298.15 K (U): Hartree (Ha),11,10,406,0.00007007,0.00005276,0.00007306,56
+Internal energy at 298.15 K (U): Hartree (Ha),11,11,365,0.00007299,0.00004996,0.00006929,45
+Internal energy at 298.15 K (U): Hartree (Ha),11,12,328,0.00006257,0.00006957,0.00008993,70
+Internal energy at 298.15 K (U): Hartree (Ha),11,13,295,0.00007122,0.00008917,0.00010692,48
+Internal energy at 298.15 K (U): Hartree (Ha),11,14,265,0.00006807,0.00010560,0.00011203,76
+Internal energy at 298.15 K (U): Hartree (Ha),11,15,238,0.00008031,0.00005271,0.00005776,53
+Internal energy at 298.15 K (U): Hartree (Ha),11,16,214,0.00006456,0.00004628,0.00004787,60
+Internal energy at 298.15 K (U): Hartree (Ha),11,17,192,0.00004905,0.00004196,0.00004708,55
+Internal energy at 298.15 K (U): Hartree (Ha),11,18,172,0.00005367,0.00008564,0.00008375,71
+Internal energy at 298.15 K (U): Hartree (Ha),11,19,154,0.00005219,0.00002801,0.00002807,58
+Internal energy at 298.15 K (U): Hartree (Ha),11,20,138,0.00004276,0.00011815,0.00011881,85
+Internal energy at 298.15 K (U): Hartree (Ha),11,21,124,0.00003917,0.00001848,0.00001865,65
+Internal energy at 298.15 K (U): Hartree (Ha),11,22,111,0.00004816,0.00006832,0.00006852,73
+Internal energy at 298.15 K (U): Hartree (Ha),11,23,99,0.00004686,0.00004097,0.00004255,60
+Internal energy at 298.15 K (U): Hartree (Ha),11,24,89,0.00005104,0.00004345,0.00004186,62
+Internal energy at 298.15 K (U): Hartree (Ha),11,25,80,0.00005694,0.00007663,0.00007541,72
+Internal energy at 298.15 K (U): Hartree (Ha),11,26,72,0.00004721,0.00002645,0.00002970,93
+Internal energy at 298.15 K (U): Hartree (Ha),11,27,64,0.00004516,0.00003320,0.00003433,73
+Internal energy at 298.15 K (U): Hartree (Ha),11,28,57,0.00005229,0.00002956,0.00003147,77
+Internal energy at 298.15 K (U): Hartree (Ha),11,29,51,0.00005446,0.00004868,0.00005028,57
+Internal energy at 298.15 K (U): Hartree (Ha),11,30,45,0.00006315,0.00004208,0.00004459,65
+Internal energy at 298.15 K (U): Hartree (Ha),11,31,40,0.00005716,0.00006156,0.00006519,100
+Internal energy at 298.15 K (U): Hartree (Ha),11,32,36,0.00010167,0.00010294,0.00011026,95
+Internal energy at 298.15 K (U): Hartree (Ha),11,33,32,0.00010561,0.00008489,0.00009033,100
+Internal energy at 298.15 K (U): Hartree (Ha),11,34,28,0.00011205,0.00012957,0.00013550,100
+Internal energy at 298.15 K (U): Hartree (Ha),11,35,25,0.00015672,0.00018237,0.00018722,79
+Internal energy at 298.15 K (U): Hartree (Ha),11,36,22,0.00016042,0.00014097,0.00014868,100
+Enthalpy at 298.15 K (H): Hartree (Ha),12,1,1057,0.00017524,0.00015377,0.00015542,25
+Enthalpy at 298.15 K (H): Hartree (Ha),12,2,951,0.00020284,0.00004021,0.00004323,39
+Enthalpy at 298.15 K (H): Hartree (Ha),12,3,855,0.00009567,0.00018926,0.00019236,65
+Enthalpy at 298.15 K (H): Hartree (Ha),12,4,769,0.00050062,0.00054718,0.00049418,36
+Enthalpy at 298.15 K (H): Hartree (Ha),12,5,692,0.00007718,0.00079109,0.00080576,65
+Enthalpy at 298.15 K (H): Hartree (Ha),12,6,622,0.00009804,0.00006611,0.00006823,39
+Enthalpy at 298.15 K (H): Hartree (Ha),12,7,559,0.00022844,0.00030237,0.00031785,42
+Enthalpy at 298.15 K (H): Hartree (Ha),12,8,503,0.00021550,0.00039679,0.00037912,39
+Enthalpy at 298.15 K (H): Hartree (Ha),12,9,452,0.00011389,0.00009940,0.00010960,31
+Enthalpy at 298.15 K (H): Hartree (Ha),12,10,406,0.00006736,0.00020876,0.00021137,28
+Enthalpy at 298.15 K (H): Hartree (Ha),12,11,365,0.00009951,0.00017482,0.00016993,33
+Enthalpy at 298.15 K (H): Hartree (Ha),12,12,328,0.00003221,0.00002459,0.00002974,75
+Enthalpy at 298.15 K (H): Hartree (Ha),12,13,295,0.00007597,0.00004809,0.00005712,38
+Enthalpy at 298.15 K (H): Hartree (Ha),12,14,265,0.00010633,0.00103563,0.00100148,33
+Enthalpy at 298.15 K (H): Hartree (Ha),12,15,238,0.00005162,0.00003531,0.00004094,45
+Enthalpy at 298.15 K (H): Hartree (Ha),12,16,214,0.00017442,0.00003049,0.00003193,59
+Enthalpy at 298.15 K (H): Hartree (Ha),12,17,192,0.00035513,0.00007837,0.00007732,60
+Enthalpy at 298.15 K (H): Hartree (Ha),12,18,172,0.00039364,0.00002537,0.00002437,58
+Enthalpy at 298.15 K (H): Hartree (Ha),12,19,154,0.00003525,0.00006335,0.00006332,73
+Enthalpy at 298.15 K (H): Hartree (Ha),12,20,138,0.00009174,0.00033015,0.00032598,22
+Enthalpy at 298.15 K (H): Hartree (Ha),12,21,124,0.00008268,0.00007666,0.00007699,27
+Enthalpy at 298.15 K (H): Hartree (Ha),12,22,111,0.00009409,0.00003244,0.00003363,74
+Enthalpy at 298.15 K (H): Hartree (Ha),12,23,99,0.00006189,0.00004017,0.00004050,38
+Enthalpy at 298.15 K (H): Hartree (Ha),12,24,89,0.00010171,0.00027152,0.00027039,48
+Enthalpy at 298.15 K (H): Hartree (Ha),12,25,80,0.00013364,0.00009552,0.00009219,52
+Enthalpy at 298.15 K (H): Hartree (Ha),12,26,72,0.00015743,0.00002003,0.00002055,76
+Enthalpy at 298.15 K (H): Hartree (Ha),12,27,64,0.00013358,0.00033306,0.00032151,37
+Enthalpy at 298.15 K (H): Hartree (Ha),12,28,57,0.00006540,0.00010358,0.00010333,47
+Enthalpy at 298.15 K (H): Hartree (Ha),12,29,51,0.00007750,0.00004328,0.00004356,60
+Enthalpy at 298.15 K (H): Hartree (Ha),12,30,45,0.00012135,0.00015645,0.00015613,52
+Enthalpy at 298.15 K (H): Hartree (Ha),12,31,40,0.00010733,0.00015812,0.00016246,33
+Enthalpy at 298.15 K (H): Hartree (Ha),12,32,36,0.00010682,0.00005059,0.00005039,60
+Enthalpy at 298.15 K (H): Hartree (Ha),12,33,32,0.00012152,0.00018660,0.00019419,64
+Enthalpy at 298.15 K (H): Hartree (Ha),12,34,28,0.00010934,0.00008707,0.00008731,41
+Enthalpy at 298.15 K (H): Hartree (Ha),12,35,25,0.00007957,0.00005034,0.00005215,65
+Enthalpy at 298.15 K (H): Hartree (Ha),12,36,22,0.00013928,0.00012506,0.00012723,53
+Free energy at 298.15 K (G): Hartree (Ha),13,1,1057,0.00013947,0.00034846,0.00036049,39
+Free energy at 298.15 K (G): Hartree (Ha),13,2,951,0.00016710,0.00014794,0.00015204,29
+Free energy at 298.15 K (G): Hartree (Ha),13,3,855,0.00007806,0.00006680,0.00007107,38
+Free energy at 298.15 K (G): Hartree (Ha),13,4,769,0.00016613,0.00016241,0.00016144,28
+Free energy at 298.15 K (G): Hartree (Ha),13,5,692,0.00009349,0.00004678,0.00004382,34
+Free energy at 298.15 K (G): Hartree (Ha),13,6,622,0.00011671,0.00004712,0.00004311,25
+Free energy at 298.15 K (G): Hartree (Ha),13,7,559,0.00010027,0.00029766,0.00027241,27
+Free energy at 298.15 K (G): Hartree (Ha),13,8,503,0.00009350,0.00004471,0.00004916,43
+Free energy at 298.15 K (G): Hartree (Ha),13,9,452,0.00004883,0.00003310,0.00003605,34
+Free energy at 298.15 K (G): Hartree (Ha),13,10,406,0.00013891,0.00006550,0.00006924,28
+Free energy at 298.15 K (G): Hartree (Ha),13,11,365,0.00009811,0.00013685,0.00014302,30
+Free energy at 298.15 K (G): Hartree (Ha),13,12,328,0.00006834,0.00005667,0.00005174,44
+Free energy at 298.15 K (G): Hartree (Ha),13,13,295,0.00003475,0.00007806,0.00007878,46
+Free energy at 298.15 K (G): Hartree (Ha),13,14,265,0.00012950,0.00011924,0.00013218,29
+Free energy at 298.15 K (G): Hartree (Ha),13,15,238,0.00007349,0.00012613,0.00013324,21
+Free energy at 298.15 K (G): Hartree (Ha),13,16,214,0.00008998,0.00009470,0.00009600,31
+Free energy at 298.15 K (G): Hartree (Ha),13,17,192,0.00003252,0.00001081,0.00001143,56
+Free energy at 298.15 K (G): Hartree (Ha),13,18,172,0.00002560,0.00001741,0.00001695,34
+Free energy at 298.15 K (G): Hartree (Ha),13,19,154,0.00009924,0.00007966,0.00008162,45
+Free energy at 298.15 K (G): Hartree (Ha),13,20,138,0.00003813,0.00001372,0.00001301,44
+Free energy at 298.15 K (G): Hartree (Ha),13,21,124,0.00011543,0.00002656,0.00002584,34
+Free energy at 298.15 K (G): Hartree (Ha),13,22,111,0.00001599,0.00001681,0.00001640,53
+Free energy at 298.15 K (G): Hartree (Ha),13,23,99,0.00002836,0.00003434,0.00003486,34
+Free energy at 298.15 K (G): Hartree (Ha),13,24,89,0.00002333,0.00004151,0.00004150,40
+Free energy at 298.15 K (G): Hartree (Ha),13,25,80,0.00008964,0.00004152,0.00004098,42
+Free energy at 298.15 K (G): Hartree (Ha),13,26,72,0.00003484,0.00009428,0.00009447,36
+Free energy at 298.15 K (G): Hartree (Ha),13,27,64,0.00023814,0.00001500,0.00001578,39
+Free energy at 298.15 K (G): Hartree (Ha),13,28,57,0.00001874,0.00002396,0.00002348,53
+Free energy at 298.15 K (G): Hartree (Ha),13,29,51,0.00002358,0.00001367,0.00001374,77
+Free energy at 298.15 K (G): Hartree (Ha),13,30,45,0.00002850,0.00004836,0.00004855,63
+Free energy at 298.15 K (G): Hartree (Ha),13,31,40,0.00002661,0.00002507,0.00002350,61
+Free energy at 298.15 K (G): Hartree (Ha),13,32,36,0.00004621,0.00002416,0.00002574,69
+Free energy at 298.15 K (G): Hartree (Ha),13,33,32,0.00006737,0.00002294,0.00002328,40
+Free energy at 298.15 K (G): Hartree (Ha),13,34,28,0.00003231,0.00001026,0.00001047,71
+Free energy at 298.15 K (G): Hartree (Ha),13,35,25,0.00003665,0.00002310,0.00002355,33
+Free energy at 298.15 K (G): Hartree (Ha),13,36,22,0.00003973,0.00013311,0.00013083,78
