@@ -197,7 +197,3 @@ Propriedade: Free energy at 298.15 K (G): Hartree (Ha)
     dropout_rate: 0.0
     batch_size: 1024
     weight_decay: 1.2892388869497785e-05
-
-Propriedade: Heat capacity at 298.15 K (Cv): cal/mol·K
-  ERRO: Cannot save file into a non-existent directory: 'optuna_results_Heat_capacity_at_298.15_K_Cv_cal'
-
