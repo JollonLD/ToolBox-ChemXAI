@@ -1130,7 +1130,7 @@ def optimize_and_degrade_all_properties(run_optuna=True, n_trials=50, timeout_pe
     }
 
 
-def get_hyperparameters(file_path='results/optuna/optimization_summary_all_properties.txt'):
+def get_hyperparameters(file_path='Paper/results/optuna/optimization_summary_all_properties.txt'):
     """
     Extrai hiperparâmetros otimizados do arquivo de resumo
     
