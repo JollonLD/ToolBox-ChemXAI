@@ -1204,6 +1204,8 @@ def get_hyperparameters(file_path='Paper/results/optuna/optimization_summary_all
             
             hyperparameters[property_name] = params
         
+        print(hyperparameters)
+
         return hyperparameters
         
     except FileNotFoundError:
