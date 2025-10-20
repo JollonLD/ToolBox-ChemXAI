@@ -963,7 +963,7 @@ def run_degradation_with_params(X, y, best_params, property_name, property_idx, 
     return degradation_results, explanation_results, baseline_results
 
 
-def optimize_and_degrade_all_properties(n_trials=50, timeout_per_property=1800):
+def optimize_and_degrade_all_properties(run_optuna=True, n_trials=50, timeout_per_property=1800):
     """
     Otimiza hiperparâmetros e executa degradação para todas as propriedades do QM9
     """
@@ -1003,31 +1003,36 @@ def optimize_and_degrade_all_properties(n_trials=50, timeout_per_property=1800):
             y_normalized = normalize_prop(y_selected)
             
             # ETAPA 1: Otimização de hiperparâmetros
-            print(f"\n--- ETAPA 1: Otimizando hiperparâmetros ---")
-            study = run_optuna(
-                property_idx=idx,
-                n_trials=n_trials,
-                timeout=timeout_per_property,
-                study_name=f"mlp_qm9_{prop_name.replace(' ', '_').replace(':', '').replace('(', '').replace(')', '')}"
-            )
-            
-            if study.best_trial is None:
-                print(f"ERRO: Nenhum trial foi completado para {prop_name}")
-                optimization_summary[prop_name] = {'error': 'Nenhum trial completado'}
-                continue
-            
-            best_params = study.best_trial.params
-            best_value = study.best_trial.value
-            
-            print(f"Melhor loss de validação: {best_value:.6f}")
-            print(f"Melhores parâmetros: {best_params}")
-            
-            optimization_summary[prop_name] = {
-                'best_value': best_value,
-                'best_params': best_params,
-                'n_trials': len(study.trials)
-            }
-            
+            if run_optuna == True:
+                print(f"\n--- ETAPA 1: Otimizando hiperparâmetros ---")
+                study = run_optuna(
+                    property_idx=idx,
+                    n_trials=n_trials,
+                    timeout=timeout_per_property,
+                    study_name=f"mlp_qm9_{prop_name.replace(' ', '_').replace(':', '').replace('(', '').replace(')', '')}"
+                )
+                
+                if study.best_trial is None:
+                    print(f"ERRO: Nenhum trial foi completado para {prop_name}")
+                    optimization_summary[prop_name] = {'error': 'Nenhum trial completado'}
+                    continue
+                
+                best_params = study.best_trial.params
+                best_value = study.best_trial.value
+                
+                print(f"Melhor loss de validação: {best_value:.6f}")
+                print(f"Melhores parâmetros: {best_params}")
+                
+                optimization_summary[prop_name] = {
+                    'best_value': best_value,
+                    'best_params': best_params,
+                    'n_trials': len(study.trials)
+                }
+            else:
+                # ETAPA 1: Otimização já feita, usando parâmetros ja definidos em optuna/optimization_summary_all_properties.txt
+                best_params = get_hyperparameters()
+
+
             # ETAPA 2: Degradação usando hiperparâmetros otimizados
             print(f"\n--- ETAPA 2: Executando degradação com XAI e Baselines ---")
             degradation_results, explanation_results, baseline_results = run_degradation_with_params(
@@ -1125,6 +1130,90 @@ def optimize_and_degrade_all_properties(n_trials=50, timeout_per_property=1800):
     }
 
 
+def get_hyperparameters(file_path='optimization_summary_all_properties.txt'):
+    """
+    Extrai hiperparâmetros otimizados do arquivo de resumo
+    
+    Args:
+        file_path: Caminho para o arquivo de resumo da otimização
+    
+    Returns:
+        dict: Dicionário com hiperparâmetros por propriedade
+    """
+    hyperparameters = {}
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        properties_sections = content.split('Propriedade: ')[1:]  # Remove header
+        
+        for section in properties_sections:
+            lines = section.strip().split('\n')
+            
+            property_name = lines[0].strip()
+            
+            # Verificar se há erro
+            if 'ERRO:' in section:
+                print(f"Propriedade {property_name} teve erro na otimização")
+                continue
+            
+            params = {}
+            in_params_section = False
+            
+            for line in lines:
+                line = line.strip()
+                
+                if 'Melhor loss de validação:' in line:
+                    # Extrair loss de validação
+                    loss_value = float(line.split(':')[1].strip())
+                    params['best_validation_loss'] = loss_value
+                
+                elif 'Número de trials:' in line:
+                    # Extrair número de trials
+                    n_trials = int(line.split(':')[1].strip())
+                    params['n_trials'] = n_trials
+                
+                elif 'Melhores parâmetros:' in line:
+                    in_params_section = True
+                    continue
+                
+                elif in_params_section and ':' in line:
+                    # Extrair parâmetros individuais
+                    param_name, param_value = line.split(':', 1)
+                    param_name = param_name.strip()
+                    param_value = param_value.strip()
+                    
+                    # Converter tipos apropriados
+                    if param_name in ['n_layers'] or 'layer_' in param_name and '_size' in param_name:
+                        params[param_name] = int(param_value)
+                    elif param_name in ['lr', 'dropout_rate', 'weight_decay']:
+                        params[param_name] = float(param_value)
+                    elif param_name == 'batch_size':
+                        params[param_name] = int(param_value)
+                    else:
+                        params[param_name] = param_value
+            
+            if 'n_layers' in params:
+                layers = []
+                for i in range(params['n_layers']):
+                    layer_key = f'layer_{i}_size'
+                    if layer_key in params:
+                        layers.append(params[layer_key])
+                params['layers'] = layers
+            
+            hyperparameters[property_name] = params
+        
+        return hyperparameters
+        
+    except FileNotFoundError:
+        print(f"Arquivo {file_path} não encontrado!")
+        return {}
+    except Exception as e:
+        print(f"Erro ao ler arquivo: {e}")
+        return {}
+
+
 if __name__ == '__main__':
     # Executar otimização e degradação para todas as propriedades
     print("Iniciando otimização de hiperparâmetros e análise de degradação para todas as propriedades QM9...")
@@ -1135,6 +1224,7 @@ if __name__ == '__main__':
     
     # Executar processo completo
     results = optimize_and_degrade_all_properties(
+        run_optuna=False, # Para nao rodar optuna de novo ja ta salvo os parametros
         n_trials=n_trials,
         timeout_per_property=timeout_per_property
     )
