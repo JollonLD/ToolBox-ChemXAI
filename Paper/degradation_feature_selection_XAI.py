@@ -9,8 +9,12 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression, LassoCV
 from torch.utils.data import Dataset, DataLoader, random_split
+from sklearn.feature_selection import SelectKBest, f_regression, mutual_info_regression, RFE
+
 
 import optuna
 from optuna.trial import TrialState
@@ -71,7 +75,8 @@ class MLP(nn.Module):
 
     def forward(self, x):
         return self.layers(x)
-    
+
+
 def load_mordred_descriptors():
 
     drive_url = "https://drive.google.com/file/d/1U8mCfVmzDcx30f_7OW1CZzytKJLthB0C/view?usp=sharing"
@@ -93,6 +98,7 @@ def load_mordred_descriptors():
     except Exception as e:
         print(f"\nOcorreu um erro: {e}")
 
+
 def dataframe_to_numpy(df):
     """
     Converte DataFrame para arrays NumPy
@@ -106,6 +112,7 @@ def dataframe_to_numpy(df):
     print(f"Features shape: {X.shape}")
     
     return X
+
 
 def get_qm9_desc():
 
@@ -122,6 +129,7 @@ def get_qm9_desc():
     props = np.array(prop)
 
     return feats, props
+
 
 def get_dataloaders(X, y, split=[80, 10, 10], batch_size=512):
     """
@@ -217,6 +225,7 @@ def get_dataloaders(X, y, split=[80, 10, 10], batch_size=512):
     
     return train_loader, val_loader, test_loader
 
+
 def train_with_params(X, y, epochs=100, batch_size=512, lr=0.001, layers=[512, 256, 128], 
                      optimizer_name='Adam', loss_function='L1Loss', dropout_rate=0.0, 
                      weight_decay=0.0, patience=10, device=None):
@@ -302,7 +311,8 @@ def train_with_params(X, y, epochs=100, batch_size=512, lr=0.001, layers=[512, 2
 
     return model, history
 
-def select_features(model, X, device):
+
+def select_features_XAI(model, X, device):
     # Criar split dos dados para SHAP
     X_train, X_test = train_test_split(X, test_size=0.2, random_state=42)
     
@@ -339,6 +349,104 @@ def select_features(model, X, device):
     print(f"Features reduzidas de {n_features} para {n_features_to_keep} ({(1-n_features_to_keep/n_features)*100:.1f}% removidas)")
     
     return X_new, selected_indices, shap_global
+
+# SelectKBest, RFE, mutual_info_regression, LASSO
+def select_features_baselines(X, X_train, y_train, method='selectkbest', k_features=None, random_state=42):
+    
+    n_features_total = X.shape[1]
+    
+    # Definir número de features para manter
+    if k_features is None:
+        k_features = int(n_features_total * 0.9)  # Manter 90% das features (similar ao SHAP)
+    
+    # Garantir mínimo de 20 features
+    k_features = max(k_features, 20)
+    k_features = min(k_features, n_features_total)  # Não exceder total
+    
+    print(f"Selecionando {k_features} features de {n_features_total} usando método: {method}")
+    
+    if method.lower() == 'selectkbest':
+        # SelectKBest com f_regression (correlação linear)
+        selector = SelectKBest(score_func=f_regression, k=k_features)
+        selector.fit(X_train, y_train)
+        
+        selected_indices = selector.get_support(indices=True)
+        feature_scores = selector.scores_
+        
+        print(f"SelectKBest - Features selecionadas: {len(selected_indices)}")
+        
+    elif method.lower() == 'rfe':
+        # Recursive Feature Elimination com Random Forest
+        estimator = RandomForestRegressor(n_estimators=50, random_state=random_state)
+        selector = RFE(estimator=estimator, n_features_to_select=k_features, step=0.1)
+        selector.fit(X_train, y_train)
+        
+        selected_indices = selector.get_support(indices=True)
+        # Para RFE, usar as importâncias do estimador final
+        try:
+            feature_scores = selector.estimator_.feature_importances_
+        except:
+            feature_scores = selector.ranking_  # Ranking das features
+        
+        print(f"RFE - Features selecionadas: {len(selected_indices)}")
+        
+    elif method.lower() == 'mutual_info':
+        # Mutual Information Regression
+        # Primeiro calcular MI scores para todas as features
+        mi_scores = mutual_info_regression(X_train, y_train, random_state=random_state)
+        
+        # Selecionar top k features
+        selected_indices = np.argsort(mi_scores)[::-1][:k_features]
+        selected_indices = np.sort(selected_indices)  # Manter ordem original
+        feature_scores = mi_scores
+        
+        print(f"Mutual Info - Features selecionadas: {len(selected_indices)}")
+        print(f"MI score médio: {np.mean(mi_scores[selected_indices]):.4f}")
+        
+    elif method.lower() == 'lasso':
+        # LASSO com validação cruzada para seleção automática de alpha
+        lasso = LassoCV(cv=5, random_state=random_state, max_iter=2000)
+        lasso.fit(X_train, y_train)
+        
+        # Features com coeficientes não-zero
+        non_zero_coefs = np.abs(lasso.coef_) > 1e-6
+        selected_indices = np.where(non_zero_coefs)[0]
+        
+        # Se LASSO selecionou muito poucas features, usar as top k
+        if len(selected_indices) < 20:
+            print(f"LASSO selecionou apenas {len(selected_indices)} features, usando top {k_features}")
+            coef_abs = np.abs(lasso.coef_)
+            selected_indices = np.argsort(coef_abs)[::-1][:k_features]
+            selected_indices = np.sort(selected_indices)
+        
+        # Se LASSO selecionou muitas features, usar as top k
+        elif len(selected_indices) > k_features:
+            coef_abs = np.abs(lasso.coef_)
+            top_indices = np.argsort(coef_abs[selected_indices])[::-1][:k_features]
+            selected_indices = selected_indices[top_indices]
+            selected_indices = np.sort(selected_indices)
+        
+        feature_scores = np.abs(lasso.coef_)
+        
+        print(f"LASSO - Features selecionadas: {len(selected_indices)}")
+        print(f"Alpha ótimo: {lasso.alpha_:.6f}")
+        
+    else:
+        raise ValueError(f"Método '{method}' não reconhecido. Use: 'selectkbest', 'rfe', 'mutual_info', 'lasso'")
+    
+    # Aplicar seleção ao dataset completo
+    X_selected = X[:, selected_indices]
+    
+    # Estatísticas da seleção
+    reduction_pct = (1 - len(selected_indices) / n_features_total) * 100
+    print(f"Redução de features: {reduction_pct:.1f}% ({n_features_total} → {len(selected_indices)})")
+    
+    if feature_scores is not None:
+        selected_scores = feature_scores[selected_indices] if len(feature_scores) == n_features_total else feature_scores
+        print(f"Score médio das features selecionadas: {np.mean(selected_scores):.4f}")
+    
+    return X_selected, selected_indices, feature_scores
+
 
 def get_fidelity(X, y, model, explanation, sample_size=250):
     """
@@ -640,7 +748,7 @@ def run_optuna(property_idx=10, n_trials=100, timeout=3600, study_name=None):
 
 def run_degradation_with_params(X, y, best_params, property_name, property_idx, device):
     """
-    Executa degradação de features usando hiperparâmetros otimizados
+    Executa degradação de features usando hiperparâmetros otimizados com XAI e métodos baseline
     """
     df_desc = pd.read_csv('Paper/desc_mordred_qm9.csv')
     df_desc.drop(['Unnamed: 0'], axis=1, inplace=True)
@@ -648,94 +756,211 @@ def run_degradation_with_params(X, y, best_params, property_name, property_idx, 
     print(f"Iniciando degradação para {property_name}")
     print(f"Dados iniciais - Features: {X.shape[1]}, Amostras: {X.shape[0]}")
     
-    # Lista para armazenar resultados de cada iteração
+    # Listas para armazenar resultados de cada iteração e método
     degradation_results = []
     explanation_results = []
-
-    current_X = X.copy()
-    current_feature_indices = np.arange(X.shape[1])
+    baseline_results = []
+    
+    # Dicionário para manter features selecionadas por cada método separadamente
+    method_data = {
+        # 'XAI': {
+        #     'current_X': X.copy(),
+        #     'current_feature_indices': np.arange(X.shape[1]),
+        #     'active': True
+        # },
+        'SelectKBest': {
+            'current_X': X.copy(),
+            'current_feature_indices': np.arange(X.shape[1]),
+            'active': True
+        },
+        'RFE': {
+            'current_X': X.copy(),
+            'current_feature_indices': np.arange(X.shape[1]),
+            'active': True
+        },
+        'MutualInfo': {
+            'current_X': X.copy(),
+            'current_feature_indices': np.arange(X.shape[1]),
+            'active': True
+        },
+        'LASSO': {
+            'current_X': X.copy(),
+            'current_feature_indices': np.arange(X.shape[1]),
+            'active': True
+        }
+    }
+    
     iteration = 0
     
-    # Loop de degradação - continua até ter no mínimo 20 features
-    while current_X.shape[1] > 20:
+    # Loop de degradação - continua até que todos os métodos tenham <= 20 features
+    while any(method['active'] and method['current_X'].shape[1] > 20 for method in method_data.values()):
         iteration += 1
-        print(f"Iteração {iteration} - Features: {current_X.shape[1]}")
+        print(f"\n{'='*60}")
+        print(f"ITERAÇÃO {iteration}")
+        print(f"{'='*60}")
         
-        # Treinar modelo com hiperparâmetros otimizados
-        model, history = train_with_params(
-            X=current_X, 
-            y=y,
-            epochs=100,
-            batch_size=best_params['batch_size'],
-            lr=best_params['lr'],
-            layers=[best_params[f'layer_{i}_size'] for i in range(best_params['n_layers'])],
-            optimizer_name=best_params['optimizer'],
-            loss_function=best_params['loss_function'],
-            dropout_rate=best_params['dropout_rate'],
-            weight_decay=best_params.get('weight_decay', 0.0),
-            patience=10,
-            device=device
-        )
-        
-        # Extrair métricas finais
-        final_epoch = history[-1]
-        train_loss = final_epoch[1]
-        val_loss = final_epoch[2] 
-        test_loss = final_epoch[3]
-        
-        print(f"Resultado - Train: {train_loss:.4f}, Val: {val_loss:.4f}, Test: {test_loss:.4f}")
-        
-        # Armazenar resultados
-        degradation_results.append({
-            'property': property_name,
-            'property_idx': property_idx,
-            'iteration': iteration,
-            'n_features': current_X.shape[1],
-            'train_loss': train_loss,
-            'val_loss': val_loss,
-            'test_loss': test_loss,
-            'n_epochs': len(history)
-        })
-
-        # Verificar se deve continuar
-        if current_X.shape[1] <= 20:
-            print(f"Atingiu o limite mínimo de 20 features")
-            break
-        
-        # Selecionar features para próxima iteração
-        try:
-            prev_X = current_X.copy()
-            current_X, selected_indices_relative, shap_explanation = select_features(model, current_X, device)
+        # Processar cada método ativo
+        for method_name, method_info in method_data.items():
+            if not method_info['active'] or method_info['current_X'].shape[1] <= 20:
+                if method_info['active']:
+                    print(f"{method_name}: Atingiu limite mínimo de 20 features - FINALIZADO")
+                    method_info['active'] = False
+                continue
+                
+            print(f"\n--- {method_name} - Features: {method_info['current_X'].shape[1]} ---")
             
-            # Calcular fidelidade (opcional)
-            pos_fidel, neg_fidel = None, None
-            if shap_explanation is not None:
-                try:
-                    pos_fidel, neg_fidel = get_fidelity(prev_X, y, model, shap_explanation)
-                except Exception as e:
-                    print(f"Erro ao calcular fidelidade: {e}")
-            
-            selected_original_indices = current_feature_indices[selected_indices_relative]
-            current_feature_indices = selected_original_indices
-            
-            explanation_results.append({
-                'property': property_name,
-                'property_idx': property_idx,
-                'iteration': iteration,
-                'n_features': current_X.shape[1],
-                'features_selected': df_desc.columns[selected_original_indices].tolist(),
-                'original_indices': selected_original_indices.tolist(),
-                'test_loss': test_loss,
-                'shap_explanation': shap_explanation if shap_explanation is not None else None,
-                'positive_fidelity': float(pos_fidel) if pos_fidel is not None else None,
-                'negative_fidelity': float(neg_fidel) if neg_fidel is not None else None
-            })
-            
-        except Exception as e:
-            print(f"Erro na seleção de features: {e}")
-            break
+            try:
+                # Treinar modelo com os dados atuais do método
+                model, history = train_with_params(
+                    X=method_info['current_X'], 
+                    y=y,
+                    epochs=100,
+                    batch_size=best_params['batch_size'],
+                    lr=best_params['lr'],
+                    layers=[best_params[f'layer_{i}_size'] for i in range(best_params['n_layers'])],
+                    optimizer_name=best_params['optimizer'],
+                    loss_function=best_params['loss_function'],
+                    dropout_rate=best_params['dropout_rate'],
+                    weight_decay=best_params.get('weight_decay', 0.0),
+                    patience=10,
+                    device=device
+                )
+                
+                # Extrair métricas finais
+                final_epoch = history[-1]
+                train_loss = final_epoch[1]
+                val_loss = final_epoch[2] 
+                test_loss = final_epoch[3]
+                
+                print(f"Resultado {method_name} - Train: {train_loss:.4f}, Val: {val_loss:.4f}, Test: {test_loss:.4f}")
+                
+                # Armazenar resultados de degradação
+                degradation_results.append({
+                    'property': property_name,
+                    'property_idx': property_idx,
+                    'method': method_name,
+                    'iteration': iteration,
+                    'n_features': method_info['current_X'].shape[1],
+                    'train_loss': train_loss,
+                    'val_loss': val_loss,
+                    'test_loss': test_loss,
+                    'n_epochs': len(history)
+                })
+                
+                # Verificar se deve continuar
+                if method_info['current_X'].shape[1] <= 20:
+                    print(f"{method_name}: Atingiu o limite mínimo de 20 features")
+                    method_info['active'] = False
+                    continue
+                
+                # Selecionar features para próxima iteração baseado no método
+                prev_X = method_info['current_X'].copy()
+                
+                if method_name == 'XAI':
+                    # Seleção usando SHAP
+                    new_X, selected_indices_relative, shap_explanation = select_features_XAI(model, prev_X, device)
+                    
+                    # Calcular fidelidade
+                    pos_fidel, neg_fidel = None, None
+                    if shap_explanation is not None:
+                        try:
+                            pos_fidel, neg_fidel = get_fidelity(prev_X, y, model, shap_explanation)
+                        except Exception as e:
+                            print(f"Erro ao calcular fidelidade: {e}")
+                    
+                    # Atualizar dados do método XAI
+                    method_info['current_X'] = new_X
+                    selected_original_indices = method_info['current_feature_indices'][selected_indices_relative]
+                    method_info['current_feature_indices'] = selected_original_indices
+                    
+                    # Armazenar resultados de explicação
+                    explanation_results.append({
+                        'property': property_name,
+                        'property_idx': property_idx,
+                        'method': method_name,
+                        'iteration': iteration,
+                        'n_features': new_X.shape[1],
+                        'features_selected': df_desc.columns[selected_original_indices].tolist(),
+                        'original_indices': selected_original_indices.tolist(),
+                        'test_loss': test_loss,
+                        'shap_explanation': shap_explanation if shap_explanation is not None else None,
+                        'positive_fidelity': float(pos_fidel) if pos_fidel is not None else None,
+                        'negative_fidelity': float(neg_fidel) if neg_fidel is not None else None
+                    })
+                    
+                else:
+                    # Seleção usando métodos baseline
+                    # Preparar dados de treino para os baselines
+                    X_train, X_temp, y_train, y_temp = train_test_split(
+                        prev_X, y, test_size=0.2, random_state=42
+                    )
+                    
+                    # Mapear nomes dos métodos
+                    baseline_method_map = {
+                        'SelectKBest': 'selectkbest',
+                        'RFE': 'rfe', 
+                        'MutualInfo': 'mutual_info',
+                        'LASSO': 'lasso'
+                    }
+                    
+                    baseline_method = baseline_method_map[method_name]
+                    
+                    # Aplicar seleção baseline
+                    new_X, selected_indices_relative, feature_scores = select_features_baselines(
+                        X=prev_X,
+                        X_train=X_train,
+                        y_train=y_train,
+                        method=baseline_method,
+                        k_features=None  # Usar 90% das features atuais
+                    )
+                    
+                    # Atualizar dados do método baseline
+                    method_info['current_X'] = new_X
+                    selected_original_indices = method_info['current_feature_indices'][selected_indices_relative]
+                    method_info['current_feature_indices'] = selected_original_indices
+                    
+                    # Armazenar resultados de baseline
+                    baseline_results.append({
+                        'property': property_name,
+                        'property_idx': property_idx,
+                        'method': method_name,
+                        'iteration': iteration,
+                        'n_features': new_X.shape[1],
+                        'features_selected': df_desc.columns[selected_original_indices].tolist(),
+                        'original_indices': selected_original_indices.tolist(),
+                        'test_loss': test_loss,
+                        'feature_scores': feature_scores.tolist() if feature_scores is not None else None,
+                        'baseline_method': baseline_method
+                    })
+                
+                print(f"{method_name}: Features reduzidas para {method_info['current_X'].shape[1]}")
+                
+            except Exception as e:
+                print(f"ERRO em {method_name}: {e}")
+                method_info['active'] = False
+                continue
+                
+    # Resumo final
+    print(f"\n{'='*60}")
+    print(f"DEGRADAÇÃO CONCLUÍDA PARA {property_name}")
+    print(f"{'='*60}")
     
-    return degradation_results, explanation_results
+    active_methods = sum(1 for method in method_data.values() if not method['active'])
+    total_degradation_results = len(degradation_results)
+    total_explanation_results = len(explanation_results)
+    total_baseline_results = len(baseline_results)
+    
+    print(f"Métodos finalizados: {active_methods}/5")
+    print(f"Total de resultados de degradação: {total_degradation_results}")
+    print(f"Total de resultados XAI: {total_explanation_results}")
+    print(f"Total de resultados baseline: {total_baseline_results}")
+    
+    # Mostrar features finais por método
+    for method_name, method_info in method_data.items():
+        final_features = method_info['current_X'].shape[1]
+        print(f"{method_name}: {final_features} features finais")
+    
+    return degradation_results, explanation_results, baseline_results
 
 
 def optimize_and_degrade_all_properties(n_trials=50, timeout_per_property=1800):
@@ -760,10 +985,12 @@ def optimize_and_degrade_all_properties(n_trials=50, timeout_per_property=1800):
     
     all_degradation_results = []
     all_explanation_results = []
+    all_baseline_results = []
     optimization_summary = {}
     
     print(f"Iniciando processamento de {len(properties)} propriedades do QM9")
     print(f"Configuração: {n_trials} trials por propriedade, {timeout_per_property}s timeout")
+    print("Métodos de seleção: XAI (SHAP), SelectKBest, RFE, MutualInfo, LASSO")
     
     for idx, prop_name in enumerate(properties):
         print(f"\n{'='*80}")
@@ -802,8 +1029,8 @@ def optimize_and_degrade_all_properties(n_trials=50, timeout_per_property=1800):
             }
             
             # ETAPA 2: Degradação usando hiperparâmetros otimizados
-            print(f"\n--- ETAPA 2: Executando degradação ---")
-            degradation_results, explanation_results = run_degradation_with_params(
+            print(f"\n--- ETAPA 2: Executando degradação com XAI e Baselines ---")
+            degradation_results, explanation_results, baseline_results = run_degradation_with_params(
                 X=X,
                 y=y_normalized,
                 best_params=best_params,
@@ -815,8 +1042,12 @@ def optimize_and_degrade_all_properties(n_trials=50, timeout_per_property=1800):
             # Armazenar resultados
             all_degradation_results.extend(degradation_results)
             all_explanation_results.extend(explanation_results)
+            all_baseline_results.extend(baseline_results)
             
-            print(f"Degradação concluída: {len(degradation_results)} iterações")
+            print(f"Degradação concluída:")
+            print(f"  - Resultados gerais: {len(degradation_results)} registros")
+            print(f"  - Resultados XAI: {len(explanation_results)} registros")
+            print(f"  - Resultados baseline: {len(baseline_results)} registros")
             
         except Exception as e:
             print(f"ERRO ao processar propriedade {prop_name}: {e}")
@@ -828,21 +1059,40 @@ def optimize_and_degrade_all_properties(n_trials=50, timeout_per_property=1800):
     print("SALVANDO RESULTADOS FINAIS")
     print(f"{'='*80}")
     
-    # Salvar resultados de degradação
+    # Salvar resultados de degradação (todos os métodos)
     if all_degradation_results:
         degradation_df = pd.DataFrame(all_degradation_results)
         degradation_df.to_csv('all_properties_degradation_results.csv', index=False, float_format='%.8f')
         print(f"Resultados de degradação salvos: {len(all_degradation_results)} registros")
+        
+        # Estatísticas por método
+        method_stats = degradation_df.groupby('method').size()
+        print("Registros por método:")
+        for method, count in method_stats.items():
+            print(f"  - {method}: {count} registros")
     
-    # Salvar resultados de explicação
+    # Salvar resultados de explicação (XAI/SHAP)
     if all_explanation_results:
         explanation_df = pd.DataFrame(all_explanation_results)
         explanation_df.to_csv('all_properties_explanation_results.csv', index=False)
-        print(f"Resultados de explicação salvos: {len(all_explanation_results)} registros")
+        print(f"Resultados XAI/SHAP salvos: {len(all_explanation_results)} registros")
+    
+    # Salvar resultados baseline
+    if all_baseline_results:
+        baseline_df = pd.DataFrame(all_baseline_results)
+        baseline_df.to_csv('all_properties_baseline_results.csv', index=False)
+        print(f"Resultados baseline salvos: {len(all_baseline_results)} registros")
+        
+        # Estatísticas por método baseline
+        baseline_method_stats = baseline_df.groupby('method').size()
+        print("Registros por método baseline:")
+        for method, count in baseline_method_stats.items():
+            print(f"  - {method}: {count} registros")
     
     # Salvar resumo de otimização
     with open('optimization_summary_all_properties.txt', 'w') as f:
         f.write("RESUMO DA OTIMIZAÇÃO E DEGRADAÇÃO - TODAS AS PROPRIEDADES QM9\n")
+        f.write("MÉTODOS: XAI (SHAP), SelectKBest, RFE, MutualInfo, LASSO\n")
         f.write("="*80 + "\n\n")
         
         for prop_name, result in optimization_summary.items():
@@ -864,11 +1114,13 @@ def optimize_and_degrade_all_properties(n_trials=50, timeout_per_property=1800):
     print(f"\nESTATÍSTICAS FINAIS:")
     print(f"Propriedades processadas com sucesso: {successful_properties}/{len(properties)}")
     print(f"Total de iterações de degradação: {len(all_degradation_results)}")
-    print(f"Total de explicações geradas: {len(all_explanation_results)}")
+    print(f"Total de explicações XAI geradas: {len(all_explanation_results)}")
+    print(f"Total de resultados baseline gerados: {len(all_baseline_results)}")
     
     return {
         'degradation_results': all_degradation_results,
         'explanation_results': all_explanation_results,
+        'baseline_results': all_baseline_results,
         'optimization_summary': optimization_summary
     }
 
@@ -889,28 +1141,8 @@ if __name__ == '__main__':
     
     print(f"\nProcesso completo finalizado!")
     print(f"Resultados salvos em:")
-    print(f"  - all_properties_degradation_results.csv")
-    print(f"  - all_properties_explanation_results.csv")
-    print(f"  - optimization_summary_all_properties.txt")
-
-
-if __name__ == "__main__":
-    # Executar otimização e degradação para todas as propriedades
-    print("Iniciando otimização de hiperparâmetros e análise de degradação para todas as propriedades QM9...")
-    
-    # Configurar parâmetros
-    n_trials = 30  # Número de trials para otimização por propriedade
-    timeout_per_property = 1200  # 20 minutos por propriedade
-    
-    # Executar processo completo
-    results = optimize_and_degrade_all_properties(
-        n_trials=n_trials,
-        timeout_per_property=timeout_per_property
-    )
-    
-    print(f"\nProcesso completo finalizado!")
-    print(f"Resultados salvos em:")
-    print(f"  - all_properties_degradation_results.csv")
-    print(f"  - all_properties_explanation_results.csv")
+    print(f"  - all_properties_degradation_results.csv (todos os métodos)")
+    print(f"  - all_properties_explanation_results.csv (XAI/SHAP)")
+    print(f"  - all_properties_baseline_results.csv (métodos baseline)")
     print(f"  - optimization_summary_all_properties.txt")
     
