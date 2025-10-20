@@ -1030,7 +1030,18 @@ def optimize_and_degrade_all_properties(run_optuna=True, n_trials=50, timeout_pe
                 }
             else:
                 # ETAPA 1: Otimização já feita, usando parâmetros ja definidos em optuna/optimization_summary_all_properties.txt
-                best_params = get_hyperparameters()
+                all_hyperparameters = get_hyperparameters()
+                
+                # Buscar hiperparâmetros para esta propriedade específica
+                if prop_name in all_hyperparameters:
+                    best_params = all_hyperparameters[prop_name]
+                    print(f"Carregando hiperparâmetros salvos para {prop_name}")
+                    print(f"Parâmetros: {best_params}")
+                else:
+                    print(f"ERRO: Hiperparâmetros não encontrados para {prop_name}")
+                    print(f"Propriedades disponíveis: {list(all_hyperparameters.keys())}")
+                    optimization_summary[prop_name] = {'error': 'Hiperparâmetros não encontrados'}
+                    continue
 
 
             # ETAPA 2: Degradação usando hiperparâmetros otimizados
