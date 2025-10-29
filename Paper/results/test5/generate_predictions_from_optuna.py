@@ -29,8 +29,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]  # ToolBox-ChemXAI root
 RESULTS_DIR = Path(__file__).resolve().parent
+
+# Add ROOT to sys.path so we can import chemxai and Paper modules
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 
 def parse_optuna_txt(path):
@@ -128,7 +132,7 @@ def safe_prop_to_fname(p):
 
 
 def main():
-    optuna_txt = ROOT / 'results' / 'optuna' / 'optimization_summary_all_properties.txt'
+    optuna_txt = ROOT / 'Paper' / 'results' / 'optuna' / 'optimization_summary_all_properties.txt'
     degradation_csv = RESULTS_DIR / 'all_properties_degradation_results.csv'
     explanation_csv = RESULTS_DIR / 'all_properties_explanation_results.csv'
 
@@ -203,7 +207,6 @@ def main():
         # build model via train_with_params if possible
         model = None
         try:
-            sys.path.append(str(ROOT))
             from Paper.degradation_feature_selection_XAI import train_with_params
 
             # build layers list from params if present
