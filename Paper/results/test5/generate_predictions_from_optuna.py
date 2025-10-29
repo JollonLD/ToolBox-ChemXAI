@@ -86,7 +86,7 @@ def safe_literal_eval(s):
 
 def load_descriptors():
     # 1) Try Paper/desc_mordred_qm9.csv
-    csv_path = ROOT / 'desc_mordred_qm9.csv'
+    csv_path = ROOT / 'Paper' / 'desc_mordred_qm9.csv'
     if csv_path.exists():
         print(f"Loading descriptors from {csv_path}")
         df = pd.read_csv(csv_path)
@@ -97,11 +97,12 @@ def load_descriptors():
         try:
             from chemxai.data import qm9_tabular
             qm = qm9_tabular()
-            _, y_all, props = qm.compute_descriptors()  # some implementations return X,y,props
-            # y_all may be 2D
-            return X, np.array(y_all), props
-        except Exception:
-            print("Could not auto-load targets via qm9_tabular; targets will be None.")
+            # load_qm9_dataset returns (coords, props, natoms)
+            coords, props, natoms = qm.load_qm9_dataset()
+            y_all = np.array(props)
+            return X, y_all, props
+        except Exception as e:
+            print(f"Could not auto-load targets via qm9_tabular.load_qm9_dataset(): {e}. Targets will be None.")
             return X, None, None
 
     # 2) Fallback: try qm9_tabular.compute_descriptors
