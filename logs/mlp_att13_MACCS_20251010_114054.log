@@ -1,6 +1,0 @@
-2025-10-10 11:40:54,171 [INFO] Iniciando treinamento do modelo mlp_att13_MACCS
-2025-10-10 11:40:54,171 [INFO] Configuração: att_index=13, epochs=30, layers=[128, 64, 32], lr=0.001, batch_size=32, descriptor_type=MACCS
-2025-10-10 11:40:54,171 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
-2025-10-10 11:40:54,171 [INFO] Carregando dados...
-2025-10-10 11:40:54,263 [INFO] Preparando dataloaders sem ruído...
-2025-10-10 11:40:54,959 [ERROR] Erro ao carregar dados: arrays used as indices must be of integer (or boolean) type

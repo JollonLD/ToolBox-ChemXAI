@@ -1,6 +1,0 @@
-2025-10-09 22:45:57,376 [INFO] Iniciando treinamento do modelo mlp_att4_Autocorr
-2025-10-09 22:45:57,377 [INFO] Configuração: att_index=4, epochs=30, layers=[128, 64, 32], lr=0.001, batch_size=32, descriptor_type=Autocorr
-2025-10-09 22:45:57,377 [INFO] Diretório para modelos: /mnt/hdd/home/jdurao/ToolBox-ChemXAI/models
-2025-10-09 22:45:57,377 [INFO] Carregando dados...
-2025-10-09 22:45:57,461 [INFO] Preparando dataloaders sem ruído...
-2025-10-09 22:45:58,258 [ERROR] Erro ao carregar dados: arrays used as indices must be of integer (or boolean) type
