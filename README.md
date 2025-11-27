@@ -22,6 +22,8 @@ pip install -r requirements.txt
 - `torch` - Deep learning framework
 - `torch-geometric` - PyTorch extension for geometric data
 - `rdkit` - Cheminformatics toolkit
+- `dscribe` - Descriptors for machine learning in materials science
+- `mordred` - Molecular descriptor calculator
 - `shap` - SHAP library for explainability
 - `lime` - LIME library for local explanations
 - `numpy` - Numerical computing
@@ -29,19 +31,166 @@ pip install -r requirements.txt
 - `matplotlib` - Visualization
 - `scikit-learn` - Machine learning
 - `scipy` - Scientific computing
+- `optuna` - Hyperparameter optimization framework
 
 ## 📁 Project Structure
 
 ```
 ToolBox-ChemXAI/
+├── chemxai/
+│   ├── __init__.py
+│   ├── data.py            # Data loading and preprocessing utilities
+│   ├── models.py          # Neural network model architectures
+│   ├── train.py           # Training pipelines and utilities
+│   ├── explainers.py      # Explainability method implementations
+│   ├── evaluate.py        # Classes for evaluation and robustness analysis
+│   └── plots.py           # Visualization functions
 ├── README.md
-├── explainers.py           # Explainability method implementations
-├── evaluate.py             # Classes for evaluation and robustness analysis
-├── plots.py               # Visualization functions
-└── requirements.txt       # Project dependencies
+├── requirements.txt       # Project dependencies
 ```
 
 ## 🔧 Python Modules
+
+### `models.py`
+
+Contains neural network architectures for both tabular and graph-based molecular data.
+
+#### Tabular Models
+
+##### `MLP`
+Multi-Layer Perceptron for regression tasks with molecular descriptors.
+
+**Parameters:**
+- `input_dim`: number of input features
+- `output_dim`: number of output targets (typically 1 for regression)
+- `layers`: list of hidden layer dimensions (e.g., `[256, 128, 64]`)
+- `device`: computation device (CPU or GPU)
+- `lr`: learning rate (default: 0.001)
+
+**Methods:**
+- `forward(x)`: forward pass through the network
+
+**Features:**
+- Flexible architecture with configurable hidden layers
+- ReLU activation functions
+- L1Loss (MAE) criterion for training
+- Adam optimizer
+
+#### Graph-Based Models
+
+##### `GCN`
+Graph Convolutional Network for molecular property prediction from molecular graphs.
+
+**Parameters:**
+- `num_features`: number of node features
+- `hidden_dim`: dimension of hidden layers (default: 256)
+
+**Methods:**
+- `forward(x, edge_index, batch=None)`: forward pass on graph data
+
+**Architecture:**
+- 3 GCN convolutional layers with batch normalization
+- Global pooling for graph-level predictions
+- Dropout (0.3) for regularization
+- 2 fully connected layers for final prediction
+
+### `train.py`
+
+Provides comprehensive training pipelines for both MLP and GCN models with extensive logging and monitoring.
+
+#### Main Functions
+
+##### `train_mlp_qm9(att_index, epochs, layers, learning_rate, ...)`
+Trains an MLP model on QM9 dataset with molecular descriptors.
+
+**Parameters:**
+- `att_index`: index of QM9 property to predict (0-14)
+- `epochs`: number of training epochs (default: 10)
+- `layers`: list of hidden layer dimensions (default: `[64, 32]`)
+- `learning_rate`: learning rate (default: 1e-3)
+- `batch_size`: batch size (default: 32)
+- `n_noise`: number of noise features to add (default: 3)
+- `descriptor_type`: type of molecular descriptor. Options:
+  - `'CM'`: Coulomb Matrix
+  - `'Morgan'`: Morgan fingerprints (ECFP)
+  - `'MorganCount'`: Morgan fingerprints with counts
+  - `'Physicochemical'`: 2D physicochemical descriptors
+  - `'3D'`: 3D geometry-based descriptors
+  - `'MACCS'`: MACCS keys (166 bits)
+  - `'Topological'`: Topological fingerprints
+  - `'AtomPair'`: Atom pair fingerprints
+  - `'EState'`: E-state fingerprints
+  - `'Pattern'`: SMARTS pattern fingerprints
+  - `'Avalon'`: Avalon fingerprints
+  - `'Autocorr'`: 2D autocorrelation descriptors
+- `cache_descriptors`: whether to cache descriptors (default: True)
+- `morgan_radius`: radius for Morgan fingerprints (default: 2)
+- `morgan_nBits`: number of bits for fingerprints (default: 512)
+- `log_dir`: directory for detailed logs (default: "logs")
+- `layer_name`: identifier for model size (default: 'medium')
+
+**Returns:**
+- List of tuples `(epoch, train_loss, val_loss)` for each epoch
+
+**Features:**
+- Comprehensive logging with timestamps
+- Automatic model checkpointing
+- Early stopping with patience
+- Training/validation/test split
+- Support for noise injection experiments
+- Detailed metrics tracking (MAE, MSE, R²)
+- JSON export of training history
+
+##### `train_gcn_qm9(target_idx, epochs, batch_size, lr, ...)`
+Trains a GCN model on QM9 molecular graphs.
+
+**Parameters:**
+- `target_idx`: index of target property (default: 3)
+- `epochs`: number of training epochs (default: 10)
+- `batch_size`: batch size (default: 64)
+- `lr`: learning rate (default: 0.001)
+- `weight_decay`: L2 regularization (default: 1e-4)
+- `n_noise`: number of noise features (default: 0)
+- `log_dir`: logging directory (default: "logs")
+
+**Returns:**
+- Trained model and training history
+
+**Features:**
+- Graph-level property prediction
+- Support for noisy feature experiments
+- Automatic best model saving
+- Comprehensive logging and metrics
+- Training curves visualization
+
+##### `setup_logging(log_dir)`
+Configures logging system with file and console output.
+
+**Parameters:**
+- `log_dir`: directory for log files (default: "logs")
+
+**Returns:**
+- Path to the created log file
+
+**Features:**
+- Timestamped log files
+- Dual output (file + console)
+- Structured logging format
+
+### `data.py`
+
+Provides comprehensive data loading and preprocessing utilities for molecular datasets, with caching and parallel processing for efficiency.
+
+**Key Classes:**
+- `graph_datasets`: Handler for graph-based molecular datasets (PCQM4Mv2, QM9)
+- `qm9_tabular`: Handler for QM9 dataset with tabular descriptor computation
+
+**Key Features:**
+- Multiple molecular descriptor types support
+- Automatic caching for faster reloading
+- Parallel processing for descriptor computation
+- Noise injection capabilities for robustness testing
+- Paired dataloaders for clean/noisy model comparison
 
 ### `explainers.py`
 
@@ -209,7 +358,71 @@ Creates horizontal bar plot for feature importance.
 
 ## 💻 Usage Examples
 
-### Example 1: Tabular SHAP Explanation
+### Example 1: Training an MLP Model
+
+```python
+from chemxai.train import train_mlp_qm9
+
+# Train MLP with Morgan fingerprints for property prediction
+history = train_mlp_qm9(
+    att_index=10,  # Internal energy at 0K (U0)
+    epochs=100,
+    layers=[512, 256, 128],
+    learning_rate=1e-3,
+    batch_size=64,
+    descriptor_type='Morgan',
+    morgan_radius=3,
+    morgan_nBits=2048,
+    layer_name='large'
+)
+
+# Model is automatically saved to models/mlp_qm9_Morgan_att10_large.pth
+print(f"Training completed. Final validation loss: {history[-1][2]:.4f}")
+```
+
+### Example 2: Training a GCN Model
+
+```python
+from chemxai.train import train_gcn_qm9
+
+# Train GCN on molecular graphs
+model, history = train_gcn_qm9(
+    target_idx=3,  # Dipole moment
+    epochs=50,
+    batch_size=32,
+    lr=0.001,
+    weight_decay=1e-4
+)
+
+print(f"Best validation MAE: {min([h[2] for h in history]):.4f}")
+```
+
+### Example 3: Computing Molecular Descriptors
+
+```python
+from chemxai.data import qm9_tabular
+
+# Initialize QM9 handler
+qm9 = qm9_tabular()
+
+# Compute different types of descriptors
+X_morgan, Y, props = qm9.compute_descriptors(
+    descriptor_type='Morgan',
+    morgan_radius=3,
+    morgan_nBits=512,
+    att_index=10
+)
+
+X_coulomb, Y, props = qm9.compute_descriptors(
+    descriptor_type='CM',
+    att_index=10
+)
+
+print(f"Morgan fingerprints shape: {X_morgan.shape}")
+print(f"Coulomb matrix shape: {X_coulomb.shape}")
+```
+
+### Example 4: Tabular SHAP Explanation
 
 ```python
 import torch
@@ -237,7 +450,7 @@ global_explanation = explainer.explain_global()
 print(f"Global importance: {global_explanation}")
 ```
 
-### Example 2: GNNExplainer for Graphs
+### Example 5: GNNExplainer for Graphs
 
 ```python
 from explainers import GNNExplain
@@ -262,7 +475,7 @@ print(f"Node importance: {node_mask}")
 print(f"Edge importance: {edge_mask}")
 ```
 
-### Example 3: Robustness Evaluation
+### Example 6: Robustness Evaluation
 
 ```python
 from evaluate import Evaluator
@@ -287,7 +500,7 @@ print(f"Average similarity: {np.mean(similarities)}")
 print(f"Average L1 difference: {np.mean(l1_diffs)}")
 ```
 
-### Example 4: Molecular Fingerprint Analysis
+### Example 7: Molecular Fingerprint Analysis
 
 ```python
 from evaluate import FingerprintAnalyzer
@@ -310,7 +523,7 @@ result = analyzer.analyze()
 print(result)
 ```
 
-### Example 5: Explanation Visualization
+### Example 8: Explanation Visualization
 
 ```python
 from plots import horizontal_bar_plot, radar_plot
@@ -336,7 +549,7 @@ fig_radar, ax_radar = radar_plot(
 )
 ```
 
-### Example 6: Graph-Level SHAP Analysis
+### Example 9: Graph-Level SHAP Analysis
 
 ```python
 from explainers import GraphShap
@@ -357,7 +570,7 @@ shap_values = explainer.explain(num_samples=50)
 print(f"Graph SHAP values: {shap_values}")
 ```
 
-### Example 7: Node-Level Analysis with NodeGraphLIME
+### Example 10: Node-Level Analysis with NodeGraphLIME
 
 ```python
 from explainers import NodeGrapLIME
