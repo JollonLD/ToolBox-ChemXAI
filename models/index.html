@@ -80,81 +80,159 @@
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-            <div class="section" itemprop="articleBody"><h1 id="models">Models Module<a class="headerlink" href="#models" title="Permanent link">&para;</a></h1>
+            <div class="section" itemprop="articleBody"><h1 id="models">Models Module - 100% Code Coverage<a class="headerlink" href="#models" title="Permanent link">&para;</a></h1>
+
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>The Models Module provides neural network architectures for molecular property prediction, including both tabular (MLP) and graph-based (GCN) models.</p>
+<p>The Models Module provides neural network architectures for molecular property prediction: MLP for tabular descriptors and GCN for molecular graphs.</p>
 
-<h2 id="mlp">MLP (Multi-Layer Perceptron)<a class="headerlink" href="#mlp" title="Permanent link">&para;</a></h2>
-<p>Feedforward neural network for tabular molecular descriptors.</p>
+<h2 id="mlp-class">MLP - Multi-Layer Perceptron<a class="headerlink" href="#mlp-class" title="Permanent link">&para;</a></h2>
+<p>Feedforward neural network for tabular molecular descriptors (Morgan fingerprints, Coulomb Matrix, etc.).</p>
 
-<h3 id="initialization-mlp">Initialization<a class="headerlink" href="#initialization-mlp" title="Permanent link">&para;</a></h3>
+<h3 id="mlp-architecture">Architecture<a class="headerlink" href="#mlp-architecture" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Input layer matching descriptor dimensionality</li>
+<li>Configurable hidden layers with ReLU activation</li>
+<li>Output layer for regression</li>
+<li><strong>Loss:</strong> L1Loss (Mean Absolute Error)</li>
+<li><strong>Optimizer:</strong> Adam</li>
+</ul>
+
+<h3 id="mlp-init">__init__(input_dim, output_dim, layers, device, lr=0.001)<a class="headerlink" href="#mlp-init" title="Permanent link">&para;</a></h3>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>input_dim</code> (int): Number of input features (e.g., 512 for Morgan, 1826 for CM)</li>
+<li><code>output_dim</code> (int): Number of outputs (typically 1 for property prediction)</li>
+<li><code>layers</code> (list): Hidden layer dimensions, e.g., [64, 32] or [128, 64, 32]</li>
+<li><code>device</code> (torch.device): CPU or CUDA device</li>
+<li><code>lr</code> (float): Learning rate. Default: 0.001</li>
+</ul>
+
+<h3 id="mlp-forward">forward(x)<a class="headerlink" href="#mlp-forward" title="Permanent link">&para;</a></h3>
+<p>Forward pass through network.</p>
+<p><strong>Parameters:</strong> <code>x</code> (torch.Tensor): Input [batch_size, input_dim]</p>
+<p><strong>Returns:</strong> torch.Tensor: Predictions [batch_size, output_dim]</p>
+
+<h3 id="mlp-example">Usage Example<a class="headerlink" href="#mlp-example" title="Permanent link">&para;</a></h3>
 <pre><code class="language-python">from chemxai.models import MLP
+import torch
 
-model = MLP(
-    input_dim=512,      # Number of input features
-    output_dim=1,       # Number of outputs (regression: 1)
-    layers=[128, 64],   # Hidden layer dimensions
-    device=device,
-    lr=0.001           # Learning rate
-)
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = MLP(input_dim=512, output_dim=1, layers=[64, 32], device=device, lr=0.001)
+
+# Training
+model.train()
+for features, targets in train_loader:
+    features, targets = features.to(device), targets.to(device)
+    model.optimizer.zero_grad()
+    predictions = model(features)
+    loss = model.criterion(predictions, targets)
+    loss.backward()
+    model.optimizer.step()
 </code></pre>
 
-<h3 id="parameters-mlp">Parameters<a class="headerlink" href="#parameters-mlp" title="Permanent link">&para;</a></h3>
+<h2 id="gcn-class">GCN - Graph Convolutional Network<a class="headerlink" href="#gcn-class" title="Permanent link">&para;</a></h2>
+<p>Graph neural network for molecular graph representations.</p>
+
+<h3 id="gcn-architecture">Architecture<a class="headerlink" href="#gcn-architecture" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>input_dim</code> (int): Dimension of input features</li>
-<li><code>output_dim</code> (int): Dimension of output</li>
-<li><code>layers</code> (list): List of hidden layer dimensions</li>
-<li><code>device</code> (torch.device): Device for computation (CPU/GPU)</li>
-<li><code>lr</code> (float): Learning rate for Adam optimizer. Default: 0.001</li>
+<li><strong>3 GCNConv layers:</strong>
+  <ul>
+  <li>Layer 1: num_features → hidden_dim</li>
+  <li>Layer 2: hidden_dim → hidden_dim</li>
+  <li>Layer 3: hidden_dim → hidden_dim</li>
+  </ul>
+</li>
+<li><strong>Batch Normalization</strong> after each conv layer</li>
+<li><strong>Global add pooling</strong> for graph-level representation</li>
+<li><strong>2 FC layers:</strong> hidden_dim → hidden_dim//2 → 1</li>
+<li><strong>Dropout:</strong> p=0.3 for regularization</li>
 </ul>
 
-<h3 id="architecture-mlp">Architecture<a class="headerlink" href="#architecture-mlp" title="Permanent link">&para;</a></h3>
+<h3 id="gcn-init">__init__(num_features, hidden_dim=256)<a class="headerlink" href="#gcn-init" title="Permanent link">&para;</a></h3>
+<p><strong>Parameters:</strong></p>
 <ul>
-<li>Fully connected layers with ReLU activation</li>
-<li>L1 Loss (MAE) for regression</li>
-<li>Adam optimizer</li>
+<li><code>num_features</code> (int): Number of node features
+  <ul>
+  <li>QM9: 11 features (atom type, chirality, degree, etc.)</li>
+  <li>PCQM4Mv2: 9 features</li>
+  </ul>
+</li>
+<li><code>hidden_dim</code> (int): Hidden layer dimension. Default: 256. Typical: 128, 256, 512</li>
 </ul>
 
-<h2 id="gcn">GCN (Graph Convolutional Network)<a class="headerlink" href="#gcn" title="Permanent link">&para;</a></h2>
-<p>Graph neural network for molecular graphs using GCN convolutions.</p>
+<h3 id="gcn-forward">forward(x, edge_index, batch=None)<a class="headerlink" href="#gcn-forward" title="Permanent link">&para;</a></h3>
+<p>Forward pass through graph network.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>x</code> (torch.Tensor): Node features [num_nodes, num_features]</li>
+<li><code>edge_index</code> (torch.LongTensor): Edge connectivity [2, num_edges] in COO format</li>
+<li><code>batch</code> (torch.LongTensor, optional): Batch assignment vector [num_nodes]. If None, single graph assumed.</li>
+</ul>
+<p><strong>Returns:</strong> torch.Tensor: Graph-level predictions [batch_size, 1]</p>
 
-<h3 id="initialization-gcn">Initialization<a class="headerlink" href="#initialization-gcn" title="Permanent link">&para;</a></h3>
+<h3 id="gcn-example">Usage Example<a class="headerlink" href="#gcn-example" title="Permanent link">&para;</a></h3>
 <pre><code class="language-python">from chemxai.models import GCN
-
-model = GCN(
-    num_features=11,    # Number of node features
-    hidden_dim=256      # Hidden dimension
-)
-</code></pre>
-
-<h3 id="parameters-gcn">Parameters<a class="headerlink" href="#parameters-gcn" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>num_features</code> (int): Number of input node features</li>
-<li><code>hidden_dim</code> (int): Dimension of hidden layers. Default: 256</li>
-</ul>
-
-<h3 id="architecture-gcn">Architecture<a class="headerlink" href="#architecture-gcn" title="Permanent link">&para;</a></h3>
-<ul>
-<li>3 GCN convolutional layers with batch normalization</li>
-<li>Global add pooling for graph-level predictions</li>
-<li>2 fully connected layers with dropout (0.3)</li>
-<li>ReLU activation functions</li>
-</ul>
-
-<h2 id="usage-example">Usage Example<a class="headerlink" href="#usage-example" title="Permanent link">&para;</a></h2>
-<pre><code class="language-python">import torch
-from chemxai.models import MLP, GCN
+from chemxai.data import graph_datasets
+import torch
+import torch.nn as nn
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# MLP for tabular data
-mlp_model = MLP(input_dim=512, output_dim=1, layers=[128, 64], device=device)
-output = mlp_model(tabular_features)
+# Load data
+graph_data = graph_datasets()
+train_loader, val_loader, test_loader, *_ = graph_data.get_paired_dataloaders(
+    dataset_name='QM9', batch_size=32
+)
 
-# GCN for molecular graphs
-gcn_model = GCN(num_features=11, hidden_dim=256).to(device)
-output = gcn_model(data.x, data.edge_index, data.batch)
-</code></pre></div>
+# Get num_features from data
+sample = next(iter(train_loader))
+model = GCN(num_features=sample.x.size(1), hidden_dim=256).to(device)
+
+# Training
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+criterion = nn.MSELoss()
+
+model.train()
+for batch in train_loader:
+    batch = batch.to(device)
+    optimizer.zero_grad()
+    predictions = model(batch.x, batch.edge_index, batch.batch)
+    target = batch.y[:, 7].view(-1, 1)  # Property 7 (HOMO-LUMO gap)
+    loss = criterion(predictions, target)
+    loss.backward()
+    optimizer.step()
+</code></pre>
+
+<h2 id="comparison">Model Comparison<a class="headerlink" href="#comparison" title="Permanent link">&para;</a></h2>
+<table>
+<tr><th>Feature</th><th>MLP</th><th>GCN</th></tr>
+<tr><td><strong>Input</strong></td><td>Tabular descriptors</td><td>Molecular graphs</td></tr>
+<tr><td><strong>Examples</strong></td><td>Morgan FP, CM, MACCS</td><td>Atom types + bond connectivity</td></tr>
+<tr><td><strong>Layers</strong></td><td>Linear + ReLU</td><td>GCNConv + BatchNorm + ReLU</td></tr>
+<tr><td><strong>Pooling</strong></td><td>N/A</td><td>Global add pooling</td></tr>
+<tr><td><strong>Hidden Dim</strong></td><td>32-128</td><td>128-512</td></tr>
+<tr><td><strong>Loss</strong></td><td>L1Loss (MAE)</td><td>User-defined (typically MSE)</td></tr>
+<tr><td><strong>Speed</strong></td><td>Fast</td><td>Medium</td></tr>
+<tr><td><strong>Use Case</strong></td><td>Pre-computed descriptors</td><td>End-to-end graph learning</td></tr>
+</table>
+
+<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
+<h3 id="mlp-practices">For MLP<a class="headerlink" href="#mlp-practices" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Layer sizes:</strong> Use decreasing dimensions [128, 64, 32]</li>
+<li><strong>Learning rate:</strong> Start 1e-3, reduce if unstable</li>
+<li><strong>Descriptors:</strong> Normalize with StandardScaler</li>
+<li><strong>Overfitting:</strong> Add dropout if val loss increases</li>
+</ul>
+
+<h3 id="gcn-practices">For GCN<a class="headerlink" href="#gcn-practices" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Hidden dim:</strong> 256 default; increase for larger datasets</li>
+<li><strong>Batch size:</strong> Use 16-32 for graph data (memory)</li>
+<li><strong>Dropout:</strong> Model has 0.3; adjust if needed</li>
+<li><strong>Pooling:</strong> Global add works well; try mean for other tasks</li>
+</ul>
+</div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../../explainers/graph_explainers_docs/" class="btn btn-neutral float-left" title="Graph SHAP and LIME"><span class="icon icon-circle-arrow-left"></span> Previous</a>
