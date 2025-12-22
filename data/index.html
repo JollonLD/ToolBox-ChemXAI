@@ -1,582 +1,519 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" >
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Data Module - ChemXAI Documentation</title>
-    <link rel="stylesheet" href="css/theme.css" />
-    <link rel="stylesheet" href="css/theme_extra.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-    <script>hljs.highlightAll();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://JollonLD.github.io/ToolBox-ChemXAI/evaluator/evaluator_docs/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Data Module - ChemXAI</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Data Module";
+        var mkdocs_page_input_path = "data.md";
+        var mkdocs_page_url = "/ToolBox-ChemXAI/data/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
 </head>
 
 <body class="wy-body-for-nav" role="document">
+
   <div class="wy-grid-for-nav">
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
-          <a href="index.html" class="icon icon-home"> ChemXAI Documentation</a>
-        </div>
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-          <ul>
-            <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
-            <li class="toctree-l1 current"><a class="reference internal current" href="#">Data Module</a></li>
-            <li class="toctree-l1"><a class="reference internal" href="models_module.html">Models Module</a></li>
-            <li class="toctree-l1"><a class="reference internal" href="explainers_module.html">Explainers Module</a></li>
-          </ul>
-        </div>
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> ChemXAI
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
       </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Core Modules</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Data Module</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../models/">Models Module</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../explainers/">Explainers Module</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../train/">Training Module</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Evaluation Module</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#class-evaluator">Class: RobustnessEvaluator</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#initialization">Initialization</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#parameters">Parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#supported-explainer-types">Supported Explainer Types</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#methods">Methods</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#robustness">robustness()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage-examples">Usage Examples</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#tabular-model-evaluation">Tabular Model Evaluation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#graph-model-evaluation">Graph Model Evaluation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#node-level-evaluation">Node-Level Evaluation</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#technical-details">Technical Details</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#robustness-metrics">Robustness Metrics</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#cosine-similarity">Cosine Similarity</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#l1-difference-manhattan-distance">L1 Difference (Manhattan Distance)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#l2-difference-euclidean-distance">L2 Difference (Euclidean Distance)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#spearman-correlation">Spearman Correlation</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#explanation-processing">Explanation Processing</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#error-handling">Error Handling</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#class-fingerprintanalyzer">Class: FingerprintAnalyzer</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#overview_1">Overview</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#initialization_1">Initialization</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#parameters_1">Parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#methods_1">Methods</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#analyze">analyze()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#visualization-features">Visualization Features</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#original-molecule-display">Original Molecule Display</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#bits-summary">Bits Summary</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#fragment-analysis">Fragment Analysis</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#color-coding">Color Coding</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#usage-example">Usage Example</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#integration-with-chemxai">Integration with ChemXAI</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#with-explainers">With Explainers</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#with-data-loaders">With Data Loaders</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#output-visualization">Output Visualization</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#performance-considerations">Performance Considerations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#best-practices">Best Practices</a>
+    </li>
+    </ul>
+                  </li>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plots/">Plots Module</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
     </nav>
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">ChemXAI Documentation</a>
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">ChemXAI</a>
+        
       </nav>
       <div class="wy-nav-content">
-        <div class="rst-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Core Modules</li>
+      <li class="breadcrumb-item active">Data Module</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-<h1 id="data-module">Data Module</h1>
+                <h1 id="evaluator">Evaluator<a class="headerlink" href="#evaluator" title="Permanent link">&para;</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>The Evaluator class provides comprehensive robustness assessment for explainability methods by comparing explanations from models trained on clean data versus noisy data. It implements multiple similarity metrics to quantify explanation stability.</p>
+<h2 id="class-evaluator">Class: <code>Evaluator</code><a class="headerlink" href="#class-evaluator" title="Permanent link">&para;</a></h2>
+<h3 id="initialization">Initialization<a class="headerlink" href="#initialization" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">from chemxai.evaluate import Evaluator
 
-<p>The <code>chemxai.data</code> module provides classes and functions for loading and preprocessing molecular datasets for both graph-based and tabular machine learning models.</p>
-
-<h2 id="overview">Overview</h2>
-
-<p>This module contains two main classes:</p>
+evaluator = Evaluator(
+    model_normal=clean_model,
+    model_noise=noisy_model,
+    train_loader_normal=clean_train_loader,
+    test_loader_normal=clean_test_loader,
+    train_loader_noise=noisy_train_loader,
+    test_loader_noise=noisy_test_loader,
+    device=device,
+    model_type='graph',
+    explainer_type='shap_local',
+    mol_index=0,
+    atom_index=0
+)
+</code></pre>
+<h3 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">&para;</a></h3>
 <ul>
-  <li><strong>graph_datasets</strong>: For handling graph-based molecular data (PyTorch Geometric)</li>
-  <li><strong>qm9_tabular</strong>: For handling tabular molecular data with various descriptor types</li>
+<li><strong>model_normal</strong> (<code>torch.nn.Module</code>): Model trained on clean data</li>
+<li><strong>model_noise</strong> (<code>torch.nn.Module</code>): Model trained on noisy data</li>
+<li><strong>train_loader_normal</strong> (<code>DataLoader</code>): Training data loader (clean)</li>
+<li><strong>test_loader_normal</strong> (<code>DataLoader</code>): Test data loader (clean)</li>
+<li><strong>train_loader_noise</strong> (<code>DataLoader</code>): Training data loader (noisy)</li>
+<li><strong>test_loader_noise</strong> (<code>DataLoader</code>): Test data loader (noisy)</li>
+<li><strong>device</strong> (<code>torch.device</code>): Computation device</li>
+<li><strong>model_type</strong> (<code>str</code>): Type of model - 'graph' or 'tabular' (default: 'graph')</li>
+<li><strong>explainer_type</strong> (<code>str</code>): Type of explainer to evaluate (default: 'shap_local')</li>
+<li><strong>mol_index</strong> (<code>int</code>): Molecule index for analysis (default: 0)</li>
+<li><strong>atom_index</strong> (<code>int</code>): Atom index for node-level explanations (default: 0)</li>
 </ul>
+<h3 id="supported-explainer-types">Supported Explainer Types<a class="headerlink" href="#supported-explainer-types" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tabular</strong>: <code>'shap_local'</code>, <code>'shap_global'</code>, <code>'lime'</code></li>
+<li><strong>Graph</strong>: <code>'gnn_explainer'</code>, <code>'graph_shap'</code>, <code>'graph_lime'</code>, <code>'node_graph_shap'</code>, <code>'node_graph_lime'</code></li>
+</ul>
+<h3 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link">&para;</a></h3>
+<h4 id="robustness"><code>robustness()</code><a class="headerlink" href="#robustness" title="Permanent link">&para;</a></h4>
+<p>Evaluates the robustness of explanations by comparing results from clean and noisy models.</p>
+<p><strong>Returns:</strong>
+- <strong>similarities</strong> (<code>list</code>): Cosine similarity values between explanations
+- <strong>l1_differences</strong> (<code>list</code>): L1 norm differences between explanations
+- <strong>l2_differences</strong> (<code>list</code>): L2 norm differences between explanations
+- <strong>spearman_correlations</strong> (<code>list</code>): Spearman correlation coefficients
+- <strong>figs</strong> (<code>list</code>): List of matplotlib figures showing distributions</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-python"># Evaluate robustness
+similarities, l1_diffs, l2_diffs, spearman_corrs, figures = evaluator.robustness()
 
-<hr>
-
-<h2 id="graph_datasets">graph_datasets</h2>
-
-<p>Class for preparing graph-based molecular datasets with support for adding noise features for robustness testing.</p>
-
-<h3 id="methods">Methods</h3>
-
-<h4 id="prepare_data_graph">prepare_data_graph</h4>
-
-<pre><code class="language-python">def prepare_data_graph(dataset_name='PCQM4'):
-    """
-    Load and prepare graph-based molecular datasets.
-    
-    Parameters
-    ----------
-    dataset_name : str, optional (default='PCQM4')
-        Name of the dataset to load. Options:
-        - 'PCQM4': PCQM4Mv2 dataset
-        - 'QM9': QM9 dataset
-    
-    Returns
-    -------
-    torch_geometric.data.InMemoryDataset
-        Dataset with normalized node features ready for GNN models.
-    
-    Example
-    -------
-    >>> from chemxai.data import graph_datasets
-    >>> gd = graph_datasets()
-    >>> dataset = gd.prepare_data_graph('QM9')
-    >>> print(f"Loaded {len(dataset)} molecules")
-    """
+print(f&quot;Mean cosine similarity: {np.mean(similarities):.3f}&quot;)
+print(f&quot;Mean L1 difference: {np.mean(l1_diffs):.3f}&quot;)
+print(f&quot;Mean Spearman correlation: {np.mean(spearman_corrs):.3f}&quot;)
 </code></pre>
+<h2 id="usage-examples">Usage Examples<a class="headerlink" href="#usage-examples" title="Permanent link">&para;</a></h2>
+<h3 id="tabular-model-evaluation">Tabular Model Evaluation<a class="headerlink" href="#tabular-model-evaluation" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">import torch
+from chemxai.evaluate import Evaluator
 
-<h4 id="prepare_data_graph_noise">prepare_data_graph_noise</h4>
+# Initialize evaluator for SHAP local explanations
+evaluator = Evaluator(
+    model_normal=clean_tabular_model,
+    model_noise=noisy_tabular_model,
+    train_loader_normal=clean_train_loader,
+    test_loader_normal=clean_test_loader,
+    train_loader_noise=noisy_train_loader,
+    test_loader_noise=noisy_test_loader,
+    device=torch.device('cuda'),
+    model_type='tabular',
+    explainer_type='shap_local'
+)
 
-<pre><code class="language-python">def prepare_data_graph_noise(dataset_name='PCQM4', noise_type='gaussian', 
-                             noise_scale=1.0, seed=42):
-    """
-    Prepare graph data with an additional noise feature for each node.
-    Useful for testing robustness of explanations.
-    
-    Parameters
-    ----------
-    dataset_name : str, optional (default='PCQM4')
-        Name of the dataset ('PCQM4' or 'QM9')
-    noise_type : str, optional (default='gaussian')
-        Type of noise to add:
-        - 'gaussian': Normal distribution with mean=0, std=noise_scale
-        - 'uniform': Uniform distribution in [-noise_scale, noise_scale]
-        - 'binary': Random binary values {0, 1}
-    noise_scale : float, optional (default=1.0)
-        Scale/magnitude of the noise
-    seed : int, optional (default=42)
-        Random seed for reproducibility
-        
-    Returns
-    --------
-    NoisyGraphDataset : torch_geometric.data.InMemoryDataset
-        Dataset with added noise feature. Contains an additional 
-        attribute 'is_noise' (boolean mask indicating noise feature).
-    
-    Example
-    -------
-    >>> gd = graph_datasets()
-    >>> noisy_data = gd.prepare_data_graph_noise(
-    ...     dataset_name='QM9',
-    ...     noise_type='gaussian',
-    ...     noise_scale=0.5
-    ... )
-    >>> print(f"Number of features: {noisy_data.num_features}")
-    >>> print(f"Noise feature index: {noisy_data.is_noise.nonzero()}")
-    """
+# Run robustness evaluation
+results = evaluator.robustness()
+similarities, l1_diffs, l2_diffs, spearman_corrs, figs = results
+
+# Analyze results
+import numpy as np
+print(f&quot;Robustness Metrics:&quot;)
+print(f&quot;  Cosine Similarity: {np.mean(similarities):.3f} ± {np.std(similarities):.3f}&quot;)
+print(f&quot;  L1 Difference: {np.mean(l1_diffs):.3f} ± {np.std(l1_diffs):.3f}&quot;)
+print(f&quot;  Spearman Correlation: {np.mean(spearman_corrs):.3f} ± {np.std(spearman_corrs):.3f}&quot;)
 </code></pre>
+<h3 id="graph-model-evaluation">Graph Model Evaluation<a class="headerlink" href="#graph-model-evaluation" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python"># Initialize evaluator for GNN explainer
+evaluator = Evaluator(
+    model_normal=clean_gnn_model,
+    model_noise=noisy_gnn_model,
+    train_loader_normal=clean_graph_train_loader,
+    test_loader_normal=clean_graph_test_loader,
+    train_loader_noise=noisy_graph_train_loader,
+    test_loader_noise=noisy_graph_test_loader,
+    device=torch.device('cuda'),
+    model_type='graph',
+    explainer_type='gnn_explainer'
+)
 
-<h4 id="get_paired_dataloaders">get_paired_dataloaders</h4>
-
-<pre><code class="language-python">def get_paired_dataloaders(dataset_name='QM9', batch_size=32, 
-                           split_ratio=[0.8, 0.1, 0.1], shuffle=True, 
-                           seed=42, noise_type='gaussian', noise_scale=1.0):
-    """
-    Create paired dataloaders for normal and noisy versions of the dataset
-    with identical train/val/test splits.
-    
-    Parameters
-    ----------
-    dataset_name : str, optional (default='QM9')
-        Name of the dataset
-    batch_size : int, optional (default=32)
-        Batch size for dataloaders
-    split_ratio : list of float, optional (default=[0.8, 0.1, 0.1])
-        Train/validation/test split ratios (must sum to 1.0)
-    shuffle : bool, optional (default=True)
-        Whether to shuffle training data
-    seed : int, optional (default=42)
-        Random seed for reproducibility
-    noise_type : str, optional (default='gaussian')
-        Type of noise ('gaussian', 'uniform', 'binary')
-    noise_scale : float, optional (default=1.0)
-        Scale of noise to add
-        
-    Returns
-    -------
-    tuple of DataLoader
-        (train_loader_normal, val_loader_normal, test_loader_normal,
-         train_loader_noise, val_loader_noise, test_loader_noise)
-         
-    Example
-    -------
-    >>> gd = graph_datasets()
-    >>> loaders = gd.get_paired_dataloaders(
-    ...     dataset_name='QM9',
-    ...     batch_size=64,
-    ...     split_ratio=[0.7, 0.15, 0.15]
-    ... )
-    >>> train_normal, val_normal, test_normal, train_noise, val_noise, test_noise = loaders
-    >>> 
-    >>> # Train on clean data
-    >>> for batch in train_normal:
-    ...     # Training code
-    ...     pass
-    """
+# Evaluate robustness
+results = evaluator.robustness()
 </code></pre>
+<h3 id="node-level-evaluation">Node-Level Evaluation<a class="headerlink" href="#node-level-evaluation" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python"># Evaluate robustness for node-level explanations
+evaluator = Evaluator(
+    model_normal=clean_gnn_model,
+    model_noise=noisy_gnn_model,
+    train_loader_normal=clean_train_loader,
+    test_loader_normal=clean_test_loader,
+    train_loader_noise=noisy_train_loader,
+    test_loader_noise=noisy_test_loader,
+    device=device,
+    model_type='graph',
+    explainer_type='node_graph_shap',
+    atom_index=2  # Focus on specific atom
+)
 
-<hr>
+results = evaluator.robustness()
+</code></pre>
+<h2 id="technical-details">Technical Details<a class="headerlink" href="#technical-details" title="Permanent link">&para;</a></h2>
+<h3 id="robustness-metrics">Robustness Metrics<a class="headerlink" href="#robustness-metrics" title="Permanent link">&para;</a></h3>
+<h4 id="cosine-similarity">Cosine Similarity<a class="headerlink" href="#cosine-similarity" title="Permanent link">&para;</a></h4>
+<p>Measures the cosine of the angle between explanation vectors:
+- <strong>Range</strong>: [-1, 1]
+- <strong>Interpretation</strong>: 1 = identical direction, 0 = orthogonal, -1 = opposite
+- <strong>Higher values indicate more robust explanations</strong></p>
+<h4 id="l1-difference-manhattan-distance">L1 Difference (Manhattan Distance)<a class="headerlink" href="#l1-difference-manhattan-distance" title="Permanent link">&para;</a></h4>
+<p>Sum of absolute differences between explanation values:
+- <strong>Range</strong>: [0, ∞)
+- <strong>Interpretation</strong>: 0 = identical explanations
+- <strong>Lower values indicate more robust explanations</strong></p>
+<h4 id="l2-difference-euclidean-distance">L2 Difference (Euclidean Distance)<a class="headerlink" href="#l2-difference-euclidean-distance" title="Permanent link">&para;</a></h4>
+<p>Euclidean norm of the difference vector:
+- <strong>Range</strong>: [0, ∞)
+- <strong>Interpretation</strong>: 0 = identical explanations
+- <strong>Lower values indicate more robust explanations</strong></p>
+<h4 id="spearman-correlation">Spearman Correlation<a class="headerlink" href="#spearman-correlation" title="Permanent link">&para;</a></h4>
+<p>Rank correlation coefficient between explanations:
+- <strong>Range</strong>: [-1, 1]
+- <strong>Interpretation</strong>: 1 = perfect rank correlation, 0 = no correlation
+- <strong>Higher values indicate more robust ranking</strong></p>
+<h3 id="explanation-processing">Explanation Processing<a class="headerlink" href="#explanation-processing" title="Permanent link">&para;</a></h3>
+<p>The evaluator handles various explanation formats:
+- <strong>Tuples</strong>: Automatically extracts relevant components (e.g., node masks from GNNExplainer)
+- <strong>Multi-dimensional arrays</strong>: Flattens complex structures
+- <strong>Missing values</strong>: Handles NaN and infinite values gracefully
+- <strong>Size mismatches</strong>: Aligns explanations of different dimensions</p>
+<h3 id="error-handling">Error Handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h3>
+<p>Robust error handling for:
+- Invalid explanation formats
+- Numerical instabilities (NaN, infinity)
+- Matrix inversion failures
+- Empty or malformed explanations</p>
+<h2 id="class-fingerprintanalyzer">Class: <code>FingerprintAnalyzer</code><a class="headerlink" href="#class-fingerprintanalyzer" title="Permanent link">&para;</a></h2>
+<h3 id="overview_1">Overview<a class="headerlink" href="#overview_1" title="Permanent link">&para;</a></h3>
+<p>Analyzes Morgan fingerprint explanations by visualizing important molecular fragments and their contributions to predictions.</p>
+<h3 id="initialization_1">Initialization<a class="headerlink" href="#initialization_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">from chemxai.evaluate import FingerprintAnalyzer
 
-<h2 id="qm9_tabular">qm9_tabular</h2>
+analyzer = FingerprintAnalyzer(
+    explanation=shap_values,
+    batch_idx=0,
+    mol_idx=0,
+    dataset_type='test',
+    device='cpu'
+)
+</code></pre>
+<h3 id="parameters_1">Parameters<a class="headerlink" href="#parameters_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>explanation</strong> (<code>list</code> or <code>numpy.ndarray</code>): Pre-calculated SHAP values for fingerprint bits</li>
+<li><strong>batch_idx</strong> (<code>int</code>): Batch index containing the molecule of interest</li>
+<li><strong>mol_idx</strong> (<code>int</code>): Molecule index within the batch</li>
+<li><strong>dataset_type</strong> (<code>str</code>): Dataset type - 'train', 'test', or 'val' (default: 'test')</li>
+<li><strong>device</strong> (<code>str</code>): Computation device (default: 'cpu')</li>
+</ul>
+<h3 id="methods_1">Methods<a class="headerlink" href="#methods_1" title="Permanent link">&para;</a></h3>
+<h4 id="analyze"><code>analyze()</code><a class="headerlink" href="#analyze" title="Permanent link">&para;</a></h4>
+<p>Performs complete analysis of fingerprint explanations with molecular visualization.</p>
+<p><strong>Returns:</strong>
+- <strong>str</strong>: Text summary of the analysis</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-python"># Analyze fingerprint explanation
+analyzer = FingerprintAnalyzer(
+    explanation=shap_values,
+    batch_idx=0,
+    mol_idx=0,
+    dataset_type='test'
+)
 
-<p>Class for loading and preprocessing QM9 dataset with various molecular descriptors for tabular ML models.</p>
+analysis_summary = analyzer.analyze()
+print(analysis_summary)
+</code></pre>
+<h3 id="visualization-features">Visualization Features<a class="headerlink" href="#visualization-features" title="Permanent link">&para;</a></h3>
+<h4 id="original-molecule-display">Original Molecule Display<a class="headerlink" href="#original-molecule-display" title="Permanent link">&para;</a></h4>
+<p>Shows the complete molecular structure being analyzed.</p>
+<h4 id="bits-summary">Bits Summary<a class="headerlink" href="#bits-summary" title="Permanent link">&para;</a></h4>
+<p>Displays:
+- Total number of important bits
+- Active vs inactive bits in the fingerprint
+- Top 10 most important bits with their SHAP values</p>
+<h4 id="fragment-analysis">Fragment Analysis<a class="headerlink" href="#fragment-analysis" title="Permanent link">&para;</a></h4>
+<p>For each important active bit:
+- Molecular fragment visualization
+- Side-by-side comparison of full molecule and fragment
+- Atom environment highlighting
+- Substructure extraction when possible</p>
+<h4 id="color-coding">Color Coding<a class="headerlink" href="#color-coding" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Red</strong>: Central atoms in fragments</li>
+<li><strong>Orange</strong>: Neighboring atoms in the environment</li>
+<li><strong>Blue</strong>: Inactive but important bits</li>
+</ul>
+<h3 id="usage-example">Usage Example<a class="headerlink" href="#usage-example" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">import torch
+from chemxai.explainers import Shap
+from chemxai.evaluate import FingerprintAnalyzer
 
-<h3 id="initialization">Initialization</h3>
+# Generate SHAP explanation
+explainer = Shap(model=model, background_tensor=background, 
+                test_tensor=test_data, device=device)
+explanation = explainer.explain_local(index=0)
 
+# Analyze the fingerprint explanation
+analyzer = FingerprintAnalyzer(
+    explanation=explanation,
+    batch_idx=0,
+    mol_idx=0,
+    dataset_type='test'
+)
+
+# Run complete analysis
+summary = analyzer.analyze()
+
+# The analysis will display:
+# 1. Original molecule structure
+# 2. Summary of important bits
+# 3. Individual fragment visualizations
+# 4. Text summary of findings
+</code></pre>
+<h2 id="integration-with-chemxai">Integration with ChemXAI<a class="headerlink" href="#integration-with-chemxai" title="Permanent link">&para;</a></h2>
+<p>The evaluator integrates seamlessly with other ChemXAI components:</p>
+<h3 id="with-explainers">With Explainers<a class="headerlink" href="#with-explainers" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">from chemxai.explainers import Shap, LIME, GNNExplain
+from chemxai.evaluate import Evaluator
+
+# Works with all explainer types
+evaluator = Evaluator(..., explainer_type='shap_local')
+# or
+evaluator = Evaluator(..., explainer_type='gnn_explainer')
+</code></pre>
+<h3 id="with-data-loaders">With Data Loaders<a class="headerlink" href="#with-data-loaders" title="Permanent link">&para;</a></h3>
 <pre><code class="language-python">from chemxai.data import qm9_tabular
 
 qm9 = qm9_tabular()
-# Automatically downloads and extracts QM9 dataset if not present
-</code></pre>
-
-<h3 id="properties">Properties</h3>
-
-<p>The QM9 dataset contains 15 molecular properties:</p>
-<ul>
-  <li>Rotational constants (A, B, C): GHz</li>
-  <li>Dipole moment (μ): Debye (D)</li>
-  <li>Isotropic polarizability (α): atomic units</li>
-  <li>HOMO energy (ϵ_HOMO): Hartree</li>
-  <li>LUMO energy (ϵ_LUMO): Hartree</li>
-  <li>Energy gap (ϵ_gap): Hartree</li>
-  <li>Electronic spatial extent: atomic units</li>
-  <li>Zero point vibrational energy: Hartree</li>
-  <li>Internal energy at 0K (U0): Hartree</li>
-  <li>Internal energy at 298.15K (U): Hartree</li>
-  <li>Enthalpy at 298.15K (H): Hartree</li>
-  <li>Free energy at 298.15K (G): Hartree</li>
-  <li>Heat capacity at 298.15K (Cv): cal/mol·K</li>
-</ul>
-
-<h3 id="descriptor-types">Supported Descriptor Types</h3>
-
-<p>The class supports various molecular descriptor types:</p>
-
-<table>
-  <tr>
-    <th>Descriptor</th>
-    <th>Description</th>
-    <th>Use Case</th>
-  </tr>
-  <tr>
-    <td><strong>Morgan</strong></td>
-    <td>Circular fingerprints (ECFP)</td>
-    <td>General structure representation</td>
-  </tr>
-  <tr>
-    <td><strong>MorganCount</strong></td>
-    <td>Morgan with occurrence counts</td>
-    <td>Frequency-based features</td>
-  </tr>
-  <tr>
-    <td><strong>CM</strong></td>
-    <td>Coulomb Matrix</td>
-    <td>3D geometry and charge distribution</td>
-  </tr>
-  <tr>
-    <td><strong>Physicochemical</strong></td>
-    <td>2D physicochemical descriptors</td>
-    <td>Drug-like properties</td>
-  </tr>
-  <tr>
-    <td><strong>3D</strong></td>
-    <td>3D geometry-based descriptors</td>
-    <td>Spatial properties</td>
-  </tr>
-  <tr>
-    <td><strong>MACCS</strong></td>
-    <td>MACCS keys (166 bits)</td>
-    <td>Substructure screening</td>
-  </tr>
-  <tr>
-    <td><strong>Topological</strong></td>
-    <td>Daylight-style fingerprints</td>
-    <td>Molecular topology</td>
-  </tr>
-  <tr>
-    <td><strong>AtomPair</strong></td>
-    <td>Atom pair fingerprints</td>
-    <td>Pharmacophore mapping</td>
-  </tr>
-  <tr>
-    <td><strong>EState</strong></td>
-    <td>Electrotopological state indices</td>
-    <td>Electronic properties</td>
-  </tr>
-  <tr>
-    <td><strong>Pattern</strong></td>
-    <td>SMARTS pattern fingerprints</td>
-    <td>Substructure queries</td>
-  </tr>
-  <tr>
-    <td><strong>Avalon</strong></td>
-    <td>Avalon fingerprints</td>
-    <td>Similarity screening</td>
-  </tr>
-  <tr>
-    <td><strong>Autocorr</strong></td>
-    <td>2D autocorrelation descriptors</td>
-    <td>Structure-property relationships</td>
-  </tr>
-</table>
-
-<h3 id="main-methods">Main Methods</h3>
-
-<h4 id="get_paired_dataloaders_tabular">get_paired_dataloaders_tabular</h4>
-
-<pre><code class="language-python">def get_paired_dataloaders_tabular(
-    att_index=10,
-    batch_size=32,
-    descriptor_type='Morgan',
-    list_mols=[],
-    n_noise=0,
-    morgan_radius=2,
-    morgan_nBits=512,
-    cache_descriptors=True,
-    split_ratio=[0.8, 0.1, 0.1],
-    seed=42
-):
-    """
-    Create dataloaders for tabular molecular data with optional noise features.
-    
-    Parameters
-    ----------
-    att_index : int, optional (default=10)
-        Index of the target property (0-14) to predict
-    batch_size : int, optional (default=32)
-        Batch size for dataloaders
-    descriptor_type : str, optional (default='Morgan')
-        Type of molecular descriptor (see table above)
-    list_mols : list, optional (default=[])
-        Filter molecules by number of atoms. Empty list = all molecules
-    n_noise : int, optional (default=0)
-        Number of random noise features to add for robustness testing
-    morgan_radius : int, optional (default=2)
-        Radius for Morgan fingerprints
-    morgan_nBits : int, optional (default=512)
-        Number of bits for fingerprint representations
-    cache_descriptors : bool, optional (default=True)
-        Whether to cache computed descriptors for faster reloading
-    split_ratio : list of float, optional (default=[0.8, 0.1, 0.1])
-        Train/validation/test split ratios
-    seed : int, optional (default=42)
-        Random seed for reproducibility
-        
-    Returns
-    -------
-    tuple
-        If n_noise > 0:
-            (train_loader, val_loader, test_loader,
-             train_loader_noise, val_loader_noise, test_loader_noise, is_noise)
-        If n_noise == 0:
-            (train_loader, val_loader, test_loader, None, None, None, None)
-            
-        where is_noise is a boolean mask indicating noise feature positions
-    
-    Example
-    -------
-    >>> from chemxai.data import qm9_tabular
-    >>> 
-    >>> # Basic usage without noise
-    >>> qm9 = qm9_tabular()
-    >>> train_loader, val_loader, test_loader, *_ = qm9.get_paired_dataloaders_tabular(
-    ...     att_index=7,  # Predict energy gap
-    ...     batch_size=64,
-    ...     descriptor_type='Morgan',
-    ...     morgan_nBits=1024
-    ... )
-    >>> 
-    >>> # With noise for robustness testing
-    >>> loaders = qm9.get_paired_dataloaders_tabular(
-    ...     att_index=7,
-    ...     batch_size=64,
-    ...     descriptor_type='Morgan',
-    ...     n_noise=5  # Add 5 random noise features
-    ... )
-    >>> train, val, test, train_noise, val_noise, test_noise, is_noise = loaders
-    >>> 
-    >>> # Use the loaders in training
-    >>> for batch_x, batch_y in train_loader:
-    ...     # batch_x: [batch_size, n_features]
-    ...     # batch_y: [batch_size, 1]
-    ...     predictions = model(batch_x)
-    ...     loss = criterion(predictions, batch_y)
-    """
-</code></pre>
-
-<h3 id="utility-methods">Utility Methods</h3>
-
-<h4 id="load_qm9_dataset">load_qm9_dataset</h4>
-
-<pre><code class="language-python">def load_qm9_dataset(list_mols=None):
-    """
-    Load the complete QM9 dataset from .xyz files with parallel processing.
-    
-    Parameters
-    ----------
-    list_mols : list, optional
-        List of molecule sizes (by atom count) to include.
-        If None or empty, loads all molecules.
-        
-    Returns
-    -------
-    tuple
-        (coordinates, properties, n_atoms) where:
-        - coordinates: list of (atoms, coords) tuples
-        - properties: list of property arrays
-        - n_atoms: list of atom counts
-        
-    Example
-    -------
-    >>> qm9 = qm9_tabular()
-    >>> coords, props, natoms = qm9.load_qm9_dataset(list_mols=[9, 10])
-    >>> print(f"Loaded {len(coords)} molecules")
-    """
-</code></pre>
-
-<h4 id="inverse_transform_features">inverse_transform_features</h4>
-
-<pre><code class="language-python">def inverse_transform_features(normalized_features, is_noise=False):
-    """
-    Denormalize features back to original scale.
-    
-    Parameters
-    ----------
-    normalized_features : np.ndarray
-        Normalized feature array to convert back
-    is_noise : bool, optional (default=False)
-        Whether to use the noise dataset scaler
-        
-    Returns
-    -------
-    np.ndarray
-        Denormalized features in original scale
-        
-    Example
-    -------
-    >>> # After getting explanations, denormalize if needed
-    >>> original_features = qm9.inverse_transform_features(
-    ...     normalized_features, 
-    ...     is_noise=False
-    ... )
-    """
-</code></pre>
-
-<hr>
-
-<h2 id="complete-example">Complete Usage Example</h2>
-
-<pre><code class="language-python">import torch
-from chemxai.data import graph_datasets, qm9_tabular
-
-# ========================================
-# Example 1: Graph-based data
-# ========================================
-
-# Initialize graph data handler
-gd = graph_datasets()
-
-# Load clean dataset
-clean_data = gd.prepare_data_graph('QM9')
-print(f"Loaded {len(clean_data)} molecules")
-print(f"Features per node: {clean_data[0].x.shape[1]}")
-
-# Create paired dataloaders (clean + noisy)
-loaders = gd.get_paired_dataloaders(
-    dataset_name='QM9',
-    batch_size=32,
-    noise_type='gaussian',
-    noise_scale=0.5
-)
-train, val, test, train_noise, val_noise, test_noise = loaders
-
-# Use in training
-for batch in train:
-    # batch is a PyG Batch object
-    x, edge_index = batch.x, batch.edge_index
-    # Your training code here
-    pass
-
-# ========================================
-# Example 2: Tabular data
-# ========================================
-
-# Initialize tabular data handler
-qm9 = qm9_tabular()
-
-# Load data with Morgan fingerprints
-train_loader, val_loader, test_loader, *_ = qm9.get_paired_dataloaders_tabular(
-    att_index=7,  # Energy gap
-    batch_size=64,
-    descriptor_type='Morgan',
-    morgan_radius=3,
-    morgan_nBits=2048,
-    cache_descriptors=True
+train_loader, _, test_loader, train_noise, _, test_noise, _ = qm9.get_paired_dataloaders_tabular(
+    batch_size=32, n_noise=3
 )
 
-# Access data
-for features, targets in train_loader:
-    # features: [batch_size, n_bits]
-    # targets: [batch_size, 1]
-    print(f"Batch shape: {features.shape}")
-    break
-
-# ========================================
-# Example 3: Robustness testing with noise
-# ========================================
-
-# Create datasets with noise features
-result = qm9.get_paired_dataloaders_tabular(
-    att_index=10,
-    batch_size=32,
-    descriptor_type='Morgan',
-    n_noise=3,  # Add 3 noise features
-    seed=42
+evaluator = Evaluator(
+    train_loader_normal=train_loader,
+    test_loader_normal=test_loader,
+    train_loader_noise=train_noise,
+    test_loader_noise=test_noise,
+    # ... other parameters
 )
-
-train, val, test, train_n, val_n, test_n, is_noise = result
-
-# Check which features are noise
-print(f"Total features: {len(is_noise)}")
-print(f"Noise feature indices: {is_noise.nonzero()[0]}")
-
-# Train two models (one on clean, one on noisy data)
-# Then use RobustnessEvaluator to compare explanations
 </code></pre>
-
-<hr>
-
-<h2 id="best-practices">Best Practices</h2>
-
-<h3 id="descriptor-selection">Descriptor Selection</h3>
+<h3 id="output-visualization">Output Visualization<a class="headerlink" href="#output-visualization" title="Permanent link">&para;</a></h3>
+<p>The robustness evaluation automatically generates and saves:
+- Cosine similarity distribution histogram
+- L1 difference distribution histogram<br />
+- Spearman correlation distribution histogram</p>
+<p>Files are saved to a <code>graphs/</code> directory with descriptive names.</p>
+<h2 id="performance-considerations">Performance Considerations<a class="headerlink" href="#performance-considerations" title="Permanent link">&para;</a></h2>
 <ul>
-  <li><strong>Morgan fingerprints</strong>: Good general-purpose choice, captures circular substructures</li>
-  <li><strong>Physicochemical descriptors</strong>: Best for drug-like property prediction</li>
-  <li><strong>3D descriptors</strong>: Use when geometry is important (requires 3D coordinates)</li>
-  <li><strong>MACCS keys</strong>: Fast and efficient for similarity searches</li>
+<li><strong>Batch Processing</strong>: Evaluates all molecules in provided batches</li>
+<li><strong>Memory Management</strong>: Handles large datasets efficiently</li>
+<li><strong>GPU Acceleration</strong>: Supports CUDA for faster computation</li>
+<li><strong>Parallel Processing</strong>: Can process multiple explanation types simultaneously</li>
 </ul>
-
-<h3 id="performance-optimization">Performance Optimization</h3>
-<ul>
-  <li>Enable <code>cache_descriptors=True</code> to avoid recomputing descriptors</li>
-  <li>Use appropriate <code>batch_size</code> based on available memory</li>
-  <li>For large datasets, consider filtering with <code>list_mols</code> parameter</li>
-  <li>Set <code>seed</code> for reproducible train/val/test splits</li>
-</ul>
-
-<h3 id="noise-features">Noise Features for Robustness Testing</h3>
-<ul>
-  <li>Start with <code>n_noise=3-5</code> for initial robustness tests</li>
-  <li>Use <code>noise_type='gaussian'</code> for realistic perturbations</li>
-  <li>Compare explanations between clean and noisy models using <code>RobustnessEvaluator</code></li>
-</ul>
-
-<hr>
-
-<h2 id="troubleshooting">Troubleshooting</h2>
-
-<h3 id="memory-issues">Memory Issues</h3>
-<pre><code class="language-python"># Reduce batch size
-loaders = qm9.get_paired_dataloaders_tabular(batch_size=16)
-
-# Filter to smaller molecules
-loaders = qm9.get_paired_dataloaders_tabular(list_mols=[5, 6, 7, 8, 9])
-</code></pre>
-
-<h3 id="slow-loading">Slow Data Loading</h3>
-<pre><code class="language-python"># Enable caching
-loaders = qm9.get_paired_dataloaders_tabular(cache_descriptors=True)
-
-# First run will be slow (computing descriptors)
-# Subsequent runs will be much faster
-</code></pre>
-
-<h3 id="reproducibility">Reproducibility</h3>
-<pre><code class="language-python"># Always set seed for reproducible splits
-loaders = qm9.get_paired_dataloaders_tabular(seed=42)
-</code></pre>
-
+<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Data Balance</strong>: Ensure clean and noisy datasets have similar distributions</li>
+<li><strong>Noise Level</strong>: Use appropriate noise levels that reflect real-world conditions</li>
+<li><strong>Sample Size</strong>: Use sufficient samples for statistical significance</li>
+<li><strong>Metric Selection</strong>: Choose metrics appropriate for your explanation type</li>
+<li><strong>Visualization</strong>: Always examine distribution plots, not just summary statistics</li>
+</ol>
+              
             </div>
-          </div>
-          <footer>
-            <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-              <a href="index.html" class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-              <a href="models_module.html" class="btn btn-neutral float-right" title="Models Module">Next <span class="icon icon-circle-arrow-right"></span></a>
-            </div>
-            <hr/>
-            <div role="contentinfo">
-              <p>Built with MkDocs</p>
-            </div>
-          </footer>
-        </div>
-      </div>
-    </section>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../explainers/graph_explainers_docs/" class="btn btn-neutral float-left" title="Graph SHAP and LIME"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../plots/plots_docs/" class="btn btn-neutral float-right" title="Graphs">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
   </div>
 
-  <script src="js/jquery-3.6.0.min.js"></script>
-  <script src="js/theme_extra.js"></script>
-  <script src="js/theme.js"></script>
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/JollonLD/ToolBox-ChemXAI.git" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span style="color: #808080">&laquo; Previous</span>
+    
+    
+      <span><a href="../models/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
 </body>
 </html>
