@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Explainers Module - ChemXAI</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+    <script>
+        var mkdocs_page_name = "Explainers Module";
+        var mkdocs_page_input_path = "explainers.md";
+        var mkdocs_page_url = "/ToolBox-ChemXAI/explainers/";
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</head>
+
+<body class="wy-body-for-nav" role="document">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> ChemXAI
+        </a>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a></li>
+              </ul>
+              <p class="caption"><span class="caption-text">Core Modules</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../data/">Data Module</a></li>
+                  <li class="toctree-l1"><a class="reference internal" href="../models/">Models Module</a></li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Explainers Module</a></li>
+                  <li class="toctree-l1"><a class="reference internal" href="../train/">Training Module</a></li>
+                  <li class="toctree-l1"><a class="reference internal" href="../evaluate/">Evaluation Module</a></li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plots/">Plots Module</a></li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">ChemXAI</a>
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Core Modules</li>
+      <li class="breadcrumb-item active">Explainers Module</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="explainers-module">Explainers Module</h1>
+
+<h2 id="overview">Overview</h2>
+<p>The Explainers module (<code>explainers.py</code>) provides a comprehensive suite of explanation methods for both tabular and graph-based molecular models. It includes implementations of SHAP, LIME, GNNExplainer, and specialized graph explanation methods.</p>
+
+<div class="admonition note">
+<p class="admonition-title">Module Structure</p>
+<p>All explainers are implemented in a single file: <code>chemxai/explainers.py</code> (909 lines)</p>
+</div>
+
+<hr />
+
+<h2 id="tabular-explainers">Tabular Explainers</h2>
+
+<h3 id="shap">Class: Shap</h3>
+<p>SHAP (SHapley Additive exPlanations) explainer for tabular molecular data using Kernel SHAP.</p>
+
+<h4 id="initialization">Initialization</h4>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.explainers</span> <span class="kn">import</span> <span class="n">Shap</span>
+
+<span class="n">explainer</span> <span class="o">=</span> <span class="n">Shap</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">background_tensor</span><span class="o">=</span><span class="n">background_data</span><span class="p">,</span>
+    <span class="n">test_tensor</span><span class="o">=</span><span class="n">test_data</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>model</code></td>
+<td>torch.nn.Module</td>
+<td>Trained PyTorch model</td>
+</tr>
+<tr>
+<td><code>background_tensor</code></td>
+<td>torch.Tensor</td>
+<td>Background data for SHAP baseline</td>
+</tr>
+<tr>
+<td><code>test_tensor</code></td>
+<td>torch.Tensor</td>
+<td>Test data to explain</td>
+</tr>
+<tr>
+<td><code>device</code></td>
+<td>torch.device</td>
+<td>Computation device (CPU/GPU)</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="methods">Methods</h4>
+
+<p><strong>explain_local(index)</strong></p>
+<p>Generate SHAP values for a single instance.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">shap_values</span> <span class="o">=</span> <span class="n">explainer</span><span class="o">.</span><span class="n">explain_local</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li><strong>Parameters:</strong> <code>index</code> (int) - Index of instance to explain</li>
+<li><strong>Returns:</strong> list of SHAP values for each feature</li>
+</ul>
+
+<p><strong>explain_global()</strong></p>
+<p>Generate global feature importance across all test instances.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">global_importance</span> <span class="o">=</span> <span class="n">explainer</span><span class="o">.</span><span class="n">explain_global</span><span class="p">()</span>
+</code></pre></div>
+<ul>
+<li><strong>Returns:</strong> list of mean absolute SHAP values per feature</li>
+</ul>
+
+<hr />
+
+<h3 id="lime">Class: LIME</h3>
+<p>LIME (Local Interpretable Model-agnostic Explanations) for tabular data.</p>
+
+<h4 id="initialization_1">Initialization</h4>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.explainers</span> <span class="kn">import</span> <span class="n">LIME</span>
+
+<span class="n">explainer</span> <span class="o">=</span> <span class="n">LIME</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">background_tensor</span><span class="o">=</span><span class="n">background_data</span><span class="p">,</span>
+    <span class="n">test_tensor</span><span class="o">=</span><span class="n">test_data</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;regression&#39;</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>model</code></td>
+<td>torch.nn.Module</td>
+<td>-</td>
+<td>Trained model</td>
+</tr>
+<tr>
+<td><code>background_tensor</code></td>
+<td>torch.Tensor</td>
+<td>-</td>
+<td>Training data</td>
+</tr>
+<tr>
+<td><code>test_tensor</code></td>
+<td>torch.Tensor</td>
+<td>-</td>
+<td>Test data</td>
+</tr>
+<tr>
+<td><code>device</code></td>
+<td>torch.device</td>
+<td>-</td>
+<td>Device</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>str</td>
+<td>'regression'</td>
+<td>'regression' or 'classification'</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="methods_1">Methods</h4>
+
+<p><strong>explain_local(index, num_features=None)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">lime_values</span> <span class="o">=</span> <span class="n">explainer</span><span class="o">.</span><span class="n">explain_local</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_features</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li><strong>Parameters:</strong> <code>index</code> (int), <code>num_features</code> (int, optional)</li>
+<li><strong>Returns:</strong> list of LIME importance values</li>
+</ul>
+
+<hr />
+
+<h2 id="graph-explainers">Graph Explainers</h2>
+
+<h3 id="gnnexplain">Class: GNNExplain</h3>
+<p>Native GNN explanation using edge and node masking.</p>
+
+<h4 id="initialization_2">Initialization</h4>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.explainers</span> <span class="kn">import</span> <span class="n">GNNExplain</span>
+
+<span class="n">explainer</span> <span class="o">=</span> <span class="n">GNNExplain</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">graph_data</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;regression&#39;</span><span class="p">,</span>
+    <span class="n">task_level</span><span class="o">=</span><span class="s1">&#39;graph&#39;</span><span class="p">,</span>
+    <span class="n">return_type</span><span class="o">=</span><span class="s1">&#39;raw&#39;</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>model</code></td>
+<td>torch.nn.Module</td>
+<td>-</td>
+<td>GNN model</td>
+</tr>
+<tr>
+<td><code>device</code></td>
+<td>torch.device</td>
+<td>-</td>
+<td>Computation device</td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td>Data</td>
+<td>-</td>
+<td>PyG graph data</td>
+</tr>
+<tr>
+<td><code>epochs</code></td>
+<td>int</td>
+<td>100</td>
+<td>Training epochs for masks</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>str</td>
+<td>'regression'</td>
+<td>Task type</td>
+</tr>
+<tr>
+<td><code>task_level</code></td>
+<td>str</td>
+<td>'graph'</td>
+<td>'graph' or 'node'</td>
+</tr>
+<tr>
+<td><code>return_type</code></td>
+<td>str</td>
+<td>'raw'</td>
+<td>'raw' or 'probabilities'</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="methods_2">Methods</h4>
+
+<p><strong>explain(index=None)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">node_mask</span><span class="p">,</span> <span class="n">edge_mask</span><span class="p">,</span> <span class="n">explanation</span> <span class="o">=</span> <span class="n">explainer</span><span class="o">.</span><span class="n">explain</span><span class="p">()</span>
+</code></pre></div>
+<ul>
+<li><strong>Returns:</strong> tuple of (node_mask, edge_mask, full_explanation)</li>
+</ul>
+
+<hr />
+
+<h3 id="graphshap">Class: GraphShap</h3>
+<p>SHAP for graph-level predictions.</p>
+
+<h4 id="initialization_3">Initialization</h4>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.explainers</span> <span class="kn">import</span> <span class="n">GraphShap</span>
+
+<span class="n">explainer</span> <span class="o">=</span> <span class="n">GraphShap</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">graph_data</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">gpu</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>data</code> (Data): Graph data object</li>
+<li><code>model</code> (torch.nn.Module): GNN model</li>
+<li><code>device</code> (torch.device): Device</li>
+<li><code>gpu</code> (bool): Enable GPU acceleration</li>
+</ul>
+
+<h4 id="methods_3">Methods</h4>
+
+<p><strong>explain(num_samples=30, info=True)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">shap_values</span> <span class="o">=</span> <span class="n">explainer</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li><strong>Parameters:</strong> <code>num_samples</code> (int), <code>info</code> (bool)</li>
+<li><strong>Returns:</strong> list of SHAP values for graph features</li>
+</ul>
+
+<hr />
+
+<h3 id="graphlime">Class: GraphLIME</h3>
+<p>LIME adapted for graph-level predictions.</p>
+
+<h4 id="initialization_4">Initialization</h4>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.explainers</span> <span class="kn">import</span> <span class="n">GraphLIME</span>
+
+<span class="n">explainer</span> <span class="o">=</span> <span class="n">GraphLIME</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+    <span class="n">rho</span><span class="o">=</span><span class="mf">0.1</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>model</code> (torch.nn.Module): GNN model</li>
+<li><code>device</code> (str): Device name</li>
+<li><code>rho</code> (float): Lasso regularization parameter</li>
+</ul>
+
+<h4 id="methods_4">Methods</h4>
+
+<p><strong>explain(data, num_samples=100)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">importance</span> <span class="o">=</span> <span class="n">explainer</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">graph_data</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li><strong>Returns:</strong> list of feature importance values</li>
+</ul>
+
+<hr />
+
+<h3 id="nodegraphshap">Class: NodeGraphShap</h3>
+<p>SHAP for node-level predictions in graphs.</p>
+
+<h4 id="initialization_5">Initialization</h4>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.explainers</span> <span class="kn">import</span> <span class="n">NodeGraphShap</span>
+
+<span class="n">explainer</span> <span class="o">=</span> <span class="n">NodeGraphShap</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">graph_data</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">gpu</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<h4 id="methods_5">Methods</h4>
+
+<p><strong>explain(node_index=0, hops=2, num_samples=10, info=True, multiclass=False)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">node_shap</span> <span class="o">=</span> <span class="n">explainer</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span>
+    <span class="n">node_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">hops</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">30</span>
+<span class="p">)</span>
+</code></pre></div>
+<ul>
+<li><strong>Parameters:</strong> <code>node_index</code>, <code>hops</code>, <code>num_samples</code>, <code>info</code>, <code>multiclass</code></li>
+<li><strong>Returns:</strong> list of SHAP values for node features</li>
+</ul>
+
+<hr />
+
+<h3 id="nodegraplime">Class: NodeGrapLIME</h3>
+<p>LIME for node-level explanations in graphs.</p>
+
+<h4 id="initialization_6">Initialization</h4>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.explainers</span> <span class="kn">import</span> <span class="n">NodeGrapLIME</span>
+
+<span class="n">explainer</span> <span class="o">=</span> <span class="n">NodeGrapLIME</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">graph_data</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">gpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">hop</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">rho</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">cached</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<h4 id="methods_6">Methods</h4>
+
+<p><strong>explain(node_index, hops, num_samples, info=False, multiclass=False)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">node_lime</span> <span class="o">=</span> <span class="n">explainer</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span>
+    <span class="n">node_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">hops</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">30</span>
+<span class="p">)</span>
+</code></pre></div>
+<ul>
+<li><strong>Returns:</strong> list of feature importance values</li>
+</ul>
+
+<hr />
+
+<h2 id="complete-usage-examples">Complete Usage Examples</h2>
+
+<h3 id="tabular-model-explanation">Tabular Model Explanation</h3>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">chemxai.data</span> <span class="kn">import</span> <span class="n">qm9_tabular</span>
+<span class="kn">from</span> <span class="nn">chemxai.models</span> <span class="kn">import</span> <span class="n">MLP</span>
+<span class="kn">from</span> <span class="nn">chemxai.explainers</span> <span class="kn">import</span> <span class="n">Shap</span><span class="p">,</span> <span class="n">LIME</span>
+
+<span class="c1"># Load data</span>
+<span class="n">qm9</span> <span class="o">=</span> <span class="n">qm9_tabular</span><span class="p">()</span>
+<span class="n">train_loader</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">test_loader</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">qm9</span><span class="o">.</span><span class="n">get_paired_dataloaders_tabular</span><span class="p">(</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">descriptor_type</span><span class="o">=</span><span class="s1">&#39;Morgan&#39;</span>
+<span class="p">)</span>
+
+<span class="c1"># Get data batches</span>
+<span class="n">bg_data</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">train_loader</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">test_data</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">test_loader</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># Initialize explainers</span>
+<span class="n">shap_explainer</span> <span class="o">=</span> <span class="n">Shap</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">bg_data</span><span class="p">,</span> <span class="n">test_data</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+<span class="n">lime_explainer</span> <span class="o">=</span> <span class="n">LIME</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">bg_data</span><span class="p">,</span> <span class="n">test_data</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+
+<span class="c1"># Generate explanations</span>
+<span class="n">shap_local</span> <span class="o">=</span> <span class="n">shap_explainer</span><span class="o">.</span><span class="n">explain_local</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">shap_global</span> <span class="o">=</span> <span class="n">shap_explainer</span><span class="o">.</span><span class="n">explain_global</span><span class="p">()</span>
+<span class="n">lime_local</span> <span class="o">=</span> <span class="n">lime_explainer</span><span class="o">.</span><span class="n">explain_local</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="graph-model-explanation">Graph Model Explanation</h3>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.data</span> <span class="kn">import</span> <span class="n">graph_datasets</span>
+<span class="kn">from</span> <span class="nn">chemxai.models</span> <span class="kn">import</span> <span class="n">GCN</span>
+<span class="kn">from</span> <span class="nn">chemxai.explainers</span> <span class="kn">import</span> <span class="n">GNNExplain</span><span class="p">,</span> <span class="n">GraphShap</span><span class="p">,</span> <span class="n">GraphLIME</span>
+
+<span class="c1"># Load graph data</span>
+<span class="n">qm9_graph</span> <span class="o">=</span> <span class="n">graph_datasets</span><span class="p">(</span><span class="n">dataset_name</span><span class="o">=</span><span class="s1">&#39;QM9&#39;</span><span class="p">)</span>
+<span class="n">train_loader</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">test_loader</span> <span class="o">=</span> <span class="n">qm9_graph</span><span class="o">.</span><span class="n">prepare_data_graph</span><span class="p">(</span>
+    <span class="n">target</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span>
+<span class="p">)</span>
+
+<span class="c1"># Get a graph</span>
+<span class="n">graph</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">test_loader</span><span class="p">))</span>
+
+<span class="c1"># GNNExplainer</span>
+<span class="n">gnn_explainer</span> <span class="o">=</span> <span class="n">GNNExplain</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">node_mask</span><span class="p">,</span> <span class="n">edge_mask</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">gnn_explainer</span><span class="o">.</span><span class="n">explain</span><span class="p">()</span>
+
+<span class="c1"># GraphShap</span>
+<span class="n">graph_shap</span> <span class="o">=</span> <span class="n">GraphShap</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+<span class="n">shap_values</span> <span class="o">=</span> <span class="n">graph_shap</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+
+<span class="c1"># GraphLIME</span>
+<span class="n">graph_lime</span> <span class="o">=</span> <span class="n">GraphLIME</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<span class="n">lime_values</span> <span class="o">=</span> <span class="n">graph_lime</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="node-level-explanation">Node-Level Explanation</h3>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.explainers</span> <span class="kn">import</span> <span class="n">NodeGraphShap</span><span class="p">,</span> <span class="n">NodeGrapLIME</span>
+
+<span class="c1"># Node-level SHAP</span>
+<span class="n">node_shap</span> <span class="o">=</span> <span class="n">NodeGraphShap</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+<span class="n">node_explanation</span> <span class="o">=</span> <span class="n">node_shap</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span>
+    <span class="n">node_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
+    <span class="n">hops</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">30</span>
+<span class="p">)</span>
+
+<span class="c1"># Node-level LIME</span>
+<span class="n">node_lime</span> <span class="o">=</span> <span class="n">NodeGrapLIME</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">hop</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">node_lime_exp</span> <span class="o">=</span> <span class="n">node_lime</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span>
+    <span class="n">node_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">hops</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">30</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<hr />
+
+<h2 id="comparison-guide">Comparison Guide</h2>
+
+<h3 id="when-to-use-each-explainer">When to Use Each Explainer</h3>
+
+<table>
+<thead>
+<tr>
+<th>Explainer</th>
+<th>Best For</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SHAP</strong></td>
+<td>Tabular, feature attribution</td>
+<td>Theoretically grounded, global view</td>
+<td>Slower computation</td>
+</tr>
+<tr>
+<td><strong>LIME</strong></td>
+<td>Tabular, local explanations</td>
+<td>Fast, interpretable</td>
+<td>Less stable</td>
+</tr>
+<tr>
+<td><strong>GNNExplain</strong></td>
+<td>Graph, native GNN method</td>
+<td>Model-aware, edge/node masks</td>
+<td>Requires training</td>
+</tr>
+<tr>
+<td><strong>GraphShap</strong></td>
+<td>Graph-level predictions</td>
+<td>Theoretically sound</td>
+<td>Computationally expensive</td>
+</tr>
+<tr>
+<td><strong>GraphLIME</strong></td>
+<td>Graph-level, fast</td>
+<td>Faster than GraphShap</td>
+<td>Approximation-based</td>
+</tr>
+<tr>
+<td><strong>NodeGraphShap</strong></td>
+<td>Node-level predictions</td>
+<td>Principled, local context</td>
+<td>Slower for large graphs</td>
+</tr>
+<tr>
+<td><strong>NodeGrapLIME</strong></td>
+<td>Node-level, faster</td>
+<td>Quick local explanations</td>
+<td>Less rigorous</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2 id="technical-details">Technical Details</h2>
+
+<h3 id="shapley-values">Shapley Values</h3>
+<ul>
+<li>Based on cooperative game theory</li>
+<li>Measures marginal contribution of each feature</li>
+<li>Satisfies desirable properties: efficiency, symmetry, dummy, additivity</li>
+</ul>
+
+<h3 id="lime-methodology">LIME Methodology</h3>
+<ul>
+<li>Generates perturbations around instance</li>
+<li>Fits interpretable model (linear) locally</li>
+<li>Uses Lasso for feature selection</li>
+</ul>
+
+<h3 id="gnnexplainer-approach">GNNExplainer Approach</h3>
+<ul>
+<li>Learns masks via gradient descent</li>
+<li>Maximizes mutual information</li>
+<li>Applies entropy regularization</li>
+</ul>
+
+<h3 id="subgraph-extraction">Subgraph Extraction</h3>
+<ul>
+<li>Node-level explainers extract k-hop neighborhoods</li>
+<li>Preserves local graph structure</li>
+<li>Relabels nodes for consistency</li>
+</ul>
+
+<hr />
+
+<h2 id="best-practices">Best Practices</h2>
+
+<h3 id="choosing-parameters">Choosing Parameters</h3>
+<ul>
+<li><strong>num_samples</strong>: 30-100 for SHAP, 100-500 for LIME</li>
+<li><strong>hops</strong>: 2-3 for node-level explanations</li>
+<li><strong>epochs (GNNExplain)</strong>: 100-200 for convergence</li>
+<li><strong>rho (LIME)</strong>: 0.1-0.5 for Lasso regularization</li>
+</ul>
+
+<h3 id="interpretation-tips">Interpretation Tips</h3>
+<ul>
+<li>Compare multiple explainers for robustness</li>
+<li>Visualize results using plots module</li>
+<li>Validate against domain knowledge</li>
+<li>Consider explanation stability across similar instances</li>
+</ul>
+
+<h3 id="performance-optimization">Performance Optimization</h3>
+<ul>
+<li>Use GPU for GNN explainers when available</li>
+<li>Cache background data for multiple explanations</li>
+<li>Adjust sample size based on accuracy needs</li>
+<li>Use smaller subgraphs for faster node-level explanations</li>
+</ul>
+
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../models/" class="btn btn-neutral float-left" title="Models Module"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../train/" class="btn btn-neutral float-right" title="Training Module">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, ChemXAI Team.</p>
+  </div>
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+</body>
+</html>

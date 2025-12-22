@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Training Module - ChemXAI</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+    <script>
+        var mkdocs_page_name = "Training Module";
+        var mkdocs_page_input_path = "train.md";
+        var mkdocs_page_url = "/ToolBox-ChemXAI/train/";
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</head>
+
+<body class="wy-body-for-nav" role="document">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> ChemXAI
+        </a>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a></li>
+              </ul>
+              <p class="caption"><span class="caption-text">Core Modules</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../data/">Data Module</a></li>
+                  <li class="toctree-l1"><a class="reference internal" href="../models/">Models Module</a></li>
+                  <li class="toctree-l1"><a class="reference internal" href="../explainers/">Explainers Module</a></li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Training Module</a></li>
+                  <li class="toctree-l1"><a class="reference internal" href="../evaluate/">Evaluation Module</a></li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plots/">Plots Module</a></li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">ChemXAI</a>
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Core Modules</li>
+      <li class="breadcrumb-item active">Training Module</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="training-module">Training Module</h1>
+
+<h2 id="overview">Overview</h2>
+<p>The Training module (<code>train.py</code>) provides comprehensive training functions for both MLP (tabular) and GCN (graph) models on molecular datasets. It includes automatic logging, model saving, early stopping, and support for noisy data augmentation.</p>
+
+<h2 id="functions">Functions</h2>
+
+<h3 id="setup_logging">setup_logging()</h3>
+<p>Configure logging to file and console with timestamps.</p>
+
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.train</span> <span class="kn">import</span> <span class="n">setup_logging</span>
+
+<span class="n">log_file</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="n">log_dir</span><span class="o">=</span><span class="s2">&quot;logs&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>log_dir</code> (str): Directory to save log files (default: "logs")</li>
+</ul>
+
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>str</code>: Path to the created log file</li>
+</ul>
+
+<hr />
+
+<h3 id="train_mlp_qm9">train_mlp_qm9()</h3>
+<p>Train an MLP model on QM9 dataset using molecular descriptors.</p>
+
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.train</span> <span class="kn">import</span> <span class="n">train_mlp_qm9</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">train_mlp_qm9</span><span class="p">(</span>
+    <span class="n">att_index</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="mi">256</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">64</span><span class="p">],</span>
+    <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+    <span class="n">descriptor_type</span><span class="o">=</span><span class="s1">&#39;Morgan&#39;</span><span class="p">,</span>
+    <span class="n">morgan_radius</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">morgan_nBits</span><span class="o">=</span><span class="mi">512</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>att_index</code></td>
+<td>int</td>
+<td>10</td>
+<td>Index of the target property (0-18 for QM9)</td>
+</tr>
+<tr>
+<td><code>epochs</code></td>
+<td>int</td>
+<td>10</td>
+<td>Number of training epochs</td>
+</tr>
+<tr>
+<td><code>layers</code></td>
+<td>list</td>
+<td>[64, 32]</td>
+<td>Hidden layer dimensions</td>
+</tr>
+<tr>
+<td><code>learning_rate</code></td>
+<td>float</td>
+<td>1e-3</td>
+<td>Learning rate for optimizer</td>
+</tr>
+<tr>
+<td><code>batch_size</code></td>
+<td>int</td>
+<td>32</td>
+<td>Batch size for training</td>
+</tr>
+<tr>
+<td><code>n_noise</code></td>
+<td>int</td>
+<td>3</td>
+<td>Number of noise features to add</td>
+</tr>
+<tr>
+<td><code>descriptor_type</code></td>
+<td>str</td>
+<td>'Morgan'</td>
+<td>Type of molecular descriptor (see Data Module)</td>
+</tr>
+<tr>
+<td><code>cache_descriptors</code></td>
+<td>bool</td>
+<td>True</td>
+<td>Whether to cache computed descriptors</td>
+</tr>
+<tr>
+<td><code>num_workers</code></td>
+<td>int</td>
+<td>4</td>
+<td>Number of data loading workers</td>
+</tr>
+<tr>
+<td><code>morgan_radius</code></td>
+<td>int</td>
+<td>2</td>
+<td>Radius for Morgan fingerprints</td>
+</tr>
+<tr>
+<td><code>morgan_nBits</code></td>
+<td>int</td>
+<td>512</td>
+<td>Number of bits for Morgan fingerprints</td>
+</tr>
+<tr>
+<td><code>log_dir</code></td>
+<td>str</td>
+<td>"logs"</td>
+<td>Directory for saving logs</td>
+</tr>
+<tr>
+<td><code>layer_name</code></td>
+<td>str</td>
+<td>'medium'</td>
+<td>Name identifier for the model architecture</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Supported Descriptor Types:</strong></p>
+<ul>
+<li><code>Morgan</code>: Circular fingerprints (ECFP)</li>
+<li><code>MACCS</code>: MACCS keys (166 bits)</li>
+<li><code>RDKit2D</code>: 2D RDKit descriptors</li>
+<li><code>RDKit2DNormalized</code>: Normalized 2D descriptors</li>
+<li><code>AllChem2D</code>: All 2D chemistry descriptors</li>
+<li><code>Avalon</code>: Avalon fingerprints</li>
+<li><code>AtomPair</code>: Atom pair fingerprints</li>
+<li><code>Torsion</code>: Topological torsion fingerprints</li>
+<li><code>RDKitFPBits</code>: RDKit fingerprint bits</li>
+<li><code>MorganFeatures</code>: Morgan fingerprints with features</li>
+<li><code>LayeredFingerprint</code>: Layered fingerprints</li>
+<li><code>PatternFingerprint</code>: Pattern-based fingerprints</li>
+</ul>
+
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>list</code>: Training history as list of tuples (epoch, train_loss, val_loss, test_loss)</li>
+</ul>
+
+<p><strong>Output Files:</strong></p>
+<ul>
+<li>Model checkpoint: <code>models/mlp_att{att_index}_{descriptor_type}_{layer_name}.pth</code></li>
+<li>Training log: <code>logs/mlp_att{att_index}_{descriptor_type}_{timestamp}.log</code></li>
+<li>Training history: <code>models/mlp_att{att_index}_{descriptor_type}_{layer_name}_history.json</code></li>
+</ul>
+
+<hr />
+
+<h3 id="train_gcn_qm9">train_gcn_qm9()</h3>
+<p>Train a Graph Convolutional Network on QM9 molecular graphs.</p>
+
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.train</span> <span class="kn">import</span> <span class="n">train_gcn_qm9</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">train_gcn_qm9</span><span class="p">(</span>
+    <span class="n">att_index</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">hidden_channels</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+    <span class="n">num_layers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>att_index</code></td>
+<td>int</td>
+<td>10</td>
+<td>Index of the target property</td>
+</tr>
+<tr>
+<td><code>epochs</code></td>
+<td>int</td>
+<td>10</td>
+<td>Number of training epochs</td>
+</tr>
+<tr>
+<td><code>hidden_channels</code></td>
+<td>int</td>
+<td>64</td>
+<td>Hidden dimension size</td>
+</tr>
+<tr>
+<td><code>num_layers</code></td>
+<td>int</td>
+<td>3</td>
+<td>Number of GCN layers</td>
+</tr>
+<tr>
+<td><code>learning_rate</code></td>
+<td>float</td>
+<td>1e-3</td>
+<td>Learning rate</td>
+</tr>
+<tr>
+<td><code>batch_size</code></td>
+<td>int</td>
+<td>32</td>
+<td>Batch size</td>
+</tr>
+<tr>
+<td><code>n_noise</code></td>
+<td>int</td>
+<td>3</td>
+<td>Number of noise features</td>
+</tr>
+<tr>
+<td><code>dropout</code></td>
+<td>float</td>
+<td>0.2</td>
+<td>Dropout rate</td>
+</tr>
+<tr>
+<td><code>num_workers</code></td>
+<td>int</td>
+<td>4</td>
+<td>Number of data workers</td>
+</tr>
+<tr>
+<td><code>log_dir</code></td>
+<td>str</td>
+<td>"logs"</td>
+<td>Logging directory</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>list</code>: Training history as list of tuples (epoch, train_loss, val_loss, test_loss)</li>
+</ul>
+
+<p><strong>Output Files:</strong></p>
+<ul>
+<li>Model checkpoint: <code>models/gcn_att{att_index}_h{hidden_channels}_l{num_layers}.pth</code></li>
+<li>Training log: <code>logs/gcn_att{att_index}_{timestamp}.log</code></li>
+<li>Training history: <code>models/gcn_att{att_index}_h{hidden_channels}_l{num_layers}_history.json</code></li>
+</ul>
+
+<hr />
+
+<h2 id="usage-examples">Usage Examples</h2>
+
+<h3 id="complete-mlp-training-workflow">Complete MLP Training Workflow</h3>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">chemxai.train</span> <span class="kn">import</span> <span class="n">setup_logging</span><span class="p">,</span> <span class="n">train_mlp_qm9</span>
+
+<span class="c1"># Setup logging</span>
+<span class="n">log_file</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="n">log_dir</span><span class="o">=</span><span class="s2">&quot;training_logs&quot;</span><span class="p">)</span>
+
+<span class="c1"># Train model with Morgan fingerprints</span>
+<span class="n">history</span> <span class="o">=</span> <span class="n">train_mlp_qm9</span><span class="p">(</span>
+    <span class="n">att_index</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>  <span class="c1"># HOMO property</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
+    <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">64</span><span class="p">],</span>
+    <span class="n">learning_rate</span><span class="o">=</span><span class="mf">5e-4</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+    <span class="n">descriptor_type</span><span class="o">=</span><span class="s1">&#39;Morgan&#39;</span><span class="p">,</span>
+    <span class="n">morgan_radius</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">morgan_nBits</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+    <span class="n">n_noise</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">layer_name</span><span class="o">=</span><span class="s1">&#39;large&#39;</span>
+<span class="p">)</span>
+
+<span class="c1"># Access training history</span>
+<span class="k">for</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">val_loss</span><span class="p">,</span> <span class="n">test_loss</span> <span class="in">in</span> <span class="n">history</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">: Train={</span><span class="si">{</span><span class="n">train_loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Val={</span><span class="si">{</span><span class="n">val_loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Test={</span><span class="si">{</span><span class="n">test_loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="complete-gcn-training-workflow">Complete GCN Training Workflow</h3>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">chemxai.train</span> <span class="kn">import</span> <span class="n">train_gcn_qm9</span>
+
+<span class="c1"># Train GCN model</span>
+<span class="n">history</span> <span class="o">=</span> <span class="n">train_gcn_qm9</span><span class="p">(</span>
+    <span class="n">att_index</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>  <span class="c1"># HOMO property</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+    <span class="n">hidden_channels</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+    <span class="n">num_layers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+    <span class="n">dropout</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">n_noise</span><span class="o">=</span><span class="mi">0</span>  <span class="c1"># No noise features for GCN</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<h3 id="comparing-different-descriptors">Comparing Different Descriptors</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Train with different descriptor types</span>
+<span class="n">descriptors</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Morgan&#39;</span><span class="p">,</span> <span class="s1">&#39;MACCS&#39;</span><span class="p">,</span> <span class="s1">&#39;RDKit2D&#39;</span><span class="p">,</span> <span class="s1">&#39;Avalon&#39;</span><span class="p">]</span>
+<span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">for</span> <span class="n">desc</span> <span class="ow">in</span> <span class="n">descriptors</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Training with {desc} descriptors...&quot;</span><span class="p">)</span>
+    <span class="n">history</span> <span class="o">=</span> <span class="n">train_mlp_qm9</span><span class="p">(</span>
+        <span class="n">att_index</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+        <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">descriptor_type</span><span class="o">=</span><span class="n">desc</span><span class="p">,</span>
+        <span class="n">layer_name</span><span class="o">=</span><span class="n">desc</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="n">results</span><span class="p">[</span><span class="n">desc</span><span class="p">]</span> <span class="o">=</span> <span class="n">history</span>
+</code></pre></div>
+
+<hr />
+
+<h2 id="technical-details">Technical Details</h2>
+
+<h3 id="automatic-model-saving">Automatic Model Saving</h3>
+<ul>
+<li>Models are automatically saved after each epoch</li>
+<li>Best model (lowest validation loss) is preserved</li>
+<li>Model state includes: weights, optimizer state, epoch, losses</li>
+</ul>
+
+<h3 id="logging-system">Logging System</h3>
+<ul>
+<li><strong>Console logging</strong>: Real-time progress updates</li>
+<li><strong>File logging</strong>: Detailed logs with timestamps</li>
+<li><strong>Metrics tracked</strong>: Train/validation/test losses per epoch</li>
+<li><strong>Training info</strong>: Hyperparameters, data statistics, timing</li>
+</ul>
+
+<h3 id="early-stopping">Early Stopping</h3>
+<ul>
+<li>Monitors validation loss</li>
+<li>Saves best model checkpoint</li>
+<li>Continues training for full epoch count</li>
+</ul>
+
+<h3 id="data-augmentation">Data Augmentation</h3>
+<ul>
+<li><strong>Noise features</strong>: Random features added for robustness testing</li>
+<li><strong>Noisy datasets</strong>: Separate dataloaders with perturbed features</li>
+<li><strong>Purpose</strong>: Test explanation stability and model robustness</li>
+</ul>
+
+<h3 id="device-management">Device Management</h3>
+<ul>
+<li>Automatic GPU detection</li>
+<li>Fallback to CPU if CUDA unavailable</li>
+<li>Efficient tensor transfers between devices</li>
+</ul>
+
+<h3 id="performance-optimization">Performance Optimization</h3>
+<ul>
+<li><strong>Descriptor caching</strong>: Computed descriptors saved to disk</li>
+<li><strong>Parallel data loading</strong>: Multi-worker dataloaders</li>
+<li><strong>Batch processing</strong>: Efficient GPU utilization</li>
+</ul>
+
+<hr />
+
+<h2 id="qm9-target-properties">QM9 Target Properties</h2>
+
+<p>Available target indices (<code>att_index</code>) for QM9 dataset:</p>
+
+<table>
+<thead>
+<tr>
+<th>Index</th>
+<th>Property</th>
+<th>Unit</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>mu</td>
+<td>Debye</td>
+<td>Dipole moment</td>
+</tr>
+<tr>
+<td>1</td>
+<td>alpha</td>
+<td>Bohr³</td>
+<td>Isotropic polarizability</td>
+</tr>
+<tr>
+<td>2</td>
+<td>homo</td>
+<td>eV</td>
+<td>Energy of HOMO</td>
+</tr>
+<tr>
+<td>3</td>
+<td>lumo</td>
+<td>eV</td>
+<td>Energy of LUMO</td>
+</tr>
+<tr>
+<td>4</td>
+<td>gap</td>
+<td>eV</td>
+<td>Gap between HOMO and LUMO</td>
+</tr>
+<tr>
+<td>5</td>
+<td>r2</td>
+<td>Bohr²</td>
+<td>Electronic spatial extent</td>
+</tr>
+<tr>
+<td>6</td>
+<td>zpve</td>
+<td>eV</td>
+<td>Zero point vibrational energy</td>
+</tr>
+<tr>
+<td>7</td>
+<td>U0</td>
+<td>eV</td>
+<td>Internal energy at 0 K</td>
+</tr>
+<tr>
+<td>8</td>
+<td>U</td>
+<td>eV</td>
+<td>Internal energy at 298.15 K</td>
+</tr>
+<tr>
+<td>9</td>
+<td>H</td>
+<td>eV</td>
+<td>Enthalpy at 298.15 K</td>
+</tr>
+<tr>
+<td>10</td>
+<td>G</td>
+<td>eV</td>
+<td>Free energy at 298.15 K</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Cv</td>
+<td>cal/mol K</td>
+<td>Heat capacity at 298.15 K</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2 id="best-practices">Best Practices</h2>
+
+<h3 id="choosing-hyperparameters">Choosing Hyperparameters</h3>
+<ul>
+<li><strong>Learning rate</strong>: Start with 1e-3, reduce if loss plateaus</li>
+<li><strong>Batch size</strong>: 32-64 for most cases, larger for more stable gradients</li>
+<li><strong>Layers (MLP)</strong>: Start with [256, 128, 64], adjust based on descriptor size</li>
+<li><strong>Hidden channels (GCN)</strong>: 64-128 for most molecular properties</li>
+<li><strong>Epochs</strong>: 100-200, monitor validation loss for convergence</li>
+</ul>
+
+<h3 id="descriptor-selection">Descriptor Selection</h3>
+<ul>
+<li><strong>Morgan</strong>: Best for general molecular property prediction</li>
+<li><strong>MACCS</strong>: Good for similarity-based tasks, smaller feature space</li>
+<li><strong>RDKit2D</strong>: Interpretable physicochemical properties</li>
+<li><strong>Avalon</strong>: Good for substructure-based predictions</li>
+</ul>
+
+<h3 id="computational-resources">Computational Resources</h3>
+<ul>
+<li>Use GPU for faster training (10-50x speedup)</li>
+<li>Enable descriptor caching to save computation time</li>
+<li>Adjust <code>num_workers</code> based on available CPU cores</li>
+<li>Monitor memory usage with large batch sizes</li>
+</ul>
+
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../explainers/" class="btn btn-neutral float-left" title="Explainers Module"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../evaluate/" class="btn btn-neutral float-right" title="Evaluation Module">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, ChemXAI Team.</p>
+  </div>
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+</body>
+</html>

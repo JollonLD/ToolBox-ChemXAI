@@ -133,25 +133,19 @@
     </ul>
                 </li>
               </ul>
-              <p class="caption"><span class="caption-text">Explainers</span></p>
+              <p class="caption"><span class="caption-text">Core Modules</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="explainers/shap_explainer_docs/">SHAP</a>
+                  <li class="toctree-l1"><a class="reference internal" href="data/">Data Module (data.py)</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="explainers/lime_explainer_docs/">LIME</a>
+                  <li class="toctree-l1"><a class="reference internal" href="models/">Models Module (models.py)</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="explainers/gnn_explainer_docs/">GNN Explainer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="explainers/">Explainers Module (explainers.py)</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="explainers/graph_explainers_docs/">Graph SHAP and LIME</a>
+                  <li class="toctree-l1"><a class="reference internal" href="train/">Training Module (train.py)</a>
                   </li>
-              </ul>
-              <p class="caption"><span class="caption-text">Evaluators</span></p>
-              <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="evaluator/evaluator_docs/">Robustness and Fingerprint Analyzer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="evaluate/">Evaluation Module (evaluate.py)</a>
                   </li>
-              </ul>
-              <p class="caption"><span class="caption-text">Plots</span></p>
-              <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="plots/plots_docs/">Graphs</a>
+                  <li class="toctree-l1"><a class="reference internal" href="plots/">Plots Module (plots.py)</a>
                   </li>
               </ul>
       </div>
@@ -206,26 +200,58 @@ explainer = Shap(
 explanation = explainer.explain_local(index=0)
 </code></pre>
 <h2 id="documentation-structure">Documentation Structure<a class="headerlink" href="#documentation-structure" title="Permanent link">&para;</a></h2>
-<h3 id="explainers">Explainers<a class="headerlink" href="#explainers" title="Permanent link">&para;</a></h3>
-<h4 id="tabular-explainers">Tabular Explainers<a class="headerlink" href="#tabular-explainers" title="Permanent link">&para;</a></h4>
+
+<p>The ChemXAI library is organized into six core modules, each corresponding to a Python file in the package:</p>
+
+<h3 id="core-modules">Core Modules<a class="headerlink" href="#core-modules" title="Permanent link">&para;</a></h3>
+
+<h4 id="data-module"><a href="data/">Data Module (data.py)</a><a class="headerlink" href="#data-module" title="Permanent link">&para;</a></h4>
 <ul>
-<li><strong><a href="explainers/shap_explainer_docs/">SHAP</a></strong>: SHapley Additive exPlanations for tabular molecular data</li>
-<li><strong><a href="explainers/lime_explainer_docs/">LIME</a></strong>: Local Interpretable Model-agnostic Explanations for tabular data</li>
+<li><strong>QM9 Dataset</strong>: Loading and preprocessing molecular data</li>
+<li><strong>PCQM4Mv2 Dataset</strong>: Large-scale molecular property dataset</li>
+<li><strong>12+ Descriptor Types</strong>: Morgan, MACCS, RDKit2D, Avalon, AtomPair, and more</li>
+<li><strong>Graph Datasets</strong>: PyTorch Geometric compatible molecular graphs</li>
+<li><strong>Data Loaders</strong>: Paired clean/noisy dataloaders for robustness testing</li>
 </ul>
-<h4 id="graph-based-explainers">Graph-based Explainers<a class="headerlink" href="#graph-based-explainers" title="Permanent link">&para;</a></h4>
+
+<h4 id="models-module"><a href="models/">Models Module (models.py)</a><a class="headerlink" href="#models-module" title="Permanent link">&para;</a></h4>
 <ul>
-<li><strong><a href="explainers/gnn_explainer_docs/">GNN Explainer</a></strong>: Native GNN explanation method using masking</li>
-<li><strong><a href="explainers/graph_explainers_docs/">Graph Explainers</a></strong>: Collection of graph-specific explanation methods:</li>
-<li>GraphShap: SHAP for graph-level predictions</li>
-<li>GraphLIME: LIME for graph-level predictions</li>
-<li>NodeGraphShap: SHAP for node-level predictions</li>
-<li>NodeGrapLIME: LIME for node-level predictions</li>
+<li><strong>MLP</strong>: Multi-layer perceptron for tabular molecular descriptors</li>
+<li><strong>GCN</strong>: Graph convolutional network for molecular graphs</li>
+<li>Configurable architectures with dropout and batch normalization</li>
 </ul>
-<h3 id="visualization-and-analysis">Visualization and Analysis<a class="headerlink" href="#visualization-and-analysis" title="Permanent link">&para;</a></h3>
+
+<h4 id="explainers-module"><a href="explainers/">Explainers Module (explainers.py)</a><a class="headerlink" href="#explainers-module" title="Permanent link">&para;</a></h4>
 <ul>
-<li><strong><a href="plots/plots_docs/">Plots</a></strong>: Visualization functions for explanation results</li>
-<li><strong><a href="evaluator/evaluator_docs/">Evaluator</a></strong>: Robustness evaluation and fingerprint analysis</li>
+<li><strong>Tabular Explainers</strong>: SHAP (local/global), LIME</li>
+<li><strong>Graph Explainers</strong>: GNNExplain, GraphShap, GraphLIME</li>
+<li><strong>Node Explainers</strong>: NodeGraphShap, NodeGrapLIME</li>
+<li>All explainers in single 909-line file for easy maintenance</li>
 </ul>
+
+<h4 id="training-module"><a href="train/">Training Module (train.py)</a><a class="headerlink" href="#training-module" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>train_mlp_qm9()</strong>: Train MLP models on molecular descriptors</li>
+<li><strong>train_gcn_qm9()</strong>: Train GCN models on molecular graphs</li>
+<li>Automatic logging, model saving, and early stopping</li>
+<li>Support for noisy data augmentation</li>
+</ul>
+
+<h4 id="evaluation-module"><a href="evaluate/">Evaluation Module (evaluate.py)</a><a class="headerlink" href="#evaluation-module" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>RobustnessEvaluator</strong>: Compare explanations from clean vs noisy models</li>
+<li><strong>MolecularAnalyzer</strong>: Visualize important fingerprint bits and fragments</li>
+<li><strong>TabularAnalyzer</strong>: Calculate fidelity metrics for tabular explanations</li>
+<li><strong>GraphAnalyzer</strong>: Graph-specific metrics and groundtruth evaluation</li>
+</ul>
+
+<h4 id="plots-module"><a href="plots/">Plots Module (plots.py)</a><a class="headerlink" href="#plots-module" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>radar_plot()</strong>: Circular visualization of feature importance</li>
+<li><strong>horizontal_bar_plot()</strong>: Bar charts for feature importance</li>
+<li><strong>k_hop_subgraph()</strong>: Extract k-hop neighborhoods from graphs</li>
+</ul>
+
 <h2 id="supported-model-types">Supported Model Types<a class="headerlink" href="#supported-model-types" title="Permanent link">&para;</a></h2>
 <h3 id="tabular-models">Tabular Models<a class="headerlink" href="#tabular-models" title="Permanent link">&para;</a></h3>
 <ul>
@@ -297,13 +323,34 @@ pip install -e .
 - numpy &gt;= 1.20.0</p>
 <h2 id="api-reference">API Reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h2>
 <h3 id="quick-reference">Quick Reference<a class="headerlink" href="#quick-reference" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python"># Tabular explainers
+<pre><code class="language-python"># Data loading
+from chemxai.data import qm9_tabular, graph_datasets
+
+# Models
+from chemxai.models import MLP, GCN
+
+# Tabular explainers
 from chemxai.explainers import Shap, LIME
 
 # Graph explainers  
 from chemxai.explainers import (
     GNNExplain, GraphShap, GraphLIME, 
     NodeGraphShap, NodeGrapLIME
+)
+
+# Training
+from chemxai.train import train_mlp_qm9, train_gcn_qm9
+
+# Evaluation
+from chemxai.evaluate import (
+    RobustnessEvaluator, 
+    MolecularAnalyzer,
+    TabularAnalyzer,
+    GraphAnalyzer
+)
+
+# Visualization
+from chemxai.plots import radar_plot, horizontal_bar_plot, k_hop_subgraph
 )
 
 # Visualization
