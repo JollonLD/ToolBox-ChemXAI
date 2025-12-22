@@ -86,17 +86,17 @@
 
 <h2 id="mlp-class">MLP<a class="headerlink" href="#mlp-class" title="Permanent link">&para;</a></h2>
 
-<p><em>class</em> <strong>chemxai.models.MLP</strong>(<em>input_dim, hidden_dims, output_dim=1, dropout=0.2, activation='relu'</em>)</p>
+<p><em>class</em> <strong>chemxai.models.MLP</strong>(<em>input_dim, output_dim, layers, device, lr=0.001</em>)</p>
 
-<p>Multi-layer perceptron for regression and classification on molecular descriptors.</p>
+<p>Multi-layer perceptron for molecular property regression. Uses L1Loss (MAE) and includes integrated optimizer.</p>
 
 <p><strong>Parameters:</strong></p>
 <ul>
-<li><strong>input_dim</strong> (<em>int</em>) – Dimensionality of input features (e.g., 2048 for ECFP)</li>
-<li><strong>hidden_dims</strong> (<em>list of int</em>) – Hidden layer dimensions. Example: [128, 256, 128] creates a 3-layer architecture</li>
-<li><strong>output_dim</strong> (<em>int</em>) – Output dimensionality. Use 1 for regression, num_classes for classification. Default: 1</li>
-<li><strong>dropout</strong> (<em>float</em>) – Dropout probability applied after each hidden layer. Range: [0, 1). Default: 0.2</li>
-<li><strong>activation</strong> (<em>str</em>) – Activation function: <code>'relu'</code>, <code>'tanh'</code>, <code>'sigmoid'</code>, or <code>'elu'</code>. Default: <code>'relu'</code></li>
+<li><strong>input_dim</strong> (<em>int</em>) – Dimensionality of input features (e.g., 2048 for Morgan fingerprints)</li>
+<li><strong>output_dim</strong> (<em>int</em>) – Output dimensionality. Default: 1 for regression</li>
+<li><strong>layers</strong> (<em>list of int</em>) – Hidden layer dimensions. Example: [256, 128, 64] creates 3 hidden layers</li>
+<li><strong>device</strong> (<em>torch.device or str</em>) – Device for model and tensors (<code>'cuda'</code> or <code>'cpu'</code>)</li>
+<li><strong>lr</strong> (<em>float</em>) – Learning rate for Adam optimizer. Default: 0.001</li>
 </ul>
 
 <p><strong>Shape:</strong></p>
@@ -120,75 +120,99 @@
 </dl>
 
 <p><strong>Architecture Details:</strong></p>
-<p>The network structure follows this pattern for each hidden layer:</p>
-<pre><code>Linear → BatchNorm1d → Activation → Dropout
+<p>The network structure follows this pattern:</p>
+<pre><code>Input → [Linear → ReLU] × len(layers) → Linear → Output
 </code></pre>
-<p>Final layer uses a single Linear transformation without activation for continuous outputs.</p>
+<p>Final layer uses Linear transformation without activation for regression. Loss function is L1Loss (MAE), optimizer is Adam integrated in the class.</p>
+
+<p><strong>Attributes:</strong></p>
+<ul>
+<li><strong>layers</strong> (<em>nn.Sequential</em>) – Stacked linear + ReLU layers</li>
+<li><strong>criterion</strong> (<em>nn.L1Loss</em>) – Mean Absolute Error loss function</li>
+<li><strong>optimizer</strong> (<em>torch.optim.Adam</em>) – Adam optimizer with specified learning rate</li>
+<li><strong>device</strong> (<em>torch.device</em>) – Device where model resides</li>
+</ul>
 
 <p><strong>Example:</strong></p>
 <pre><code class="language-python">import torch
 from chemxai.models import MLP
 
-# Create MLP for 2048-dim ECFP descriptors
+# Setup device
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# Create MLP for 2048-dim Morgan fingerprints
 model = MLP(
     input_dim=2048,
-    hidden_dims=[512, 256, 128],
     output_dim=1,
-    dropout=0.3,
-    activation='relu'
+    layers=[512, 256, 128],  # 3 hidden layers
+    device=device,
+    lr=0.001
 )
 
 # Forward pass
 batch_size = 32
-x = torch.randn(batch_size, 2048)
+x = torch.randn(batch_size, 2048).to(device)
 output = model(x)
 print(output.shape)  # torch.Size([32, 1])
 
-# Training setup
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-criterion = torch.nn.MSELoss()
+# Training loop (optimizer and criterion already in model)
+targets = torch.randn(batch_size, 1).to(device)
 
-# Training loop
 model.train()
 for epoch in range(100):
-    optimizer.zero_grad()
+    model.optimizer.zero_grad()
     predictions = model(x)
-    loss = criterion(predictions, targets)
+    loss = model.criterion(predictions, targets)
     loss.backward()
-    optimizer.step()
+    model.optimizer.step()
+    
+    if epoch % 10 == 0:
+        print(f"Epoch {epoch}, Loss: {loss.item():.4f}")
 
 # Inference
 model.eval()
 with torch.no_grad():
+    test_features = torch.randn(10, 2048).to(device)
     predictions = model(test_features)
+    print(f"Predictions: {predictions.squeeze()}")
 </code></pre>
 
 <p><strong>Architecture Variants:</strong></p>
 <ul>
-<li><strong>Shallow network:</strong> hidden_dims=[256] – Fast, works for simple relationships</li>
-<li><strong>Deep network:</strong> hidden_dims=[512, 512, 256, 128] – Better for complex patterns, risk of overfitting</li>
-<li><strong>Bottleneck:</strong> hidden_dims=[256, 64, 256] – Compression in middle layers for feature learning</li>
-<li><strong>Pyramid:</strong> hidden_dims=[512, 256, 128, 64] – Gradual dimension reduction</li>
+<li><strong>Shallow network:</strong> layers=[256] – Fast, works for simple relationships</li>
+<li><strong>Deep network:</strong> layers=[512, 512, 256, 128] – Better for complex patterns, risk of overfitting</li>
+<li><strong>Bottleneck:</strong> layers=[256, 64, 256] – Compression in middle layers for feature learning</li>
+<li><strong>Pyramid:</strong> layers=[512, 256, 128, 64] – Gradual dimension reduction</li>
 </ul>
 
 <h2 id="gcn-class">GCN<a class="headerlink" href="#gcn-class" title="Permanent link">&para;</a></h2>
 
-<p><em>class</em> <strong>chemxai.models.GCN</strong>(<em>num_node_features, hidden_dim=64</em>)</p>
+<p><em>class</em> <strong>chemxai.models.GCN</strong>(<em>num_features, hidden_dim=256</em>)</p>
 
 <p>Graph Convolutional Network for molecular graph regression using PyTorch Geometric.</p>
 
 <p><strong>Parameters:</strong></p>
 <ul>
-<li><strong>num_node_features</strong> (<em>int</em>) – Dimensionality of node features (typically 11 for QM9: atom type one-hot encoding)</li>
-<li><strong>hidden_dim</strong> (<em>int</em>) – Hidden layer dimensionality for graph convolutions. Default: 64</li>
+<li><strong>num_features</strong> (<em>int</em>) – Dimensionality of node features (typically 11 for QM9: atom type one-hot encoding)</li>
+<li><strong>hidden_dim</strong> (<em>int</em>) – Hidden layer dimensionality for all graph convolutions. Default: 256</li>
 </ul>
 
 <p><strong>Architecture:</strong></p>
-<pre><code>GCNConv(num_node_features → hidden_dim) → ReLU
-GCNConv(hidden_dim → hidden_dim) → ReLU
-Global Mean Pooling
+<pre><code>GCNConv(num_features → hidden_dim) → BatchNorm1d → ReLU
+GCNConv(hidden_dim → hidden_dim) → BatchNorm1d → ReLU
+GCNConv(hidden_dim → hidden_dim) → BatchNorm1d → ReLU
+Global Add Pooling
+Linear(hidden_dim → hidden_dim) → ReLU → Dropout(0.3)
 Linear(hidden_dim → 1)
 </code></pre>
+
+<p><strong>Key Components:</strong></p>
+<ul>
+<li><strong>3 GCN Layers:</strong> Each with batch normalization for stable training</li>
+<li><strong>Global Add Pooling:</strong> Sums node features to create graph-level representation</li>
+<li><strong>Dropout (0.3):</strong> Applied before final layer to prevent overfitting</li>
+<li><strong>Batch Inference:</strong> Handles variable-sized graphs via batch parameter</li>
+</ul>
 
 <p><strong>Methods:</strong></p>
 
@@ -219,8 +243,8 @@ Linear(hidden_dim → 1)
 from torch_geometric.data import Data, Batch
 from chemxai.models import GCN
 
-# Create GCN model
-model = GCN(num_node_features=11, hidden_dim=64)
+# Create GCN model with default hidden_dim=256
+model = GCN(num_features=11, hidden_dim=256)
 
 # Example: Single molecule with 5 atoms
 x = torch.randn(5, 11)  # 5 nodes, 11 features each
@@ -233,10 +257,10 @@ edge_index = torch.tensor([
 mol_data = Data(x=x, edge_index=edge_index)
 
 # Batch multiple molecules
-batch = Batch.from_data_list([mol_data, mol_data, mol_data])
+batch_data = Batch.from_data_list([mol_data, mol_data, mol_data])
 
 # Forward pass
-output = model(batch.x, batch.edge_index, batch.batch)
+output = model(batch_data.x, batch_data.edge_index, batch_data.batch)
 print(output.shape)  # torch.Size([3, 1])
 
 # Training with DataLoader
@@ -244,16 +268,25 @@ from torch_geometric.loader import DataLoader
 
 train_loader = DataLoader(dataset, batch_size=32, shuffle=True)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
-criterion = torch.nn.MSELoss()
+criterion = torch.nn.L1Loss()  # MAE loss
 
 model.train()
 for epoch in range(50):
     for batch in train_loader:
         optimizer.zero_grad()
         out = model(batch.x, batch.edge_index, batch.batch)
-        loss = criterion(out, batch.y)
+        loss = criterion(out.squeeze(), batch.y)
         loss.backward()
         optimizer.step()
+    
+    if epoch % 10 == 0:
+        print(f"Epoch {epoch}, Loss: {loss.item():.4f}")
+
+# Inference
+model.eval()
+with torch.no_grad():
+    test_output = model(batch_data.x, batch_data.edge_index, batch_data.batch)
+    print(f"Predictions: {test_output.squeeze()}")
 </code></pre>
 
 <p><strong>GCN Convolution Layer:</strong></p>

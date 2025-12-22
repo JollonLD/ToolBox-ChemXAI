@@ -86,111 +86,87 @@
 
 <h2 id="train-mlp-qm9">train_mlp_qm9<a class="headerlink" href="#train-mlp-qm9" title="Permanent link">&para;</a></h2>
 
-<p><em>function</em> <strong>chemxai.train.train_mlp_qm9</strong>(<em>att_index, epochs, layers, learning_rate, batch_size, descriptor, noise_level, attack_method, att_train_size, custom_att, random_seed</em>)</p>
+<p><em>function</em> <strong>chemxai.train.train_mlp_qm9</strong>(<em>att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, batch_size=32, n_noise=3, descriptor_type='Morgan', cache_descriptors=True, num_workers=4, morgan_radius=2, morgan_nBits=512, log_dir="logs", layer_name='medium'</em>)</p>
 
-<p>Trains a multi-layer perceptron on QM9 molecular descriptors for property prediction.</p>
+<p>Trains a multi-layer perceptron on QM9 molecular descriptors for property prediction with automatic logging.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <dl>
 <dt><strong>att_index</strong> (<em>int</em>)</dt>
 <dd>
-Target property index from QM9 dataset (0-11):
-<ul>
-<li>0: μ (dipole moment in Debye)</li>
-<li>1: α (isotropic polarizability in Bohr³)</li>
-<li>2: ε<sub>HOMO</sub> (HOMO energy in Hartree)</li>
-<li>3: ε<sub>LUMO</sub> (LUMO energy in Hartree)</li>
-<li>4: Δε (HOMO-LUMO gap in Hartree)</li>
-<li>5: ⟨R²⟩ (electronic spatial extent in Bohr²)</li>
-<li>6: ZPVE (zero point vibrational energy in Hartree)</li>
-<li>7: U<sub>0</sub> (internal energy at 0K in Hartree)</li>
-<li>8: U (internal energy at 298.15K in Hartree)</li>
-<li>9: H (enthalpy at 298.15K in Hartree)</li>
-<li>10: G (free energy at 298.15K in Hartree)</li>
-<li>11: c<sub>v</sub> (heat capacity at 298.15K in cal/mol·K)</li>
-</ul>
+Target property index from QM9 dataset (0-14). Default: 10 (G - free energy at 298.15K)
 </dd>
 
 <dt><strong>epochs</strong> (<em>int</em>)</dt>
-<dd>Number of training epochs. Typical range: 50-200.</dd>
+<dd>Number of training epochs. Default: 10</dd>
 
 <dt><strong>layers</strong> (<em>list of int</em>)</dt>
 <dd>Hidden layer architecture specification. Each element defines the number of neurons in that layer.<br>
-Example: [128, 256, 128] creates a 3-layer network with bottleneck architecture.</dd>
+Default: [64, 32]</dd>
 
 <dt><strong>learning_rate</strong> (<em>float</em>)</dt>
-<dd>Initial learning rate for Adam optimizer. Typical values: 0.001-0.01.</dd>
+<dd>Initial learning rate for Adam optimizer. Default: 1e-3</dd>
 
 <dt><strong>batch_size</strong> (<em>int</em>)</dt>
-<dd>Mini-batch size for training. Larger batches provide more stable gradients but require more memory.</dd>
+<dd>Mini-batch size for training. Default: 32</dd>
 
-<dt><strong>descriptor</strong> (<em>str</em>)</dt>
+<dt><strong>n_noise</strong> (<em>int</em>)</dt>
+<dd>Number of noise features to add for noise detection experiments. Default: 3</dd>
+
+<dt><strong>descriptor_type</strong> (<em>str</em>)</dt>
 <dd>
-Molecular descriptor type to generate:
+Molecular descriptor type to generate. Default: 'Morgan'. Options:
 <ul>
-<li><code>'ECFPs'</code> – Extended-Connectivity Fingerprints (2048-bit, radius=2)</li>
-<li><code>'MACCSKeys'</code> – MACCS structural keys (166-bit)</li>
-<li><code>'Avalon'</code> – Avalon fingerprints (512-bit)</li>
-<li><code>'ErG'</code> – Estate + Gasteiger combined descriptors</li>
-<li><code>'pubchem'</code> – PubChem fingerprints (881-bit)</li>
-<li><code>'EstateIndices'</code> – Electrotopological state indices</li>
-<li><code>'fragments'</code> – Fragment-based descriptors</li>
-<li><code>'graph'</code> – Graph-theoretical descriptors</li>
-<li><code>'moe_type'</code> – MOE-type descriptors</li>
-<li><code>'constitutional'</code> – Constitutional descriptors</li>
-<li><code>'AUTOCORR2D'</code> – 2D autocorrelation</li>
-<li><code>'charge'</code> – Charge-based descriptors</li>
-<li><code>'connectivity'</code> – Connectivity indices</li>
-<li><code>'kappa'</code> – Kappa shape indices</li>
+<li><code>'CM'</code> – Coulomb Matrix</li>
+<li><code>'Morgan'</code> – Morgan fingerprints (ECFP, circular)</li>
+<li><code>'MorganCount'</code> – Morgan fingerprints with occurrence counts</li>
+<li><code>'Physicochemical'</code> – 2D physicochemical descriptors</li>
+<li><code>'3D'</code> – 3D geometric descriptors</li>
+<li><code>'MACCS'</code> – MACCS structural keys (166-bit)</li>
+<li><code>'Topological'</code> – Topological fingerprints</li>
+<li><code>'AtomPair'</code> – Atom pair fingerprints</li>
+<li><code>'EState'</code> – E-State indices</li>
+<li><code>'Pattern'</code> – Pattern fingerprints</li>
+<li><code>'Avalon'</code> – Avalon fingerprints</li>
+<li><code>'Autocorr'</code> – 2D autocorrelation descriptors</li>
 </ul>
 </dd>
 
-<dt><strong>noise_level</strong> (<em>float</em>)</dt>
-<dd>Gaussian noise standard deviation for data augmentation. Range: [0.0, 1.0].<br>
-Applied as: x' = x + noise_level × σ(x) × ε, where ε ~ N(0,1) and σ(x) is feature std.<br>
-Use 0.0 for no noise, 0.05-0.15 for robustness enhancement.</dd>
+<dt><strong>cache_descriptors</strong> (<em>bool</em>)</dt>
+<dd>Whether to cache computed descriptors for faster loading. Default: True</dd>
 
-<dt><strong>attack_method</strong> (<em>str or None</em>)</dt>
-<dd>
-Adversarial training method:
-<ul>
-<li><code>'PGD'</code> – Projected Gradient Descent (stronger, slower)</li>
-<li><code>'FGSM'</code> – Fast Gradient Sign Method (faster, weaker)</li>
-<li><code>None</code> – No adversarial training</li>
-</ul>
-</dd>
+<dt><strong>num_workers</strong> (<em>int</em>)</dt>
+<dd>Number of workers for data loading. Default: 4</dd>
 
-<dt><strong>att_train_size</strong> (<em>int</em>)</dt>
-<dd>Number of adversarial examples to generate per epoch. Only used when attack_method is not None.<br>
-Typical values: 100-1000 depending on dataset size.</dd>
+<dt><strong>morgan_radius</strong> (<em>int</em>)</dt>
+<dd>Radius for Morgan fingerprints. Default: 2</dd>
 
-<dt><strong>custom_att</strong> (<em>callable or None</em>)</dt>
-<dd>Custom attack function with signature: <code>attack_fn(model, data, labels, device) -> adversarial_data</code>.<br>
-If None, uses built-in attack specified by attack_method.</dd>
+<dt><strong>morgan_nBits</strong> (<em>int</em>)</dt>
+<dd>Number of bits for Morgan fingerprints. Default: 512</dd>
 
-<dt><strong>random_seed</strong> (<em>int</em>)</dt>
-<dd>Random seed for reproducibility. Sets seeds for Python, NumPy, and PyTorch.</dd>
+<dt><strong>log_dir</strong> (<em>str</em>)</dt>
+<dd>Directory to save detailed training logs. Default: "logs"</dd>
+
+<dt><strong>layer_name</strong> (<em>str</em>)</dt>
+<dd>Name identifier for the layer configuration. Default: 'medium'</dd>
 </dl>
 
 <p><strong>Returns:</strong></p>
 <ul>
-<li><strong>model</strong> (<em>chemxai.models.MLP</em>) – Trained MLP model in evaluation mode</li>
-<li><strong>test_loader</strong> (<em>torch.utils.data.DataLoader</em>) – Test data loader with normalized features</li>
-<li><strong>target_scaler</strong> (<em>sklearn.preprocessing.StandardScaler</em>) – Fitted scaler for target denormalization</li>
+<li><strong>list</strong> – List of tuples (epoch, train_loss, val_loss) for each training epoch</li>
 </ul>
 
 <p><strong>Training Process:</strong></p>
 <ol>
 <li>Load QM9 dataset and compute specified molecular descriptors</li>
-<li>Apply noise injection if noise_level > 0</li>
-<li>Split data: 80% train, 10% validation, 10% test (stratified by target)</li>
+<li>Add n_noise noise features if n_noise > 0</li>
+<li>Split data: 80% train, 10% validation, 10% test</li>
 <li>Normalize features using StandardScaler (fit on train, transform all)</li>
-<li>Normalize targets using StandardScaler</li>
-<li>Initialize MLP with specified architecture</li>
-<li>Train using Adam optimizer with MSE loss</li>
-<li>Apply adversarial training if attack_method is specified</li>
-<li>Return trained model, test loader, and target scaler</li>
+<li>Initialize MLP with specified architecture and device</li>
+<li>Train using integrated optimizer and L1Loss (MAE)</li>
+<li>Save model checkpoint and detailed logs to log_dir</li>
+<li>Return training history (losses per epoch)</li>
 </ol>
 
 <p><strong>Example - Basic Training:</strong></p>
@@ -259,49 +235,48 @@ robust_model, test_loader, scaler = train_mlp_qm9(
 
 <h2 id="train-gcn-qm9">train_gcn_qm9<a class="headerlink" href="#train-gcn-qm9" title="Permanent link">&para;</a></h2>
 
-<p><em>function</em> <strong>chemxai.train.train_gcn_qm9</strong>(<em>target_idx=7, epochs=10, batch_size=32, lr=0.01, weight_decay=5e-4, device='cpu', random_seed=42</em>)</p>
+<p><em>function</em> <strong>chemxai.train.train_gcn_qm9</strong>(<em>target_idx=3, epochs=10, batch_size=64, lr=0.001, weight_decay=1e-4, n_noise=0, log_dir="logs"</em>)</p>
 
-<p>Trains a Graph Convolutional Network on QM9 molecular graphs.</p>
+<p>Trains a Graph Convolutional Network on QM9 molecular graphs with automatic logging.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <dl>
 <dt><strong>target_idx</strong> (<em>int</em>)</dt>
-<dd>Target property index (0-11), same as train_mlp_qm9. Default: 7 (U<sub>0</sub>)</dd>
+<dd>Target property index from QM9 dataset (0-14). Default: 3 (LUMO energy)</dd>
 
 <dt><strong>epochs</strong> (<em>int</em>)</dt>
-<dd>Number of training epochs. GCNs typically converge faster than MLPs. Default: 10</dd>
+<dd>Number of training epochs. Default: 10</dd>
 
 <dt><strong>batch_size</strong> (<em>int</em>)</dt>
-<dd>Number of graphs per mini-batch. Smaller than tabular due to variable graph sizes. Default: 32</dd>
+<dd>Number of graphs per mini-batch. Default: 64</dd>
 
 <dt><strong>lr</strong> (<em>float</em>)</dt>
-<dd>Learning rate for Adam optimizer. Higher than MLP due to simpler architecture. Default: 0.01</dd>
+<dd>Learning rate for optimizer. Default: 0.001</dd>
 
 <dt><strong>weight_decay</strong> (<em>float</em>)</dt>
-<dd>L2 regularization coefficient for Adam optimizer. Helps prevent overfitting. Default: 5e-4</dd>
+<dd>L2 regularization weight. Default: 1e-4</dd>
 
-<dt><strong>device</strong> (<em>str or torch.device</em>)</dt>
-<dd>Computation device: <code>'cpu'</code>, <code>'cuda'</code>, or <code>torch.device</code> object. Default: <code>'cpu'</code></dd>
+<dt><strong>n_noise</strong> (<em>int</em>)</dt>
+<dd>Number of noise graphs to include for robustness testing. Default: 0 (no noise)</dd>
 
-<dt><strong>random_seed</strong> (<em>int</em>)</dt>
-<dd>Random seed for reproducibility. Default: 42</dd>
+<dt><strong>log_dir</strong> (<em>str</em>)</dt>
+<dd>Directory to save detailed training logs. Default: "logs"</dd>
 </dl>
 
 <p><strong>Returns:</strong></p>
 <ul>
-<li><strong>model</strong> (<em>chemxai.models.GCN</em>) – Trained GCN model</li>
-<li><strong>test_loader</strong> (<em>torch_geometric.loader.DataLoader</em>) – Test data loader</li>
-<li><strong>scaler</strong> (<em>sklearn.preprocessing.StandardScaler</em>) – Target scaler</li>
-<li><strong>train_loader</strong> (<em>torch_geometric.loader.DataLoader</em>) – Training data loader (for continued training)</li>
+<li><strong>list</strong> – List of tuples (epoch, train_loss, val_loss) for each training epoch</li>
 </ul>
 
 <p><strong>Model Architecture:</strong></p>
-<pre><code>Input: Node features (11-dimensional)
-├── GCNConv(11 → 64) + ReLU
-├── GCNConv(64 → 64) + ReLU
-├── Global Mean Pooling
-└── Linear(64 → 1)
+<pre><code>Input: Node features (num_features-dimensional)
+├── GCNConv(num_features → 256) + BatchNorm1d + ReLU
+├── GCNConv(256 → 256) + BatchNorm1d + ReLU
+├── GCNConv(256 → 256) + BatchNorm1d + ReLU
+├── Global Add Pooling
+├── Linear(256 → 256) + ReLU + Dropout(0.3)
+└── Linear(256 → 1)
 Output: Graph-level prediction
 </code></pre>
 
@@ -309,11 +284,12 @@ Output: Graph-level prediction
 <ol>
 <li>Load QM9 molecular graphs with node features (atom type, chirality, etc.)</li>
 <li>Create graph representations with edge indices (bond connectivity)</li>
-<li>Split: 80% train, 10% validation, 10% test</li>
-<li>Normalize target values using StandardScaler</li>
-<li>Initialize GCN with 2 convolutional layers</li>
-<li>Train with Adam optimizer and MSE loss</li>
-<li>Monitor validation loss for convergence</li>
+<li>Split data using get_paired_dataloaders</li>
+<li>Automatically detect and use GPU if available</li>
+<li>Initialize GCN with 3 convolutional layers + BatchNorm</li>
+<li>Train with L1Loss (MAE)</li>
+<li>Save model checkpoint and detailed logs to log_dir</li>
+<li>Return training history (losses per epoch)</li>
 </ol>
 
 <p><strong>Example:</strong></p>
