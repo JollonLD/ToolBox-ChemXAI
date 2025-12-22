@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Module - ChemXAI Documentation</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</head>
+
+<body class="wy-body-for-nav" role="document">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> ChemXAI Documentation</a>
+        </div>
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+          <ul>
+            <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+            <li class="toctree-l1 current"><a class="reference internal current" href="#">Data Module</a></li>
+            <li class="toctree-l1"><a class="reference internal" href="models_module.html">Models Module</a></li>
+            <li class="toctree-l1"><a class="reference internal" href="explainers_module.html">Explainers Module</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">ChemXAI Documentation</a>
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+<h1 id="data-module">Data Module</h1>
+
+<p>The <code>chemxai.data</code> module provides classes and functions for loading and preprocessing molecular datasets for both graph-based and tabular machine learning models.</p>
+
+<h2 id="overview">Overview</h2>
+
+<p>This module contains two main classes:</p>
+<ul>
+  <li><strong>graph_datasets</strong>: For handling graph-based molecular data (PyTorch Geometric)</li>
+  <li><strong>qm9_tabular</strong>: For handling tabular molecular data with various descriptor types</li>
+</ul>
+
+<hr>
+
+<h2 id="graph_datasets">graph_datasets</h2>
+
+<p>Class for preparing graph-based molecular datasets with support for adding noise features for robustness testing.</p>
+
+<h3 id="methods">Methods</h3>
+
+<h4 id="prepare_data_graph">prepare_data_graph</h4>
+
+<pre><code class="language-python">def prepare_data_graph(dataset_name='PCQM4'):
+    """
+    Load and prepare graph-based molecular datasets.
+    
+    Parameters
+    ----------
+    dataset_name : str, optional (default='PCQM4')
+        Name of the dataset to load. Options:
+        - 'PCQM4': PCQM4Mv2 dataset
+        - 'QM9': QM9 dataset
+    
+    Returns
+    -------
+    torch_geometric.data.InMemoryDataset
+        Dataset with normalized node features ready for GNN models.
+    
+    Example
+    -------
+    >>> from chemxai.data import graph_datasets
+    >>> gd = graph_datasets()
+    >>> dataset = gd.prepare_data_graph('QM9')
+    >>> print(f"Loaded {len(dataset)} molecules")
+    """
+</code></pre>
+
+<h4 id="prepare_data_graph_noise">prepare_data_graph_noise</h4>
+
+<pre><code class="language-python">def prepare_data_graph_noise(dataset_name='PCQM4', noise_type='gaussian', 
+                             noise_scale=1.0, seed=42):
+    """
+    Prepare graph data with an additional noise feature for each node.
+    Useful for testing robustness of explanations.
+    
+    Parameters
+    ----------
+    dataset_name : str, optional (default='PCQM4')
+        Name of the dataset ('PCQM4' or 'QM9')
+    noise_type : str, optional (default='gaussian')
+        Type of noise to add:
+        - 'gaussian': Normal distribution with mean=0, std=noise_scale
+        - 'uniform': Uniform distribution in [-noise_scale, noise_scale]
+        - 'binary': Random binary values {0, 1}
+    noise_scale : float, optional (default=1.0)
+        Scale/magnitude of the noise
+    seed : int, optional (default=42)
+        Random seed for reproducibility
+        
+    Returns
+    --------
+    NoisyGraphDataset : torch_geometric.data.InMemoryDataset
+        Dataset with added noise feature. Contains an additional 
+        attribute 'is_noise' (boolean mask indicating noise feature).
+    
+    Example
+    -------
+    >>> gd = graph_datasets()
+    >>> noisy_data = gd.prepare_data_graph_noise(
+    ...     dataset_name='QM9',
+    ...     noise_type='gaussian',
+    ...     noise_scale=0.5
+    ... )
+    >>> print(f"Number of features: {noisy_data.num_features}")
+    >>> print(f"Noise feature index: {noisy_data.is_noise.nonzero()}")
+    """
+</code></pre>
+
+<h4 id="get_paired_dataloaders">get_paired_dataloaders</h4>
+
+<pre><code class="language-python">def get_paired_dataloaders(dataset_name='QM9', batch_size=32, 
+                           split_ratio=[0.8, 0.1, 0.1], shuffle=True, 
+                           seed=42, noise_type='gaussian', noise_scale=1.0):
+    """
+    Create paired dataloaders for normal and noisy versions of the dataset
+    with identical train/val/test splits.
+    
+    Parameters
+    ----------
+    dataset_name : str, optional (default='QM9')
+        Name of the dataset
+    batch_size : int, optional (default=32)
+        Batch size for dataloaders
+    split_ratio : list of float, optional (default=[0.8, 0.1, 0.1])
+        Train/validation/test split ratios (must sum to 1.0)
+    shuffle : bool, optional (default=True)
+        Whether to shuffle training data
+    seed : int, optional (default=42)
+        Random seed for reproducibility
+    noise_type : str, optional (default='gaussian')
+        Type of noise ('gaussian', 'uniform', 'binary')
+    noise_scale : float, optional (default=1.0)
+        Scale of noise to add
+        
+    Returns
+    -------
+    tuple of DataLoader
+        (train_loader_normal, val_loader_normal, test_loader_normal,
+         train_loader_noise, val_loader_noise, test_loader_noise)
+         
+    Example
+    -------
+    >>> gd = graph_datasets()
+    >>> loaders = gd.get_paired_dataloaders(
+    ...     dataset_name='QM9',
+    ...     batch_size=64,
+    ...     split_ratio=[0.7, 0.15, 0.15]
+    ... )
+    >>> train_normal, val_normal, test_normal, train_noise, val_noise, test_noise = loaders
+    >>> 
+    >>> # Train on clean data
+    >>> for batch in train_normal:
+    ...     # Training code
+    ...     pass
+    """
+</code></pre>
+
+<hr>
+
+<h2 id="qm9_tabular">qm9_tabular</h2>
+
+<p>Class for loading and preprocessing QM9 dataset with various molecular descriptors for tabular ML models.</p>
+
+<h3 id="initialization">Initialization</h3>
+
+<pre><code class="language-python">from chemxai.data import qm9_tabular
+
+qm9 = qm9_tabular()
+# Automatically downloads and extracts QM9 dataset if not present
+</code></pre>
+
+<h3 id="properties">Properties</h3>
+
+<p>The QM9 dataset contains 15 molecular properties:</p>
+<ul>
+  <li>Rotational constants (A, B, C): GHz</li>
+  <li>Dipole moment (μ): Debye (D)</li>
+  <li>Isotropic polarizability (α): atomic units</li>
+  <li>HOMO energy (ϵ_HOMO): Hartree</li>
+  <li>LUMO energy (ϵ_LUMO): Hartree</li>
+  <li>Energy gap (ϵ_gap): Hartree</li>
+  <li>Electronic spatial extent: atomic units</li>
+  <li>Zero point vibrational energy: Hartree</li>
+  <li>Internal energy at 0K (U0): Hartree</li>
+  <li>Internal energy at 298.15K (U): Hartree</li>
+  <li>Enthalpy at 298.15K (H): Hartree</li>
+  <li>Free energy at 298.15K (G): Hartree</li>
+  <li>Heat capacity at 298.15K (Cv): cal/mol·K</li>
+</ul>
+
+<h3 id="descriptor-types">Supported Descriptor Types</h3>
+
+<p>The class supports various molecular descriptor types:</p>
+
+<table>
+  <tr>
+    <th>Descriptor</th>
+    <th>Description</th>
+    <th>Use Case</th>
+  </tr>
+  <tr>
+    <td><strong>Morgan</strong></td>
+    <td>Circular fingerprints (ECFP)</td>
+    <td>General structure representation</td>
+  </tr>
+  <tr>
+    <td><strong>MorganCount</strong></td>
+    <td>Morgan with occurrence counts</td>
+    <td>Frequency-based features</td>
+  </tr>
+  <tr>
+    <td><strong>CM</strong></td>
+    <td>Coulomb Matrix</td>
+    <td>3D geometry and charge distribution</td>
+  </tr>
+  <tr>
+    <td><strong>Physicochemical</strong></td>
+    <td>2D physicochemical descriptors</td>
+    <td>Drug-like properties</td>
+  </tr>
+  <tr>
+    <td><strong>3D</strong></td>
+    <td>3D geometry-based descriptors</td>
+    <td>Spatial properties</td>
+  </tr>
+  <tr>
+    <td><strong>MACCS</strong></td>
+    <td>MACCS keys (166 bits)</td>
+    <td>Substructure screening</td>
+  </tr>
+  <tr>
+    <td><strong>Topological</strong></td>
+    <td>Daylight-style fingerprints</td>
+    <td>Molecular topology</td>
+  </tr>
+  <tr>
+    <td><strong>AtomPair</strong></td>
+    <td>Atom pair fingerprints</td>
+    <td>Pharmacophore mapping</td>
+  </tr>
+  <tr>
+    <td><strong>EState</strong></td>
+    <td>Electrotopological state indices</td>
+    <td>Electronic properties</td>
+  </tr>
+  <tr>
+    <td><strong>Pattern</strong></td>
+    <td>SMARTS pattern fingerprints</td>
+    <td>Substructure queries</td>
+  </tr>
+  <tr>
+    <td><strong>Avalon</strong></td>
+    <td>Avalon fingerprints</td>
+    <td>Similarity screening</td>
+  </tr>
+  <tr>
+    <td><strong>Autocorr</strong></td>
+    <td>2D autocorrelation descriptors</td>
+    <td>Structure-property relationships</td>
+  </tr>
+</table>
+
+<h3 id="main-methods">Main Methods</h3>
+
+<h4 id="get_paired_dataloaders_tabular">get_paired_dataloaders_tabular</h4>
+
+<pre><code class="language-python">def get_paired_dataloaders_tabular(
+    att_index=10,
+    batch_size=32,
+    descriptor_type='Morgan',
+    list_mols=[],
+    n_noise=0,
+    morgan_radius=2,
+    morgan_nBits=512,
+    cache_descriptors=True,
+    split_ratio=[0.8, 0.1, 0.1],
+    seed=42
+):
+    """
+    Create dataloaders for tabular molecular data with optional noise features.
+    
+    Parameters
+    ----------
+    att_index : int, optional (default=10)
+        Index of the target property (0-14) to predict
+    batch_size : int, optional (default=32)
+        Batch size for dataloaders
+    descriptor_type : str, optional (default='Morgan')
+        Type of molecular descriptor (see table above)
+    list_mols : list, optional (default=[])
+        Filter molecules by number of atoms. Empty list = all molecules
+    n_noise : int, optional (default=0)
+        Number of random noise features to add for robustness testing
+    morgan_radius : int, optional (default=2)
+        Radius for Morgan fingerprints
+    morgan_nBits : int, optional (default=512)
+        Number of bits for fingerprint representations
+    cache_descriptors : bool, optional (default=True)
+        Whether to cache computed descriptors for faster reloading
+    split_ratio : list of float, optional (default=[0.8, 0.1, 0.1])
+        Train/validation/test split ratios
+    seed : int, optional (default=42)
+        Random seed for reproducibility
+        
+    Returns
+    -------
+    tuple
+        If n_noise > 0:
+            (train_loader, val_loader, test_loader,
+             train_loader_noise, val_loader_noise, test_loader_noise, is_noise)
+        If n_noise == 0:
+            (train_loader, val_loader, test_loader, None, None, None, None)
+            
+        where is_noise is a boolean mask indicating noise feature positions
+    
+    Example
+    -------
+    >>> from chemxai.data import qm9_tabular
+    >>> 
+    >>> # Basic usage without noise
+    >>> qm9 = qm9_tabular()
+    >>> train_loader, val_loader, test_loader, *_ = qm9.get_paired_dataloaders_tabular(
+    ...     att_index=7,  # Predict energy gap
+    ...     batch_size=64,
+    ...     descriptor_type='Morgan',
+    ...     morgan_nBits=1024
+    ... )
+    >>> 
+    >>> # With noise for robustness testing
+    >>> loaders = qm9.get_paired_dataloaders_tabular(
+    ...     att_index=7,
+    ...     batch_size=64,
+    ...     descriptor_type='Morgan',
+    ...     n_noise=5  # Add 5 random noise features
+    ... )
+    >>> train, val, test, train_noise, val_noise, test_noise, is_noise = loaders
+    >>> 
+    >>> # Use the loaders in training
+    >>> for batch_x, batch_y in train_loader:
+    ...     # batch_x: [batch_size, n_features]
+    ...     # batch_y: [batch_size, 1]
+    ...     predictions = model(batch_x)
+    ...     loss = criterion(predictions, batch_y)
+    """
+</code></pre>
+
+<h3 id="utility-methods">Utility Methods</h3>
+
+<h4 id="load_qm9_dataset">load_qm9_dataset</h4>
+
+<pre><code class="language-python">def load_qm9_dataset(list_mols=None):
+    """
+    Load the complete QM9 dataset from .xyz files with parallel processing.
+    
+    Parameters
+    ----------
+    list_mols : list, optional
+        List of molecule sizes (by atom count) to include.
+        If None or empty, loads all molecules.
+        
+    Returns
+    -------
+    tuple
+        (coordinates, properties, n_atoms) where:
+        - coordinates: list of (atoms, coords) tuples
+        - properties: list of property arrays
+        - n_atoms: list of atom counts
+        
+    Example
+    -------
+    >>> qm9 = qm9_tabular()
+    >>> coords, props, natoms = qm9.load_qm9_dataset(list_mols=[9, 10])
+    >>> print(f"Loaded {len(coords)} molecules")
+    """
+</code></pre>
+
+<h4 id="inverse_transform_features">inverse_transform_features</h4>
+
+<pre><code class="language-python">def inverse_transform_features(normalized_features, is_noise=False):
+    """
+    Denormalize features back to original scale.
+    
+    Parameters
+    ----------
+    normalized_features : np.ndarray
+        Normalized feature array to convert back
+    is_noise : bool, optional (default=False)
+        Whether to use the noise dataset scaler
+        
+    Returns
+    -------
+    np.ndarray
+        Denormalized features in original scale
+        
+    Example
+    -------
+    >>> # After getting explanations, denormalize if needed
+    >>> original_features = qm9.inverse_transform_features(
+    ...     normalized_features, 
+    ...     is_noise=False
+    ... )
+    """
+</code></pre>
+
+<hr>
+
+<h2 id="complete-example">Complete Usage Example</h2>
+
+<pre><code class="language-python">import torch
+from chemxai.data import graph_datasets, qm9_tabular
+
+# ========================================
+# Example 1: Graph-based data
+# ========================================
+
+# Initialize graph data handler
+gd = graph_datasets()
+
+# Load clean dataset
+clean_data = gd.prepare_data_graph('QM9')
+print(f"Loaded {len(clean_data)} molecules")
+print(f"Features per node: {clean_data[0].x.shape[1]}")
+
+# Create paired dataloaders (clean + noisy)
+loaders = gd.get_paired_dataloaders(
+    dataset_name='QM9',
+    batch_size=32,
+    noise_type='gaussian',
+    noise_scale=0.5
+)
+train, val, test, train_noise, val_noise, test_noise = loaders
+
+# Use in training
+for batch in train:
+    # batch is a PyG Batch object
+    x, edge_index = batch.x, batch.edge_index
+    # Your training code here
+    pass
+
+# ========================================
+# Example 2: Tabular data
+# ========================================
+
+# Initialize tabular data handler
+qm9 = qm9_tabular()
+
+# Load data with Morgan fingerprints
+train_loader, val_loader, test_loader, *_ = qm9.get_paired_dataloaders_tabular(
+    att_index=7,  # Energy gap
+    batch_size=64,
+    descriptor_type='Morgan',
+    morgan_radius=3,
+    morgan_nBits=2048,
+    cache_descriptors=True
+)
+
+# Access data
+for features, targets in train_loader:
+    # features: [batch_size, n_bits]
+    # targets: [batch_size, 1]
+    print(f"Batch shape: {features.shape}")
+    break
+
+# ========================================
+# Example 3: Robustness testing with noise
+# ========================================
+
+# Create datasets with noise features
+result = qm9.get_paired_dataloaders_tabular(
+    att_index=10,
+    batch_size=32,
+    descriptor_type='Morgan',
+    n_noise=3,  # Add 3 noise features
+    seed=42
+)
+
+train, val, test, train_n, val_n, test_n, is_noise = result
+
+# Check which features are noise
+print(f"Total features: {len(is_noise)}")
+print(f"Noise feature indices: {is_noise.nonzero()[0]}")
+
+# Train two models (one on clean, one on noisy data)
+# Then use RobustnessEvaluator to compare explanations
+</code></pre>
+
+<hr>
+
+<h2 id="best-practices">Best Practices</h2>
+
+<h3 id="descriptor-selection">Descriptor Selection</h3>
+<ul>
+  <li><strong>Morgan fingerprints</strong>: Good general-purpose choice, captures circular substructures</li>
+  <li><strong>Physicochemical descriptors</strong>: Best for drug-like property prediction</li>
+  <li><strong>3D descriptors</strong>: Use when geometry is important (requires 3D coordinates)</li>
+  <li><strong>MACCS keys</strong>: Fast and efficient for similarity searches</li>
+</ul>
+
+<h3 id="performance-optimization">Performance Optimization</h3>
+<ul>
+  <li>Enable <code>cache_descriptors=True</code> to avoid recomputing descriptors</li>
+  <li>Use appropriate <code>batch_size</code> based on available memory</li>
+  <li>For large datasets, consider filtering with <code>list_mols</code> parameter</li>
+  <li>Set <code>seed</code> for reproducible train/val/test splits</li>
+</ul>
+
+<h3 id="noise-features">Noise Features for Robustness Testing</h3>
+<ul>
+  <li>Start with <code>n_noise=3-5</code> for initial robustness tests</li>
+  <li>Use <code>noise_type='gaussian'</code> for realistic perturbations</li>
+  <li>Compare explanations between clean and noisy models using <code>RobustnessEvaluator</code></li>
+</ul>
+
+<hr>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<h3 id="memory-issues">Memory Issues</h3>
+<pre><code class="language-python"># Reduce batch size
+loaders = qm9.get_paired_dataloaders_tabular(batch_size=16)
+
+# Filter to smaller molecules
+loaders = qm9.get_paired_dataloaders_tabular(list_mols=[5, 6, 7, 8, 9])
+</code></pre>
+
+<h3 id="slow-loading">Slow Data Loading</h3>
+<pre><code class="language-python"># Enable caching
+loaders = qm9.get_paired_dataloaders_tabular(cache_descriptors=True)
+
+# First run will be slow (computing descriptors)
+# Subsequent runs will be much faster
+</code></pre>
+
+<h3 id="reproducibility">Reproducibility</h3>
+<pre><code class="language-python"># Always set seed for reproducible splits
+loaders = qm9.get_paired_dataloaders_tabular(seed=42)
+</code></pre>
+
+            </div>
+          </div>
+          <footer>
+            <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+              <a href="index.html" class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+              <a href="models_module.html" class="btn btn-neutral float-right" title="Models Module">Next <span class="icon icon-circle-arrow-right"></span></a>
+            </div>
+            <hr/>
+            <div role="contentinfo">
+              <p>Built with MkDocs</p>
+            </div>
+          </footer>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/jquery-3.6.0.min.js"></script>
+  <script src="js/theme_extra.js"></script>
+  <script src="js/theme.js"></script>
+</body>
+</html>

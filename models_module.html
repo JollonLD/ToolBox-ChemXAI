@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Models Module - ChemXAI Documentation</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</head>
+
+<body class="wy-body-for-nav" role="document">
+  <div class="wy-grid-for-nav">
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="main" class="document">
+            <div class="section">
+              
+<h1 id="models-module">Models Module</h1>
+
+<p>The <code>chemxai.models</code> module provides neural network architectures for molecular property prediction on both tabular and graph-based data.</p>
+
+<h2 id="overview">Overview</h2>
+
+<p>This module contains two main model classes:</p>
+<ul>
+  <li><strong>MLP</strong>: Multi-Layer Perceptron for tabular molecular descriptors</li>
+  <li><strong>GCN</strong>: Graph Convolutional Network for molecular graphs</li>
+</ul>
+
+<hr>
+
+<h2 id="mlp-class">MLP - Multi-Layer Perceptron</h2>
+
+<p>Fully connected neural network for regression tasks on tabular molecular data.</p>
+
+<h3 id="mlp-init">Class Definition</h3>
+
+<pre><code class="language-python">class MLP(nn.Module):
+    """
+    Multi-Layer Perceptron for molecular property prediction.
+    
+    Parameters
+    ----------
+    input_dim : int
+        Dimension of input features (e.g., number of fingerprint bits)
+    output_dim : int
+        Dimension of output (typically 1 for regression)
+    layers : list of int
+        List specifying the number of neurons in each hidden layer
+        Example: [64, 32] creates two hidden layers with 64 and 32 neurons
+    device : torch.device
+        Device to run the model on ('cpu' or 'cuda')
+    lr : float, optional (default=0.001)
+        Learning rate for Adam optimizer
+        
+    Attributes
+    ----------
+    layers : nn.Sequential
+        Sequential container of all layers
+    criterion : nn.L1Loss
+        Mean Absolute Error loss function
+    optimizer : torch.optim.Adam
+        Adam optimizer with specified learning rate
+    device : torch.device
+        Device where model resides
+    
+    Example
+    -------
+    >>> import torch
+    >>> from chemxai.models import MLP
+    >>> 
+    >>> # Create MLP for Morgan fingerprints (2048 bits)
+    >>> device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    >>> model = MLP(
+    ...     input_dim=2048,
+    ...     output_dim=1,
+    ...     layers=[256, 128, 64],
+    ...     device=device,
+    ...     lr=0.001
+    ... )
+    >>> 
+    >>> # Forward pass
+    >>> x = torch.randn(32, 2048).to(device)  # batch of 32 molecules
+    >>> predictions = model(x)
+    >>> print(predictions.shape)  # torch.Size([32, 1])
+    """
+    
+    def __init__(self, input_dim, output_dim, layers, device, lr=0.001):
+        super(MLP, self).__init__()
+        all_layers = []
+        prev_dim = input_dim
+
+        # Hidden layers with ReLU activation
+        for layer_dim in layers:
+            all_layers.append(nn.Linear(prev_dim, layer_dim))
+            all_layers.append(nn.ReLU())
+            prev_dim = layer_dim
+
+        # Output layer (no activation for regression)
+        all_layers.append(nn.Linear(prev_dim, output_dim))
+
+        self.layers = nn.Sequential(*all_layers)
+        self.criterion = nn.L1Loss()  # Mean Absolute Error
+        self.optimizer = optim.Adam(self.parameters(), lr=lr)
+        self.device = device
+
+    def forward(self, x):
+        """
+        Forward pass through the network.
+        
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input features of shape [batch_size, input_dim]
+            
+        Returns
+        -------
+        torch.Tensor
+            Predictions of shape [batch_size, output_dim]
+        """
+        return self.layers(x)
+</code></pre>
+
+<h3 id="mlp-usage">Usage Examples</h3>
+
+<h4 id="mlp-basic">Basic Training Loop</h4>
+
+<pre><code class="language-python">import torch
+import torch.nn.functional as F
+from chemxai.models import MLP
+from chemxai.data import qm9_tabular
+
+# Setup
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# Load data
+qm9 = qm9_tabular()
+train_loader, val_loader, test_loader, *_ = qm9.get_paired_dataloaders_tabular(
+    att_index=7,  # Energy gap
+    batch_size=64,
+    descriptor_type='Morgan',
+    morgan_nBits=2048
+)
+
+# Create model
+model = MLP(
+    input_dim=2048,
+    output_dim=1,
+    layers=[256, 128, 64],
+    device=device,
+    lr=0.001
+).to(device)
+
+# Training loop
+model.train()
+for epoch in range(100):
+    total_loss = 0
+    for batch_x, batch_y in train_loader:
+        batch_x, batch_y = batch_x.to(device), batch_y.to(device)
+        
+        # Forward pass
+        model.optimizer.zero_grad()
+        predictions = model(batch_x)
+        loss = model.criterion(predictions, batch_y)
+        
+        # Backward pass
+        loss.backward()
+        model.optimizer.step()
+        
+        total_loss += loss.item()
+    
+    # Validation
+    model.eval()
+    val_loss = 0
+    with torch.no_grad():
+        for batch_x, batch_y in val_loader:
+            batch_x, batch_y = batch_x.to(device), batch_y.to(device)
+            predictions = model(batch_x)
+            val_loss += model.criterion(predictions, batch_y).item()
+    
+    print(f'Epoch {epoch}: Train Loss = {total_loss/len(train_loader):.4f}, '
+          f'Val Loss = {val_loss/len(val_loader):.4f}')
+    model.train()
+
+# Save model
+torch.save(model.state_dict(), 'mlp_model.pth')
+</code></pre>
+
+<h4 id="mlp-prediction">Making Predictions</h4>
+
+<pre><code class="language-python"># Load trained model
+model = MLP(input_dim=2048, output_dim=1, layers=[256, 128, 64], device=device)
+model.load_state_dict(torch.load('mlp_model.pth'))
+model.to(device)
+model.eval()
+
+# Make predictions
+with torch.no_grad():
+    for batch_x, batch_y in test_loader:
+        batch_x = batch_x.to(device)
+        predictions = model(batch_x)
+        print(f'Predictions: {predictions[:5].squeeze()}')
+        print(f'Actual: {batch_y[:5].squeeze()}')
+        break
+</code></pre>
+
+<hr>
+
+<h2 id="gcn-class">GCN - Graph Convolutional Network</h2>
+
+<p>Graph neural network for molecular property prediction from molecular graphs.</p>
+
+<h3 id="gcn-init">Class Definition</h3>
+
+<pre><code class="language-python">class GCN(torch.nn.Module):
+    """
+    Graph Convolutional Network for molecular graphs.
+    
+    Architecture:
+    - 3 GCN layers with batch normalization and ReLU activation
+    - Global add pooling for graph-level representation
+    - 2 fully connected layers for final prediction
+    - Dropout (0.3) for regularization
+    
+    Parameters
+    ----------
+    num_features : int
+        Number of input node features
+    hidden_dim : int, optional (default=256)
+        Dimension of hidden layers in GCN and FC layers
+        
+    Example
+    -------
+    >>> import torch
+    >>> from chemxai.models import GCN
+    >>> from chemxai.data import graph_datasets
+    >>> 
+    >>> # Load graph data
+    >>> gd = graph_datasets()
+    >>> dataset = gd.prepare_data_graph('QM9')
+    >>> 
+    >>> # Create model
+    >>> model = GCN(num_features=dataset[0].x.shape[1], hidden_dim=256)
+    >>> 
+    >>> # Forward pass for single graph
+    >>> data = dataset[0]
+    >>> prediction = model(data.x, data.edge_index)
+    >>> print(f'Prediction shape: {prediction.shape}')
+    >>> 
+    >>> # Forward pass for batch
+    >>> from torch_geometric.loader import DataLoader
+    >>> loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    >>> batch = next(iter(loader))
+    >>> predictions = model(batch.x, batch.edge_index, batch.batch)
+    >>> print(f'Batch predictions shape: {predictions.shape}')
+    """
+    
+    def __init__(self, num_features, hidden_dim=256):
+        super(GCN, self).__init__()
+        
+        # Graph convolutional layers
+        self.conv1 = GCNConv(num_features, hidden_dim)
+        self.bn1 = BatchNorm1d(hidden_dim)
+        
+        self.conv2 = GCNConv(hidden_dim, hidden_dim)
+        self.bn2 = BatchNorm1d(hidden_dim)
+        
+        self.conv3 = GCNConv(hidden_dim, hidden_dim)
+        self.bn3 = BatchNorm1d(hidden_dim)
+
+        # Fully connected layers
+        self.lin1 = Linear(hidden_dim, hidden_dim)
+        self.lin2 = Linear(hidden_dim, 1)
+        
+        # Dropout for regularization
+        self.dropout = Dropout(0.3)
+
+    def forward(self, x, edge_index, batch=None):
+        """
+        Forward pass through the GCN.
+        
+        Parameters
+        ----------
+        x : torch.Tensor
+            Node feature matrix of shape [num_nodes, num_features]
+        edge_index : torch.Tensor
+            Edge indices of shape [2, num_edges]
+        batch : torch.Tensor, optional
+            Batch vector of shape [num_nodes] indicating which graph
+            each node belongs to. If None, assumes single graph.
+            
+        Returns
+        -------
+        torch.Tensor
+            Graph-level predictions of shape [num_graphs, 1]
+        """
+        # If batch not provided, assume single graph
+        if batch is None:
+            batch = torch.zeros(x.size(0), dtype=torch.long, device=x.device)
+
+        # GCN layers
+        x = self.conv1(x, edge_index)
+        x = self.bn1(x)
+        x = F.relu(x)
+
+        x = self.conv2(x, edge_index)
+        x = self.bn2(x)
+        x = F.relu(x)
+
+        x = self.conv3(x, edge_index)
+        x = self.bn3(x)
+        x = F.relu(x)
+
+        # Global pooling
+        x = global_add_pool(x, batch)
+
+        # Fully connected layers
+        x = self.dropout(F.relu(self.lin1(x)))
+        x = self.lin2(x)
+
+        return x
+</code></pre>
+
+<h3 id="gcn-usage">Usage Examples</h3>
+
+<h4 id="gcn-training">Training a GCN</h4>
+
+<pre><code class="language-python">import torch
+import torch.nn.functional as F
+from torch_geometric.loader import DataLoader
+from chemxai.models import GCN
+from chemxai.data import graph_datasets
+
+# Setup
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# Load data
+gd = graph_datasets()
+dataset = gd.prepare_data_graph('QM9')
+
+# Create train/val/test split
+train_size = int(0.8 * len(dataset))
+val_size = int(0.1 * len(dataset))
+test_size = len(dataset) - train_size - val_size
+
+train_dataset = dataset[:train_size]
+val_dataset = dataset[train_size:train_size+val_size]
+test_dataset = dataset[train_size+val_size:]
+
+# Create dataloaders
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+
+# Create model
+model = GCN(
+    num_features=dataset[0].x.shape[1],
+    hidden_dim=256
+).to(device)
+
+# Optimizer and loss
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+criterion = torch.nn.MSELoss()
+
+# Training loop
+for epoch in range(100):
+    model.train()
+    total_loss = 0
+    
+    for batch in train_loader:
+        batch = batch.to(device)
+        optimizer.zero_grad()
+        
+        # Forward pass
+        out = model(batch.x, batch.edge_index, batch.batch)
+        
+        # Compute loss (assuming regression on property at index 7)
+        loss = criterion(out.squeeze(), batch.y[:, 7])
+        
+        # Backward pass
+        loss.backward()
+        optimizer.step()
+        
+        total_loss += loss.item() * batch.num_graphs
+    
+    # Validation
+    model.eval()
+    val_loss = 0
+    with torch.no_grad():
+        for batch in val_loader:
+            batch = batch.to(device)
+            out = model(batch.x, batch.edge_index, batch.batch)
+            loss = criterion(out.squeeze(), batch.y[:, 7])
+            val_loss += loss.item() * batch.num_graphs
+    
+    print(f'Epoch {epoch}: Train Loss = {total_loss/len(train_dataset):.4f}, '
+          f'Val Loss = {val_loss/len(val_dataset):.4f}')
+
+# Save model
+torch.save(model.state_dict(), 'gcn_model.pth')
+</code></pre>
+
+<h4 id="gcn-inference">Inference with GCN</h4>
+
+<pre><code class="language-python"># Load model
+model = GCN(num_features=11, hidden_dim=256)  # QM9 has 11 node features
+model.load_state_dict(torch.load('gcn_model.pth'))
+model.to(device)
+model.eval()
+
+# Make predictions on test set
+predictions = []
+true_values = []
+
+with torch.no_grad():
+    for batch in test_loader:
+        batch = batch.to(device)
+        out = model(batch.x, batch.edge_index, batch.batch)
+        predictions.extend(out.squeeze().cpu().numpy())
+        true_values.extend(batch.y[:, 7].cpu().numpy())
+
+# Calculate metrics
+import numpy as np
+predictions = np.array(predictions)
+true_values = np.array(true_values)
+
+mae = np.mean(np.abs(predictions - true_values))
+rmse = np.sqrt(np.mean((predictions - true_values)**2))
+
+print(f'Test MAE: {mae:.4f}')
+print(f'Test RMSE: {rmse:.4f}')
+</code></pre>
+
+<hr>
+
+<h2 id="model-comparison">Model Comparison</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Aspect</th>
+      <th>MLP</th>
+      <th>GCN</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Input Type</strong></td>
+      <td>Fixed-size vectors (fingerprints, descriptors)</td>
+      <td>Variable-size molecular graphs</td>
+    </tr>
+    <tr>
+      <td><strong>Architecture</strong></td>
+      <td>Fully connected layers</td>
+      <td>Graph convolutions + pooling</td>
+    </tr>
+    <tr>
+      <td><strong>Advantages</strong></td>
+      <td>Simple, fast, works with any descriptor</td>
+      <td>Learns from molecular structure directly</td>
+    </tr>
+    <tr>
+      <td><strong>Disadvantages</strong></td>
+      <td>Requires manual feature engineering</td>
+      <td>More complex, requires graph structure</td>
+    </tr>
+    <tr>
+      <td><strong>Best For</strong></td>
+      <td>Quick experiments, standard descriptors</td>
+      <td>Learning structural patterns, 3D data</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="best-practices">Best Practices</h2>
+
+<h3 id="mlp-best-practices">MLP Best Practices</h3>
+
+<ul>
+  <li><strong>Layer sizes</strong>: Start with [256, 128, 64] and adjust based on data size</li>
+  <li><strong>Learning rate</strong>: 0.001 is a good starting point, use learning rate scheduling for better results</li>
+  <li><strong>Input normalization</strong>: Always normalize/standardize input features</li>
+  <li><strong>Regularization</strong>: Add dropout or L2 regularization if overfitting occurs</li>
+  <li><strong>Descriptor choice</strong>: Morgan fingerprints work well for most tasks</li>
+</ul>
+
+<h3 id="gcn-best-practices">GCN Best Practices</h3>
+
+<ul>
+  <li><strong>Hidden dimensions</strong>: 256 works well for most molecular datasets</li>
+  <li><strong>Number of layers</strong>: 3-5 GCN layers is typically sufficient</li>
+  <li><strong>Batch size</strong>: Start with 32-64, adjust based on GPU memory</li>
+  <li><strong>Pooling</strong>: global_add_pool works well for molecular properties</li>
+  <li><strong>Normalization</strong>: Batch normalization helps training stability</li>
+  <li><strong>Dropout</strong>: 0.3 is a good default value</li>
+</ul>
+
+<hr>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<h3 id="mlp-issues">MLP Issues</h3>
+
+<pre><code class="language-python"># Issue: Model not learning
+# Solution: Check learning rate and add more layers
+model = MLP(input_dim=2048, output_dim=1, 
+            layers=[512, 256, 128, 64],  # More capacity
+            device=device, lr=0.01)  # Higher LR
+
+# Issue: Overfitting
+# Solution: Add dropout layers manually
+import torch.nn as nn
+class MLPWithDropout(MLP):
+    def __init__(self, *args, dropout=0.5, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Modify layers to add dropout
+        new_layers = []
+        for layer in self.layers:
+            new_layers.append(layer)
+            if isinstance(layer, nn.ReLU):
+                new_layers.append(nn.Dropout(dropout))
+        self.layers = nn.Sequential(*new_layers)
+</code></pre>
+
+<h3 id="gcn-issues">GCN Issues</h3>
+
+<pre><code class="language-python"># Issue: Out of memory
+# Solution: Reduce batch size or hidden dimension
+train_loader = DataLoader(train_dataset, batch_size=16)  # Smaller batches
+model = GCN(num_features=11, hidden_dim=128)  # Smaller model
+
+# Issue: Exploding gradients
+# Solution: Add gradient clipping
+torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
+# Issue: Slow convergence
+# Solution: Use learning rate scheduler
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer, mode='min', factor=0.5, patience=10
+)
+</code></pre>
+
+<hr>
+
+<h2 id="advanced-usage">Advanced Usage</h2>
+
+<h3 id="custom-architectures">Custom Architectures</h3>
+
+<pre><code class="language-python">from chemxai.models import GCN
+import torch.nn as nn
+
+class CustomGCN(GCN):
+    """Extended GCN with attention mechanism"""
+    def __init__(self, num_features, hidden_dim=256, num_heads=4):
+        super().__init__(num_features, hidden_dim)
+        # Add custom layers here
+        from torch_geometric.nn import GATConv
+        self.att_conv = GATConv(hidden_dim, hidden_dim, heads=num_heads)
+    
+    def forward(self, x, edge_index, batch=None):
+        # Custom forward pass
+        x = super().forward(x, edge_index, batch)
+        return x
+</code></pre>
+
+<h3 id="ensemble">Ensemble Methods</h3>
+
+<pre><code class="language-python"># Train multiple models and ensemble predictions
+models = []
+for i in range(5):
+    model = MLP(input_dim=2048, output_dim=1, 
+                layers=[256, 128, 64], device=device)
+    # Train model...
+    models.append(model)
+
+# Ensemble prediction
+def ensemble_predict(models, x):
+    predictions = []
+    for model in models:
+        model.eval()
+        with torch.no_grad():
+            pred = model(x)
+            predictions.append(pred)
+    return torch.mean(torch.stack(predictions), dim=0)
+</code></pre>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

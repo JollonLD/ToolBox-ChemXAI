@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Complete API Documentation - ChemXAI</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <style>
+        .method-signature { background: #f5f5f5; padding: 10px; border-left: 4px solid #2980b9; margin: 10px 0; }
+        .param-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .param-table th, .param-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .param-table th { background-color: #2980b9; color: white; }
+        .code-example { background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0; }
+    </style>
+</head>
+
+<body>
+<div class="document">
+
+<h1>ChemXAI - Complete API Documentation</h1>
+
+<p><strong>Version:</strong> 1.0.0<br>
+<strong>Last Updated:</strong> December 2025</p>
+
+<nav>
+    <h2>Table of Contents</h2>
+    <ul>
+        <li><a href="#data-module">1. Data Module</a></li>
+        <li><a href="#models-module">2. Models Module</a></li>
+        <li><a href="#explainers-module">3. Explainers Module</a></li>
+        <li><a href="#train-module">4. Training Module</a></li>
+        <li><a href="#evaluate-module">5. Evaluation Module</a></li>
+        <li><a href="#plots-module">6. Plotting Module</a></li>
+    </ul>
+</nav>
+
+<hr>
+
+<!-- DATA MODULE -->
+<section id="data-module">
+<h1>1. Data Module (chemxai.data)</h1>
+
+<h2>1.1 graph_datasets</h2>
+
+<p>Class for handling graph-based molecular datasets.</p>
+
+<div class="method-signature">
+<code>graph_datasets.prepare_data_graph(dataset_name='PCQM4')</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td>dataset_name</td><td>str</td><td>'PCQM4'</td><td>Dataset name: 'PCQM4' or 'QM9'</td></tr>
+</table>
+
+<p><strong>Returns:</strong> torch_geometric.data.InMemoryDataset with normalized features</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.data import graph_datasets
+
+gd = graph_datasets()
+dataset = gd.prepare_data_graph('QM9')
+print(f"Loaded {len(dataset)} molecules")
+print(f"Node features: {dataset[0].x.shape}")</code></pre>
+</div>
+
+<div class="method-signature">
+<code>graph_datasets.prepare_data_graph_noise(dataset_name='PCQM4', noise_type='gaussian', noise_scale=1.0, seed=42)</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td>dataset_name</td><td>str</td><td>'PCQM4'</td><td>Dataset to load</td></tr>
+<tr><td>noise_type</td><td>str</td><td>'gaussian'</td><td>'gaussian', 'uniform', or 'binary'</td></tr>
+<tr><td>noise_scale</td><td>float</td><td>1.0</td><td>Magnitude of noise</td></tr>
+<tr><td>seed</td><td>int</td><td>42</td><td>Random seed for reproducibility</td></tr>
+</table>
+
+<p><strong>Returns:</strong> Dataset with additional noise feature</p>
+
+<div class="code-example">
+<pre><code class="language-python">noisy_data = gd.prepare_data_graph_noise(
+    dataset_name='QM9',
+    noise_type='gaussian',
+    noise_scale=0.5,
+    seed=42
+)
+print(f"Features with noise: {noisy_data.num_features}")</code></pre>
+</div>
+
+<h2>1.2 qm9_tabular</h2>
+
+<p>Class for handling tabular molecular descriptors from QM9 dataset.</p>
+
+<h3>Supported Descriptor Types:</h3>
+<ul>
+    <li><strong>Morgan</strong>: Circular fingerprints (ECFP)</li>
+    <li><strong>MorganCount</strong>: Morgan with occurrence counts</li>
+    <li><strong>CM</strong>: Coulomb Matrix</li>
+    <li><strong>Physicochemical</strong>: 2D physicochemical descriptors</li>
+    <li><strong>3D</strong>: 3D geometry-based descriptors</li>
+    <li><strong>MACCS</strong>: MACCS keys (166 bits)</li>
+    <li><strong>Topological</strong>: Daylight-style fingerprints</li>
+    <li><strong>AtomPair</strong>: Atom pair fingerprints</li>
+    <li><strong>EState</strong>: Electrotopological state indices</li>
+    <li><strong>Pattern</strong>: SMARTS pattern fingerprints</li>
+    <li><strong>Avalon</strong>: Avalon fingerprints</li>
+    <li><strong>Autocorr</strong>: 2D autocorrelation descriptors</li>
+</ul>
+
+<div class="method-signature">
+<code>qm9_tabular.get_paired_dataloaders_tabular(att_index=10, batch_size=32, descriptor_type='Morgan', ...)</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td>att_index</td><td>int</td><td>10</td><td>Target property index (0-14)</td></tr>
+<tr><td>batch_size</td><td>int</td><td>32</td><td>Batch size for dataloaders</td></tr>
+<tr><td>descriptor_type</td><td>str</td><td>'Morgan'</td><td>Type of molecular descriptor</td></tr>
+<tr><td>list_mols</td><td>list</td><td>[]</td><td>Filter by number of atoms</td></tr>
+<tr><td>n_noise</td><td>int</td><td>0</td><td>Number of noise features to add</td></tr>
+<tr><td>morgan_radius</td><td>int</td><td>2</td><td>Radius for Morgan fingerprints</td></tr>
+<tr><td>morgan_nBits</td><td>int</td><td>512</td><td>Number of bits for fingerprints</td></tr>
+<tr><td>cache_descriptors</td><td>bool</td><td>True</td><td>Cache computed descriptors</td></tr>
+<tr><td>split_ratio</td><td>list</td><td>[0.8,0.1,0.1]</td><td>Train/val/test split ratios</td></tr>
+<tr><td>seed</td><td>int</td><td>42</td><td>Random seed</td></tr>
+</table>
+
+<p><strong>Returns:</strong> tuple of DataLoaders (train, val, test, train_noise, val_noise, test_noise, is_noise)</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.data import qm9_tabular
+
+qm9 = qm9_tabular()
+
+# Basic usage
+train, val, test, *_ = qm9.get_paired_dataloaders_tabular(
+    att_index=7,  # Energy gap
+    batch_size=64,
+    descriptor_type='Morgan',
+    morgan_nBits=2048
+)
+
+# With noise for robustness testing
+result = qm9.get_paired_dataloaders_tabular(
+    att_index=7,
+    n_noise=5,
+    descriptor_type='Morgan'
+)
+train, val, test, train_n, val_n, test_n, is_noise = result</code></pre>
+</div>
+
+</section>
+
+<!-- MODELS MODULE -->
+<section id="models-module">
+<h1>2. Models Module (chemxai.models)</h1>
+
+<h2>2.1 MLP - Multi-Layer Perceptron</h2>
+
+<div class="method-signature">
+<code>MLP(input_dim, output_dim, layers, device, lr=0.001)</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+<tr><td>input_dim</td><td>int</td><td>Number of input features</td></tr>
+<tr><td>output_dim</td><td>int</td><td>Number of outputs (typically 1 for regression)</td></tr>
+<tr><td>layers</td><td>list[int]</td><td>Hidden layer sizes, e.g., [256, 128, 64]</td></tr>
+<tr><td>device</td><td>torch.device</td><td>Device ('cpu' or 'cuda')</td></tr>
+<tr><td>lr</td><td>float</td><td>Learning rate for Adam optimizer</td></tr>
+</table>
+
+<p><strong>Attributes:</strong></p>
+<ul>
+    <li><code>layers</code>: nn.Sequential of all layers</li>
+    <li><code>criterion</code>: nn.L1Loss (MAE)</li>
+    <li><code>optimizer</code>: torch.optim.Adam</li>
+</ul>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.models import MLP
+import torch
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+model = MLP(
+    input_dim=2048,  # Morgan fingerprint size
+    output_dim=1,
+    layers=[256, 128, 64],
+    device=device,
+    lr=0.001
+).to(device)
+
+# Forward pass
+x = torch.randn(32, 2048).to(device)
+predictions = model(x)
+print(predictions.shape)  # torch.Size([32, 1])</code></pre>
+</div>
+
+<h2>2.2 GCN - Graph Convolutional Network</h2>
+
+<div class="method-signature">
+<code>GCN(num_features, hidden_dim=256)</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td>num_features</td><td>int</td><td>-</td><td>Number of node features</td></tr>
+<tr><td>hidden_dim</td><td>int</td><td>256</td><td>Hidden layer dimensions</td></tr>
+</table>
+
+<p><strong>Architecture:</strong></p>
+<ul>
+    <li>3 GCN layers with batch normalization</li>
+    <li>Global add pooling</li>
+    <li>2 fully connected layers</li>
+    <li>Dropout (0.3) for regularization</li>
+</ul>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.models import GCN
+from chemxai.data import graph_datasets
+
+gd = graph_datasets()
+dataset = gd.prepare_data_graph('QM9')
+
+model = GCN(
+    num_features=dataset[0].x.shape[1],
+    hidden_dim=256
+).to(device)
+
+# Single graph prediction
+data = dataset[0]
+prediction = model(data.x, data.edge_index)
+
+# Batch prediction
+from torch_geometric.loader import DataLoader
+loader = DataLoader(dataset, batch_size=32)
+batch = next(iter(loader))
+predictions = model(batch.x, batch.edge_index, batch.batch)</code></pre>
+</div>
+
+</section>
+
+<!-- EXPLAINERS MODULE -->
+<section id="explainers-module">
+<h1>3. Explainers Module (chemxai.explainers)</h1>
+
+<h2>3.1 Tabular Explainers</h2>
+
+<h3>3.1.1 Shap</h3>
+
+<p>SHAP (SHapley Additive exPlanations) for tabular data using KernelExplainer.</p>
+
+<div class="method-signature">
+<code>Shap(model, background_tensor, test_tensor, device)</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+<tr><td>model</td><td>nn.Module</td><td>Trained PyTorch model</td></tr>
+<tr><td>background_tensor</td><td>torch.Tensor</td><td>Background data for SHAP</td></tr>
+<tr><td>test_tensor</td><td>torch.Tensor</td><td>Test data to explain</td></tr>
+<tr><td>device</td><td>torch.device</td><td>Device for computation</td></tr>
+</table>
+
+<p><strong>Methods:</strong></p>
+
+<div class="method-signature">
+<code>explain_local(index)</code>
+</div>
+<p>Generate local explanation for a specific instance.</p>
+<p><strong>Returns:</strong> list of SHAP values (one per feature)</p>
+
+<div class="method-signature">
+<code>explain_global()</code>
+</div>
+<p>Generate global feature importance across all test instances.</p>
+<p><strong>Returns:</strong> list of mean absolute SHAP values</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.explainers import Shap
+
+# Get data
+train_batch = next(iter(train_loader))
+test_batch = next(iter(test_loader))
+
+# Create explainer
+explainer = Shap(
+    model=model,
+    background_tensor=train_batch[0],
+    test_tensor=test_batch[0],
+    device=device
+)
+
+# Local explanation for first molecule
+local_shap = explainer.explain_local(index=0)
+print(f"SHAP values shape: {len(local_shap)}")
+
+# Global feature importance
+global_shap = explainer.explain_global()
+print(f"Most important feature: {global_shap.index(max(global_shap))}")</code></pre>
+</div>
+
+<h3>3.1.2 LIME</h3>
+
+<p>LIME (Local Interpretable Model-agnostic Explanations) for tabular data.</p>
+
+<div class="method-signature">
+<code>LIME(model, background_tensor, test_tensor, device, mode='regression')</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td>model</td><td>nn.Module</td><td>-</td><td>Trained model</td></tr>
+<tr><td>background_tensor</td><td>torch.Tensor</td><td>-</td><td>Training data</td></tr>
+<tr><td>test_tensor</td><td>torch.Tensor</td><td>-</td><td>Test data</td></tr>
+<tr><td>device</td><td>torch.device</td><td>-</td><td>Computation device</td></tr>
+<tr><td>mode</td><td>str</td><td>'regression'</td><td>'regression' or 'classification'</td></tr>
+</table>
+
+<p><strong>Methods:</strong></p>
+
+<div class="method-signature">
+<code>explain_local(index, num_features=None)</code>
+</div>
+<p>Generate LIME explanation for a specific instance.</p>
+<p><strong>Returns:</strong> list of feature importances</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.explainers import LIME
+
+explainer = LIME(
+    model=model,
+    background_tensor=train_batch[0],
+    test_tensor=test_batch[0],
+    device=device,
+    mode='regression'
+)
+
+# Explain first molecule
+lime_values = explainer.explain_local(index=0, num_features=20)
+print(f"Top features: {sorted(range(len(lime_values)), key=lambda i: abs(lime_values[i]), reverse=True)[:5]}")</code></pre>
+</div>
+
+<h2>3.2 Graph Explainers</h2>
+
+<h3>3.2.1 GNNExplain</h3>
+
+<p>Native GNN explainer using masking to identify important nodes and edges.</p>
+
+<div class="method-signature">
+<code>GNNExplain(model, device, data, epochs, mode='regression', task_level='graph', return_type='raw')</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td>model</td><td>nn.Module</td><td>-</td><td>GNN model</td></tr>
+<tr><td>device</td><td>torch.device</td><td>-</td><td>Computation device</td></tr>
+<tr><td>data</td><td>Data</td><td>-</td><td>PyG graph data</td></tr>
+<tr><td>epochs</td><td>int</td><td>-</td><td>Training epochs for explainer</td></tr>
+<tr><td>mode</td><td>str</td><td>'regression'</td><td>Task mode</td></tr>
+<tr><td>task_level</td><td>str</td><td>'graph'</td><td>'node' or 'graph'</td></tr>
+<tr><td>return_type</td><td>str</td><td>'raw'</td><td>Return format</td></tr>
+</table>
+
+<p><strong>Methods:</strong></p>
+
+<div class="method-signature">
+<code>explain(index=None)</code>
+</div>
+<p><strong>Returns:</strong> tuple of (node_mask, edge_mask, explanation_object)</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.explainers import GNNExplain
+
+# Create explainer for a molecule
+explainer = GNNExplain(
+    model=gcn_model,
+    device=device,
+    data=graph_data,
+    epochs=100,
+    mode='regression',
+    task_level='graph'
+)
+
+# Get explanation
+node_mask, edge_mask, explanation = explainer.explain()
+
+# Identify most important nodes
+important_nodes = torch.argsort(torch.tensor(node_mask), descending=True)[:5]
+print(f"Top 5 important nodes: {important_nodes.tolist()}")</code></pre>
+</div>
+
+<h3>3.2.2 GraphShap</h3>
+
+<p>SHAP for graph-level predictions.</p>
+
+<div class="method-signature">
+<code>GraphShap(data, model, device=None, gpu=False)</code>
+</div>
+
+<p><strong>Methods:</strong></p>
+
+<div class="method-signature">
+<code>explain(num_samples=30, info=True)</code>
+</div>
+<p><strong>Returns:</strong> list of SHAP values (one per feature)</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.explainers import GraphShap
+
+explainer = GraphShap(
+    data=graph_data,
+    model=gcn_model,
+    device=device
+)
+
+# Get SHAP values for graph
+shap_values = explainer.explain(num_samples=50)
+print(f"Feature importances: {shap_values}")</code></pre>
+</div>
+
+<h3>3.2.3 GraphLIME</h3>
+
+<p>LIME for graph-level predictions.</p>
+
+<div class="method-signature">
+<code>GraphLIME(model, device='cpu', rho=0.1)</code>
+</div>
+
+<p><strong>Methods:</strong></p>
+
+<div class="method-signature">
+<code>explain(data, num_samples=100)</code>
+</div>
+<p><strong>Returns:</strong> list of feature importances</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.explainers import GraphLIME
+
+explainer = GraphLIME(model=gcn_model, device=device, rho=0.1)
+feature_importance = explainer.explain(data=graph_data, num_samples=100)
+print(f"Feature importance: {feature_importance}")</code></pre>
+</div>
+
+<h3>3.2.4 NodeGraphShap</h3>
+
+<p>SHAP for node-level predictions in graphs.</p>
+
+<div class="method-signature">
+<code>NodeGraphShap(data, model, device, gpu=False)</code>
+</div>
+
+<p><strong>Methods:</strong></p>
+
+<div class="method-signature">
+<code>explain(node_index=0, hops=2, num_samples=10, info=True, multiclass=False)</code>
+</div>
+<p><strong>Returns:</strong> list of SHAP values for node features</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.explainers import NodeGraphShap
+
+explainer = NodeGraphShap(
+    data=graph_data,
+    model=gcn_model,
+    device=device
+)
+
+# Explain specific node (e.g., atom)
+shap_values = explainer.explain(
+    node_index=5,
+    hops=2,
+    num_samples=50
+)
+print(f"Node 5 feature importances: {shap_values}")</code></pre>
+</div>
+
+<h3>3.2.5 NodeGrapLIME</h3>
+
+<p>LIME for node-level predictions in graphs.</p>
+
+<div class="method-signature">
+<code>NodeGrapLIME(data, model, device, gpu=False, hop=2, rho=0.1, cached=True)</code>
+</div>
+
+<p><strong>Methods:</strong></p>
+
+<div class="method-signature">
+<code>explain(node_index, hops, num_samples, info=False, multiclass=False)</code>
+</div>
+<p><strong>Returns:</strong> list of feature importances</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.explainers import NodeGrapLIME
+
+explainer = NodeGrapLIME(
+    data=graph_data,
+    model=gcn_model,
+    device=device,
+    hop=2,
+    rho=0.1
+)
+
+# Explain node
+lime_values = explainer.explain(
+    node_index=5,
+    hops=2,
+    num_samples=100
+)
+print(f"Node LIME values: {lime_values}")</code></pre>
+</div>
+
+</section>
+
+<!-- TRAINING MODULE -->
+<section id="train-module">
+<h1>4. Training Module (chemxai.train)</h1>
+
+<h2>4.1 train_mlp_qm9</h2>
+
+<p>Train an MLP model on QM9 tabular data.</p>
+
+<div class="method-signature">
+<code>train_mlp_qm9(att_index=10, epochs=10, layers=[64, 32], learning_rate=1e-3, 
+              batch_size=32, n_noise=0, descriptor_type='Morgan', ...)</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td>att_index</td><td>int</td><td>10</td><td>Target property index (0-14)</td></tr>
+<tr><td>epochs</td><td>int</td><td>10</td><td>Number of training epochs</td></tr>
+<tr><td>layers</td><td>list</td><td>[64, 32]</td><td>Hidden layer sizes</td></tr>
+<tr><td>learning_rate</td><td>float</td><td>0.001</td><td>Learning rate</td></tr>
+<tr><td>batch_size</td><td>int</td><td>32</td><td>Batch size</td></tr>
+<tr><td>n_noise</td><td>int</td><td>0</td><td>Number of noise features</td></tr>
+<tr><td>descriptor_type</td><td>str</td><td>'Morgan'</td><td>Descriptor type</td></tr>
+<tr><td>cache_descriptors</td><td>bool</td><td>True</td><td>Cache descriptors</td></tr>
+<tr><td>morgan_radius</td><td>int</td><td>2</td><td>Morgan fingerprint radius</td></tr>
+<tr><td>morgan_nBits</td><td>int</td><td>512</td><td>Number of fingerprint bits</td></tr>
+<tr><td>log_dir</td><td>str</td><td>'logs'</td><td>Directory for logs</td></tr>
+<tr><td>layer_name</td><td>str</td><td>'medium'</td><td>Name for saved model</td></tr>
+</table>
+
+<p><strong>Returns:</strong> list of tuples (epoch, train_loss, val_loss)</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.train import train_mlp_qm9
+
+# Train MLP on energy gap prediction
+history = train_mlp_qm9(
+    att_index=7,  # Energy gap
+    epochs=100,
+    layers=[256, 128, 64],
+    learning_rate=0.001,
+    batch_size=64,
+    descriptor_type='Morgan',
+    morgan_nBits=2048,
+    log_dir='training_logs'
+)
+
+# Check training progress
+for epoch, train_loss, val_loss in history[-10:]:
+    print(f"Epoch {epoch}: Train={train_loss:.4f}, Val={val_loss:.4f}")</code></pre>
+</div>
+
+<h2>4.2 train_gcn_qm9</h2>
+
+<p>Train a GCN model on QM9 graph data.</p>
+
+<div class="method-signature">
+<code>train_gcn_qm9(target_idx=3, epochs=10, batch_size=64, lr=0.001, 
+              weight_decay=1e-4, n_noise=0, log_dir='logs')</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td>target_idx</td><td>int</td><td>3</td><td>Target property index</td></tr>
+<tr><td>epochs</td><td>int</td><td>10</td><td>Training epochs</td></tr>
+<tr><td>batch_size</td><td>int</td><td>64</td><td>Batch size</td></tr>
+<tr><td>lr</td><td>float</td><td>0.001</td><td>Learning rate</td></tr>
+<tr><td>weight_decay</td><td>float</td><td>1e-4</td><td>L2 regularization</td></tr>
+<tr><td>n_noise</td><td>int</td><td>0</td><td>Use noisy data if > 0</td></tr>
+<tr><td>log_dir</td><td>str</td><td>'logs'</td><td>Log directory</td></tr>
+</table>
+
+<p><strong>Returns:</strong> list of tuples (epoch, train_loss, val_loss)</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.train import train_gcn_qm9
+
+# Train GCN
+history = train_gcn_qm9(
+    target_idx=7,
+    epochs=100,
+    batch_size=32,
+    lr=0.001,
+    weight_decay=1e-4,
+    log_dir='gcn_training_logs'
+)
+
+# Check final performance
+final_epoch, final_train, final_val = history[-1]
+print(f"Final - Train Loss: {final_train:.4f}, Val Loss: {final_val:.4f}")</code></pre>
+</div>
+
+</section>
+
+<!-- EVALUATION MODULE -->
+<section id="evaluate-module">
+<h1>5. Evaluation Module (chemxai.evaluate)</h1>
+
+<h2>5.1 RobustnessEvaluator</h2>
+
+<p>Evaluate robustness of explanations by comparing clean vs noisy models.</p>
+
+<div class="method-signature">
+<code>RobustnessEvaluator(first_model, second_model, x1_train, x1_test, x2_train, x2_test, 
+                    device, model_type='graph', explainer_type='shap_local', 
+                    mol_index=0, atom_index=0)</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+<tr><td>first_model</td><td>nn.Module</td><td>First model (typically clean)</td></tr>
+<tr><td>second_model</td><td>nn.Module</td><td>Second model (typically with noise)</td></tr>
+<tr><td>x1_train</td><td>DataLoader</td><td>Training data for first model</td></tr>
+<tr><td>x1_test</td><td>DataLoader</td><td>Test data for first model</td></tr>
+<tr><td>x2_train</td><td>DataLoader</td><td>Training data for second model</td></tr>
+<tr><td>x2_test</td><td>DataLoader</td><td>Test data for second model</td></tr>
+<tr><td>device</td><td>torch.device</td><td>Computation device</td></tr>
+<tr><td>model_type</td><td>str</td><td>'tabular' or 'graph'</td></tr>
+<tr><td>explainer_type</td><td>str</td><td>Type of explainer to use</td></tr>
+</table>
+
+<p><strong>Explainer Types:</strong></p>
+<ul>
+    <li><code>'shap_local'</code>: Local SHAP for tabular data</li>
+    <li><code>'shap_global'</code>: Global SHAP for tabular data</li>
+    <li><code>'lime'</code>: LIME for tabular data</li>
+    <li><code>'gnn_explainer'</code>: GNNExplainer for graphs</li>
+    <li><code>'graph_shap'</code>: GraphShap</li>
+    <li><code>'graph_lime'</code>: GraphLIME</li>
+    <li><code>'node_graph_shap'</code>: NodeGraphShap</li>
+    <li><code>'node_graph_lime'</code>: NodeGrapLIME</li>
+</ul>
+
+<p><strong>Methods:</strong></p>
+
+<div class="method-signature">
+<code>get_metrics()</code>
+</div>
+<p>Compute robustness metrics between two models' explanations.</p>
+<p><strong>Returns:</strong> tuple of (similarities, l1_differences, l2_differences, spearman_correlations, figures)</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.evaluate import RobustnessEvaluator
+import numpy as np
+
+# Get paired dataloaders (clean and noisy)
+result = qm9.get_paired_dataloaders_tabular(
+    att_index=7,
+    batch_size=32,
+    n_noise=3
+)
+train, val, test, train_n, val_n, test_n, is_noise = result
+
+# Train two models (one on clean, one on noisy data)
+# model_clean = ... (trained on train)
+# model_noise = ... (trained on train_n)
+
+# Create evaluator
+evaluator = RobustnessEvaluator(
+    first_model=model_clean,
+    second_model=model_noise,
+    x1_train=train,
+    x1_test=test,
+    x2_train=train_n,
+    x2_test=test_n,
+    device=device,
+    model_type='tabular',
+    explainer_type='shap_local'
+)
+
+# Compute metrics
+sims, l1, l2, spearman, figs = evaluator.get_metrics()
+
+# Analyze results
+print(f"Mean cosine similarity: {np.mean(sims):.3f}")
+print(f"Mean L1 difference: {np.mean(l1):.3f}")
+print(f"Mean Spearman correlation: {np.mean(spearman):.3f}")
+
+# Figures are saved to 'graphs/' directory</code></pre>
+</div>
+
+</section>
+
+<!-- PLOTS MODULE -->
+<section id="plots-module">
+<h1>6. Plotting Module (chemxai.plots)</h1>
+
+<h2>6.1 radar_plot</h2>
+
+<p>Create a radar plot for feature importance visualization.</p>
+
+<div class="method-signature">
+<code>radar_plot(values, feature_names=None, title="Feature Importance Radar Plot")</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+<tr><td>values</td><td>np.ndarray</td><td>Feature importance values</td></tr>
+<tr><td>feature_names</td><td>list</td><td>Names of features (optional)</td></tr>
+<tr><td>title</td><td>str</td><td>Plot title</td></tr>
+</table>
+
+<p><strong>Returns:</strong> tuple of (figure, axes)</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.plots import radar_plot
+import numpy as np
+
+# Get SHAP values
+shap_values = explainer.explain_local(index=0)
+
+# Create radar plot
+fig, ax = radar_plot(
+    values=np.array(shap_values),
+    feature_names=[f"Feature {i}" for i in range(len(shap_values))],
+    title="Molecular Feature Importance"
+)
+fig.savefig('radar_plot.png', dpi=300)</code></pre>
+</div>
+
+<h2>6.2 horizontal_bar_plot</h2>
+
+<p>Create a horizontal bar plot for feature importance.</p>
+
+<div class="method-signature">
+<code>horizontal_bar_plot(values, feature_names=None, title="Feature Importance", 
+                    sort=True, max_features=None, color_positive='blue', 
+                    color_negative='red', figsize=(12, 8), 
+                    save_path='graphs', filename='feature_importance.png')</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td>values</td><td>array-like</td><td>-</td><td>Feature importance values</td></tr>
+<tr><td>feature_names</td><td>list</td><td>None</td><td>Feature names</td></tr>
+<tr><td>title</td><td>str</td><td>varies</td><td>Plot title</td></tr>
+<tr><td>sort</td><td>bool</td><td>True</td><td>Sort by absolute importance</td></tr>
+<tr><td>max_features</td><td>int</td><td>None</td><td>Maximum features to show</td></tr>
+<tr><td>color_positive</td><td>str</td><td>'blue'</td><td>Color for positive values</td></tr>
+<tr><td>color_negative</td><td>str</td><td>'red'</td><td>Color for negative values</td></tr>
+<tr><td>figsize</td><td>tuple</td><td>(12, 8)</td><td>Figure size</td></tr>
+<tr><td>save_path</td><td>str</td><td>'graphs'</td><td>Directory to save plot</td></tr>
+<tr><td>filename</td><td>str</td><td>varies</td><td>Filename for plot</td></tr>
+</table>
+
+<p><strong>Returns:</strong> tuple of (figure, axes)</p>
+
+<div class="code-example">
+<pre><code class="language-python">from chemxai.plots import horizontal_bar_plot
+
+# Get LIME values
+lime_values = lime_explainer.explain_local(index=0)
+
+# Create bar plot showing top 20 features
+fig, ax = horizontal_bar_plot(
+    values=lime_values,
+    title="Top 20 Most Important Features",
+    max_features=20,
+    sort=True,
+    color_positive='green',
+    color_negative='red',
+    figsize=(14, 10),
+    save_path='plots',
+    filename='lime_importance.png'
+)
+
+# Plot is automatically saved and returned</code></pre>
+</div>
+
+<h2>6.3 k_hop_subgraph</h2>
+
+<p>Extract k-hop subgraph around a node (utility function for graph explainers).</p>
+
+<div class="method-signature">
+<code>k_hop_subgraph(node_idx, num_hops, edge_index, relabel_nodes=False, 
+               num_nodes=None, flow='source_to_target')</code>
+</div>
+
+<table class="param-table">
+<tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+<tr><td>node_idx</td><td>int/list/tensor</td><td>Central node(s)</td></tr>
+<tr><td>num_hops</td><td>int</td><td>Number of hops</td></tr>
+<tr><td>edge_index</td><td>torch.Tensor</td><td>Edge indices [2, num_edges]</td></tr>
+<tr><td>relabel_nodes</td><td>bool</td><td>Relabel nodes consecutively</td></tr>
+<tr><td>num_nodes</td><td>int</td><td>Total number of nodes</td></tr>
+<tr><td>flow</td><td>str</td><td>Message passing direction</td></tr>
+</table>
+
+<p><strong>Returns:</strong> tuple of (subset, edge_index, mapping, edge_mask)</p>
+
+</section>
+
+<!-- COMPLETE WORKFLOW EXAMPLE -->
+<section id="complete-workflow">
+<h1>7. Complete Workflow Example</h1>
+
+<div class="code-example">
+<pre><code class="language-python">"""
+Complete ChemXAI Workflow Example
+Train models, generate explanations, evaluate robustness
+"""
+
+import torch
+from chemxai.data import qm9_tabular
+from chemxai.models import MLP
+from chemxai.train import train_mlp_qm9
+from chemxai.explainers import Shap
+from chemxai.evaluate import RobustnessEvaluator
+from chemxai.plots import horizontal_bar_plot
+import numpy as np
+
+# ============================================
+# 1. SETUP
+# ============================================
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"Using device: {device}")
+
+# ============================================
+# 2. PREPARE DATA
+# ============================================
+qm9 = qm9_tabular()
+
+# Get clean and noisy dataloaders
+result = qm9.get_paired_dataloaders_tabular(
+    att_index=7,  # Energy gap
+    batch_size=64,
+    descriptor_type='Morgan',
+    morgan_nBits=2048,
+    n_noise=3,  # Add 3 noise features
+    seed=42
+)
+train, val, test, train_n, val_n, test_n, is_noise = result
+
+print(f"Training samples: {len(train.dataset)}")
+print(f"Feature dimension: {train.dataset[0][0].shape[0]}")
+print(f"Noise features at indices: {is_noise.nonzero()[0].tolist()}")
+
+# ============================================
+# 3. TRAIN MODELS
+# ============================================
+
+# Train clean model
+print("\n=== Training Clean Model ===")
+history_clean = train_mlp_qm9(
+    att_index=7,
+    epochs=50,
+    layers=[256, 128, 64],
+    learning_rate=0.001,
+    batch_size=64,
+    descriptor_type='Morgan',
+    morgan_nBits=2048,
+    n_noise=0,
+    layer_name='clean'
+)
+
+# Train noisy model
+print("\n=== Training Noisy Model ===")
+history_noise = train_mlp_qm9(
+    att_index=7,
+    epochs=50,
+    layers=[256, 128, 64],
+    learning_rate=0.001,
+    batch_size=64,
+    descriptor_type='Morgan',
+    morgan_nBits=2048,
+    n_noise=3,
+    layer_name='noisy'
+)
+
+# ============================================
+# 4. LOAD TRAINED MODELS
+# ============================================
+input_dim = 2048
+model_clean = MLP(input_dim, 1, [256, 128, 64], device).to(device)
+model_clean.load_state_dict(torch.load('models/mlp_qm9_Morgan_att7_clean.pth'))
+model_clean.eval()
+
+model_noise = MLP(input_dim+3, 1, [256, 128, 64], device).to(device)
+model_noise.load_state_dict(torch.load('models/mlp_qm9_noise_Morgan_att7.pth'))
+model_noise.eval()
+
+# ============================================
+# 5. GENERATE EXPLANATIONS
+# ============================================
+
+# Get test batches
+test_batch_clean = next(iter(test))
+test_batch_noise = next(iter(test_n))
+train_batch_clean = next(iter(train))
+train_batch_noise = next(iter(train_n))
+
+# Create SHAP explainers
+print("\n=== Creating SHAP Explainers ===")
+explainer_clean = Shap(
+    model=model_clean,
+    background_tensor=train_batch_clean[0],
+    test_tensor=test_batch_clean[0],
+    device=device
+)
+
+explainer_noise = Shap(
+    model=model_noise,
+    background_tensor=train_batch_noise[0],
+    test_tensor=test_batch_noise[0],
+    device=device
+)
+
+# Get local explanations for first molecule
+shap_clean = explainer_clean.explain_local(index=0)
+shap_noise = explainer_noise.explain_local(index=0)
+
+print(f"SHAP values length (clean): {len(shap_clean)}")
+print(f"SHAP values length (noise): {len(shap_noise)}")
+
+# ============================================
+# 6. VISUALIZE EXPLANATIONS
+# ============================================
+
+# Plot clean model explanation
+fig, ax = horizontal_bar_plot(
+    values=shap_clean,
+    title="Feature Importance (Clean Model)",
+    max_features=30,
+    save_path='explanations',
+    filename='clean_model_shap.png'
+)
+
+# Plot noisy model explanation
+fig, ax = horizontal_bar_plot(
+    values=shap_noise[:input_dim],  # Exclude noise features from visualization
+    title="Feature Importance (Noisy Model)",
+    max_features=30,
+    save_path='explanations',
+    filename='noisy_model_shap.png'
+)
+
+# ============================================
+# 7. EVALUATE ROBUSTNESS
+# ============================================
+
+print("\n=== Evaluating Robustness ===")
+evaluator = RobustnessEvaluator(
+    first_model=model_clean,
+    second_model=model_noise,
+    x1_train=train,
+    x1_test=test,
+    x2_train=train_n,
+    x2_test=test_n,
+    device=device,
+    model_type='tabular',
+    explainer_type='shap_local'
+)
+
+# Compute robustness metrics
+sims, l1_diffs, l2_diffs, spearman_corrs, figs = evaluator.get_metrics()
+
+# ============================================
+# 8. ANALYZE RESULTS
+# ============================================
+
+print("\n=== Robustness Analysis Results ===")
+print(f"Cosine Similarity:")
+print(f"  Mean: {np.mean(sims):.3f}")
+print(f"  Std:  {np.std(sims):.3f}")
+print(f"  Min:  {np.min(sims):.3f}")
+print(f"  Max:  {np.max(sims):.3f}")
+
+print(f"\nL1 Distance:")
+print(f"  Mean: {np.mean(l1_diffs):.3f}")
+print(f"  Std:  {np.std(l1_diffs):.3f}")
+
+print(f"\nSpearman Correlation:")
+print(f"  Mean: {np.mean(spearman_corrs):.3f}")
+print(f"  Std:  {np.std(spearman_corrs):.3f}")
+
+# Identify most stable features
+global_clean = explainer_clean.explain_global()
+global_noise = explainer_noise.explain_global()
+
+# Top 10 features by global importance
+top_features_clean = sorted(range(len(global_clean)), 
+                           key=lambda i: abs(global_clean[i]), 
+                           reverse=True)[:10]
+
+print(f"\nTop 10 Most Important Features (Clean Model):")
+for rank, idx in enumerate(top_features_clean, 1):
+    print(f"  {rank}. Feature {idx}: {global_clean[idx]:.4f}")
+
+print("\n=== Analysis Complete ===")
+print("Plots saved to 'graphs/' directory")
+print("Explanations saved to 'explanations/' directory")
+</code></pre>
+</div>
+
+</section>
+
+<!-- FOOTER -->
+<footer style="margin-top: 50px; padding: 20px; background: #f5f5f5; border-top: 2px solid #2980b9;">
+<p><strong>ChemXAI Documentation</strong></p>
+<p>Version 1.0.0 | Last Updated: December 2025</p>
+<p>For more information, visit the <a href="https://github.com/JollonLD/ToolBox-ChemXAI">GitHub Repository</a></p>
+</footer>
+
+</div>
+</body>
+</html>
