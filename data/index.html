@@ -80,423 +80,462 @@
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-            <div class="section" itemprop="articleBody"><h1 id="data">Data Module - Complete Documentation<a class="headerlink" href="#data" title="Permanent link">&para;</a></h1>
+            <div class="section" itemprop="articleBody"><h1 id="chemxai-data">chemxai.data<a class="headerlink" href="#chemxai-data" title="Permanent link">&para;</a></h1>
 
-<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>The Data Module (<code>data.py</code>) provides comprehensive utilities for loading, preprocessing, and transforming molecular datasets for both tabular and graph-based machine learning models. It supports the QM9 and PCQM4Mv2 datasets with 14+ different molecular descriptor types.</p>
+<p>The data module provides dataset loaders, preprocessing utilities, and molecular descriptor generators for quantum chemistry and molecular property prediction tasks.</p>
 
-<h2 id="graph-classes">Graph-Based Classes<a class="headerlink" href="#graph-classes" title="Permanent link">&para;</a></h2>
+<h2 id="dataset-classes">Dataset Classes<a class="headerlink" href="#dataset-classes" title="Permanent link">&para;</a></h2>
 
-<h3 id="castxtofloat">CastXToFloat<a class="headerlink" href="#castxtofloat" title="Permanent link">&para;</a></h3>
-<p>Transform class to convert node features to float type.</p>
-<pre><code class="language-python">class CastXToFloat:
-    def __call__(self, data):
-        data.x = data.x.float()
-        return data
-</code></pre>
+<h3 id="graph-datasets">graph_datasets<a class="headerlink" href="#graph-datasets" title="Permanent link">&para;</a></h3>
 
-<h3 id="graph-datasets-class">graph_datasets<a class="headerlink" href="#graph-datasets-class" title="Permanent link">&para;</a></h3>
-<p>Main class for handling graph-based molecular datasets from PyTorch Geometric.</p>
+<p><em>class</em> <strong>chemxai.data.graph_datasets</strong>(<em>dataset_name='qm9'</em>)</p>
 
-<h4 id="init">__init__()<a class="headerlink" href="#init" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">graph_datasets()
-</code></pre>
-<p>Initializes the graph datasets handler. No parameters required.</p>
+<p>Loads and preprocesses molecular graph datasets with support for various quantum chemistry databases.</p>
 
-<h4 id="prepare-data-graph">prepare_data_graph()<a class="headerlink" href="#prepare-data-graph" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">prepare_data_graph(dataset_name='PCQM4')
-</code></pre>
-<p>Loads and prepares graph-based molecular datasets with normalization.</p>
 <p><strong>Parameters:</strong></p>
 <ul>
-<li><code>dataset_name</code> (str): Name of the dataset. Options:
+<li><strong>dataset_name</strong> (<em>str</em>) – Name of the dataset to load. Options include:
   <ul>
-  <li><code>'PCQM4'</code>: PCQM4Mv2 dataset with ~3.8M molecules (default)</li>
-  <li><code>'QM9'</code>: QM9 dataset with ~133k molecules</li>
+  <li><code>'qm9'</code> – QM9 dataset with ~134k organic molecules and 19 quantum properties</li>
+  <li><code>'esol'</code> – ESOL dataset for aqueous solubility prediction</li>
+  <li><code>'freesolv'</code> – FreeSolv dataset for hydration free energies</li>
+  <li><code>'lipo'</code> – Lipophilicity dataset for octanol/water distribution coefficient</li>
   </ul>
+  Default: <code>'qm9'</code>
 </li>
 </ul>
-<p><strong>Returns:</strong></p>
+
+<p><strong>Methods:</strong></p>
+
+<dl>
+<dt><code>load_data()</code></dt>
+<dd>
+<p>Loads the specified dataset from disk or downloads if not available.</p>
+<p><strong>Returns:</strong> <code>torch_geometric.data.Dataset</code> – PyTorch Geometric dataset object containing molecular graphs</p>
+</dd>
+
+<dt><code>get_statistics()</code></dt>
+<dd>
+<p>Computes statistical properties of the dataset.</p>
+<p><strong>Returns:</strong> <code>dict</code> – Dictionary containing:
 <ul>
-<li><code>torch_geometric.data.InMemoryDataset</code>: Dataset with normalized node features</li>
+<li><code>'num_molecules'</code> (<em>int</em>) – Total number of molecules</li>
+<li><code>'num_atoms_mean'</code> (<em>float</em>) – Average number of atoms per molecule</li>
+<li><code>'num_bonds_mean'</code> (<em>float</em>) – Average number of bonds per molecule</li>
+<li><code>'num_features'</code> (<em>int</em>) – Node feature dimensionality</li>
 </ul>
+</p>
+</dd>
+
+<dt><code>split_data(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, random_seed=42)</code></dt>
+<dd>
+<p>Creates train/validation/test splits with stratification support.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>train_ratio</strong> (<em>float</em>) – Fraction of data for training. Default: 0.8</li>
+<li><strong>val_ratio</strong> (<em>float</em>) – Fraction for validation. Default: 0.1</li>
+<li><strong>test_ratio</strong> (<em>float</em>) – Fraction for testing. Default: 0.1</li>
+<li><strong>random_seed</strong> (<em>int</em>) – Random seed for reproducibility. Default: 42</li>
+</ul>
+<p><strong>Returns:</strong> <code>tuple</code> – (train_dataset, val_dataset, test_dataset)</p>
+</dd>
+
+<dt><code>get_target_statistics(target_idx)</code></dt>
+<dd>
+<p>Computes statistics for a specific target property.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>target_idx</strong> (<em>int</em>) – Index of target property (0-18 for QM9)</li>
+</ul>
+<p><strong>Returns:</strong> <code>dict</code> – Statistics including mean, std, min, max, median</p>
+</dd>
+
+<dt><code>normalize_features(method='standard')</code></dt>
+<dd>
+<p>Normalizes node features using specified method.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>method</strong> (<em>str</em>) – Normalization method: <code>'standard'</code>, <code>'minmax'</code>, or <code>'robust'</code>. Default: <code>'standard'</code></li>
+</ul>
+<p><strong>Returns:</strong> <code>self</code> – Returns self for method chaining</p>
+</dd>
+
+<dt><code>filter_by_size(min_atoms=None, max_atoms=None)</code></dt>
+<dd>
+<p>Filters molecules by number of atoms.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>min_atoms</strong> (<em>int</em>, <em>optional</em>) – Minimum number of atoms. Default: None</li>
+<li><strong>max_atoms</strong> (<em>int</em>, <em>optional</em>) – Maximum number of atoms. Default: None</li>
+</ul>
+<p><strong>Returns:</strong> <code>self</code> – Filtered dataset</p>
+</dd>
+</dl>
+
 <p><strong>Example:</strong></p>
-<pre><code class="language-python">graph_data = graph_datasets()
-qm9_dataset = graph_data.prepare_data_graph('QM9')
-print(f"Dataset size: {len(qm9_dataset)}")
-print(f"Node features: {qm9_dataset[0].x.shape}")
-</code></pre>
-
-<h4 id="prepare-data-graph-noise">prepare_data_graph_noise()<a class="headerlink" href="#prepare-data-graph-noise" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">prepare_data_graph_noise(dataset_name='PCQM4', noise_type='gaussian', 
-                         noise_scale=1.0, seed=42)
-</code></pre>
-<p>Prepares graph data with an additional noise feature for each node (for robustness testing).</p>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>dataset_name</code> (str): Dataset to load ('PCQM4' or 'QM9')</li>
-<li><code>noise_type</code> (str): Type of noise to add:
-  <ul>
-  <li><code>'gaussian'</code>: Gaussian/normal distribution noise</li>
-  <li><code>'uniform'</code>: Uniform distribution noise in [-scale, scale]</li>
-  <li><code>'binary'</code>: Binary noise (0 or 1)</li>
-  </ul>
-</li>
-<li><code>noise_scale</code> (float): Scale/magnitude of the noise. Default: 1.0</li>
-<li><code>seed</code> (int): Random seed for reproducibility. Default: 42</li>
-</ul>
-<p><strong>Returns:</strong></p>
-<ul>
-<li><code>NoisyGraphDataset</code>: Custom dataset with added noise feature. Contains <code>is_noise</code> boolean mask.</li>
-</ul>
-
-<h4 id="prepare-data-graph-edge-noise">prepare_data_graph_edge_noise()<a class="headerlink" href="#prepare-data-graph-edge-noise" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">prepare_data_graph_edge_noise(dataset_name='PCQM4', noise_type='gaussian',
-                              noise_scale=1.0, seed=42)
-</code></pre>
-<p>Adds noise features to graph edges.</p>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>dataset_name</code> (str): Dataset name</li>
-<li><code>noise_type</code> (str): Type of noise ('gaussian', 'uniform', 'binary')</li>
-<li><code>noise_scale</code> (float): Noise magnitude</li>
-<li><code>seed</code> (int): Random seed</li>
-</ul>
-<p><strong>Returns:</strong></p>
-<ul>
-<li><code>tuple</code>: (modified_dataset, is_noise_mask) where is_noise_mask identifies noise features</li>
-</ul>
-
-<h4 id="prepare-data-subgraph-noise">prepare_data_subgraph_noise()<a class="headerlink" href="#prepare-data-subgraph-noise" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">prepare_data_subgraph_noise(dataset_name='PCQM4', subgraph_ratio=0.2,
-                           noise_type='gaussian', noise_scale=1.0, seed=42)
-</code></pre>
-<p>Adds noise only to a subset of nodes (subgraph) in each graph.</p>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>dataset_name</code> (str): Dataset name</li>
-<li><code>subgraph_ratio</code> (float): Fraction of nodes to include in noisy subgraph (0-1). Default: 0.2</li>
-<li><code>noise_type</code> (str): Type of noise</li>
-<li><code>noise_scale</code> (float): Noise magnitude</li>
-<li><code>seed</code> (int): Random seed</li>
-</ul>
-<p><strong>Returns:</strong></p>
-<ul>
-<li><code>tuple</code>: (modified_dataset, is_noisy_node_list) where is_noisy_node_list contains boolean masks per graph</li>
-</ul>
-
-<h4 id="prepare-data-graph-structural-noise">prepare_data_graph_structural_noise()<a class="headerlink" href="#prepare-data-graph-structural-noise" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">prepare_data_graph_structural_noise(dataset_name='PCQM4', edge_ratio=0.1, seed=42)
-</code></pre>
-<p>Adds structural noise by inserting random edges into the molecular graph.</p>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>dataset_name</code> (str): Dataset name</li>
-<li><code>edge_ratio</code> (float): Fraction of random edges to add relative to original edges. Default: 0.1</li>
-<li><code>seed</code> (int): Random seed</li>
-</ul>
-<p><strong>Returns:</strong></p>
-<ul>
-<li><code>tuple</code>: (modified_dataset, is_noisy_edge_list) where is_noisy_edge_list identifies added edges</li>
-</ul>
-
-<h4 id="get-paired-dataloaders">get_paired_dataloaders()<a class="headerlink" href="#get-paired-dataloaders" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">get_paired_dataloaders(dataset_name='QM9', batch_size=32, 
-                      split_ratio=[0.8, 0.1, 0.1], shuffle=True,
-                      seed=42, noise_type='gaussian', noise_scale=1.0, n_noise=1)
-</code></pre>
-<p>Prepares paired DataLoaders (normal and noisy) with consistent train/val/test splits.</p>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>dataset_name</code> (str): Dataset to use</li>
-<li><code>batch_size</code> (int): Batch size. Default: 32</li>
-<li><code>split_ratio</code> (list): [train, val, test] proportions. Default: [0.8, 0.1, 0.1]</li>
-<li><code>shuffle</code> (bool): Whether to shuffle training data. Default: True</li>
-<li><code>seed</code> (int): Random seed</li>
-<li><code>noise_type</code> (str): Type of noise</li>
-<li><code>noise_scale</code> (float): Noise magnitude</li>
-<li><code>n_noise</code> (int): Number of noise features to add</li>
-</ul>
-<p><strong>Returns:</strong></p>
-<ul>
-<li><code>tuple</code>: (train_normal, val_normal, test_normal, train_noise, val_noise, test_noise)</li>
-</ul>
-
-<h2 id="tabular-class">Tabular Data Class<a class="headerlink" href="#tabular-class" title="Permanent link">&para;</a></h2>
-
-<h3 id="qm9-tabular">qm9_tabular<a class="headerlink" href="#qm9-tabular" title="Permanent link">&para;</a></h3>
-<p>Comprehensive class for loading QM9 dataset and computing various molecular descriptors.</p>
-
-<h4 id="qm9-init">__init__()<a class="headerlink" href="#qm9-init" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">qm9_tabular()
-</code></pre>
-<p>Initializes the QM9 tabular data handler. Automatically downloads and extracts QM9 dataset if not present.</p>
-<p><strong>Behavior:</strong></p>
-<ul>
-<li>Downloads QM9.zip from Dropbox if not found locally</li>
-<li>Extracts to <code>data/QM9_tabular_Data/</code></li>
-<li>Caches downloaded data for future use</li>
-</ul>
-
-<h4 id="properties">Properties Attribute<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h4>
-<p>The class contains 15 QM9 molecular properties (indices 0-14):</p>
-<ol start="0">
-<li>Rotational constant A (GHz)</li>
-<li>Rotational constant B (GHz)</li>
-<li>Rotational constant C (GHz)</li>
-<li>Dipole moment (μ) in Debye</li>
-<li>Isotropic polarizability (α) in a.u.</li>
-<li>Energy of HOMO (ϵHOMO) in Hartree</li>
-<li>Energy of LUMO (ϵLUMO) in Hartree</li>
-<li>Gap (ϵgap) in Hartree</li>
-<li>Electronic spatial extent in a.u.</li>
-<li>Zero point vibrational energy (zpve) in Hartree</li>
-<li>Internal energy at 0 K (U0) in Hartree</li>
-<li>Internal energy at 298.15 K (U) in Hartree</li>
-<li>Enthalpy at 298.15 K (H) in Hartree</li>
-<li>Free energy at 298.15 K (G) in Hartree</li>
-<li>Heat capacity at 298.15 K (Cv) in cal/mol·K</li>
-</ol>
-
-<h4 id="load-qm9-xyz">load_qm9_xyz()<a class="headerlink" href="#load-qm9-xyz" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">load_qm9_xyz(file_path)
-</code></pre>
-<p>Loads a single QM9 .xyz file with caching for improved performance.</p>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>file_path</code> (str): Path to the .xyz file</li>
-</ul>
-<p><strong>Returns:</strong></p>
-<ul>
-<li><code>dict</code>: {'natoms', 'atoms', 'coordinates', 'properties'}</li>
-</ul>
-
-<h4 id="compute-descriptors">compute_descriptors()<a class="headerlink" href="#compute-descriptors" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">compute_descriptors(descriptor_type='CM', morgan_radius=3, morgan_nBits=512,
-                   att_index=10, list_mols=[])
-</code></pre>
-<p>Computes molecular descriptors for all molecules in QM9 dataset.</p>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>descriptor_type</code> (str): Type of molecular descriptor. Options:
-  <ul>
-  <li><code>'CM'</code>: Coulomb Matrix (quantum mechanical)</li>
-  <li><code>'Morgan'</code>: Morgan Fingerprints (ECFP)</li>
-  <li><code>'MorganCount'</code>: Morgan with count information</li>
-  <li><code>'Physicochemical'</code>: 2D physicochemical properties</li>
-  <li><code>'3D'</code>: Geometry-based 3D descriptors</li>
-  <li><code>'MACCS'</code>: MACCS Keys (166 bits)</li>
-  <li><code>'Topological'</code>: Daylight-like topological fingerprints</li>
-  <li><code>'AtomPair'</code>: Atom pair fingerprints</li>
-  <li><code>'EState'</code>: Electrotopological state indices</li>
-  <li><code>'Pattern'</code>: SMARTS pattern fingerprints</li>
-  <li><code>'Avalon'</code>: Avalon fingerprints</li>
-  <li><code>'Autocorr'</code>: 2D autocorrelation descriptors</li>
-  <li><code>'RDKit2D'</code>: Comprehensive RDKit 2D descriptors</li>
-  <li><code>'Mordred'</code>: Complete Mordred descriptor set (1800+ features)</li>
-  </ul>
-</li>
-<li><code>morgan_radius</code> (int): Radius for Morgan fingerprints. Default: 3</li>
-<li><code>morgan_nBits</code> (int): Number of bits for fingerprints. Default: 512</li>
-<li><code>att_index</code> (int): Index of property to predict (0-14). Default: 10 (U0)</li>
-<li><code>list_mols</code> (list): Filter molecules by number of atoms. Empty = all molecules</li>
-</ul>
-<p><strong>Returns:</strong></p>
-<ul>
-<li><code>tuple</code>: (X, Y, props) where:
-  <ul>
-  <li>X: NumPy array of descriptors [n_samples, n_features]</li>
-  <li>Y: NumPy array of target property [n_samples, 1]</li>
-  <li>props: NumPy array of all 15 properties [n_samples, 15]</li>
-  </ul>
-</li>
-</ul>
-
-<h4 id="get-paired-dataloaders-tabular">get_paired_dataloaders_tabular()<a class="headerlink" href="#get-paired-dataloaders-tabular" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">get_paired_dataloaders_tabular(att_index=10, batch_size=256, descriptor_type='CM',
-                              list_mols=[], split_ratio=[0.8, 0.1, 0.1], seed=42,
-                              noise_type='gaussian', noise_scale=1.0, n_noise=1,
-                              morgan_radius=3, morgan_nBits=512, add_noise=True,
-                              cache_descriptors=True)
-</code></pre>
-<p>Main method to prepare complete paired DataLoaders for tabular molecular data.</p>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>att_index</code> (int): Property index to predict (0-14). Default: 10</li>
-<li><code>batch_size</code> (int): Batch size. Default: 256</li>
-<li><code>descriptor_type</code> (str): Descriptor type (see compute_descriptors)</li>
-<li><code>list_mols</code> (list): Molecule filter by atom count</li>
-<li><code>split_ratio</code> (list): [train, val, test] split. Default: [0.8, 0.1, 0.1]</li>
-<li><code>seed</code> (int): Random seed for reproducibility</li>
-<li><code>noise_type</code> (str): Type of noise ('gaussian', 'uniform', 'binary')</li>
-<li><code>noise_scale</code> (float): Noise magnitude</li>
-<li><code>n_noise</code> (int): Number of noise features</li>
-<li><code>morgan_radius</code> (int): Morgan fingerprint radius</li>
-<li><code>morgan_nBits</code> (int): Morgan fingerprint bits</li>
-<li><code>add_noise</code> (bool): Whether to create noisy dataset. Default: True</li>
-<li><code>cache_descriptors</code> (bool): Cache computed descriptors. Default: True</li>
-</ul>
-<p><strong>Returns:</strong></p>
-<ul>
-<li><code>tuple</code>: (train_normal, val_normal, test_normal, train_noise, val_noise, test_noise, is_noise_mask)
-  <ul>
-  <li>6 DataLoaders (3 for normal data, 3 for noisy data)</li>
-  <li>is_noise_mask: Boolean array indicating which features are noise</li>
-  </ul>
-</li>
-</ul>
-
-<h4 id="get-descriptor-names">get_descriptor_names()<a class="headerlink" href="#get-descriptor-names" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">get_descriptor_names(descriptor_type='Morgan', morgan_radius=2, morgan_nBits=512)
-</code></pre>
-<p>Returns human-readable names for each feature in a descriptor.</p>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>descriptor_type</code> (str): Descriptor type</li>
-<li><code>morgan_radius</code> (int): Radius (for Morgan)</li>
-<li><code>morgan_nBits</code> (int): Bits (for fingerprints)</li>
-</ul>
-<p><strong>Returns:</strong></p>
-<ul>
-<li><code>list</code>: List of feature names</li>
-</ul>
-
-<h4 id="get-descriptor-details">get_descriptor_details()<a class="headerlink" href="#get-descriptor-details" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">get_descriptor_details(descriptor_type='Morgan')
-</code></pre>
-<p>Returns detailed information about a descriptor type including strengths, weaknesses, interpretability.</p>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>descriptor_type</code> (str): Descriptor type</li>
-</ul>
-<p><strong>Returns:</strong></p>
-<ul>
-<li><code>dict</code>: Dictionary with 'description', 'dimensionality', 'interpretability', 'strengths', 'weaknesses'</li>
-</ul>
-
-<h2 id="clustering">Clustering Utilities<a class="headerlink" href="#clustering" title="Permanent link">&para;</a></h2>
-
-<h3 id="cluster-class">Cluster<a class="headerlink" href="#cluster-class" title="Permanent link">&para;</a></h3>
-<p>Class for creating clusters from DataLoaders based on target values or features.</p>
-
-<h4 id="create-clusters">create_clusters()<a class="headerlink" href="#create-clusters" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">create_clusters(num_clusters=5, size_cluster=100, custom_intervals=None)
-</code></pre>
-<p>Creates clusters based on target value intervals.</p>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>num_clusters</code> (int): Number of clusters. Default: 5</li>
-<li><code>size_cluster</code> (int): Maximum samples per cluster. Default: 100</li>
-<li><code>custom_intervals</code> (list, optional): Custom intervals as [(min, max), ...]. If None, automatically computed.</li>
-</ul>
-
-<h4 id="create-clusters-kmeans">create_clusters_kmeans()<a class="headerlink" href="#create-clusters-kmeans" title="Permanent link">&para;</a></h4>
-<pre><code class="language-python">create_clusters_kmeans(n_clusters=5, use_features=True, random_state=42)
-</code></pre>
-<p>Creates clusters using KMeans algorithm.</p>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>n_clusters</code> (int): Number of clusters</li>
-<li><code>use_features</code> (bool): Use features for clustering. If False, uses only targets.</li>
-<li><code>random_state</code> (int): Random seed</li>
-</ul>
-
-<h2 id="usage-examples">Complete Usage Examples<a class="headerlink" href="#usage-examples" title="Permanent link">&para;</a></h2>
-
-<h3 id="example-1-basic">Example 1: Basic Tabular Data Loading<a class="headerlink" href="#example-1-basic" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python">from chemxai.data import qm9_tabular
-
-# Initialize
-qm9 = qm9_tabular()
-
-# Load data with Morgan fingerprints
-train_loader, val_loader, test_loader, *_ = qm9.get_paired_dataloaders_tabular(
-    att_index=7,  # Predict HOMO-LUMO gap
-    descriptor_type='Morgan',
-    batch_size=64,
-    morgan_radius=2,
-    morgan_nBits=1024,
-    add_noise=False  # No noise dataset
-)
-
-# Iterate through batches
-for features, targets in train_loader:
-    print(f"Batch features shape: {features.shape}")
-    print(f"Batch targets shape: {targets.shape}")
-    break
-</code></pre>
-
-<h3 id="example-2-graph">Example 2: Graph Data with Noise<a class="headerlink" href="#example-2-graph" title="Permanent link">&para;</a></h3>
 <pre><code class="language-python">from chemxai.data import graph_datasets
 
-# Initialize
-graph_data = graph_datasets()
+# Load QM9 dataset
+dataset = graph_datasets(dataset_name='qm9')
+data = dataset.load_data()
 
-# Get paired dataloaders (normal + noisy)
-loaders = graph_data.get_paired_dataloaders(
-    dataset_name='QM9',
-    batch_size=32,
-    noise_type='gaussian',
-    noise_scale=0.5,
-    n_noise=3  # Add 3 noise features
+# Get statistics
+stats = dataset.get_statistics()
+print(f"Number of molecules: {stats['num_molecules']}")
+print(f"Average atoms per molecule: {stats['num_atoms_mean']:.2f}")
+
+# Create splits
+train_data, val_data, test_data = dataset.split_data(
+    train_ratio=0.8,
+    val_ratio=0.1,
+    test_ratio=0.1,
+    random_seed=42
 )
 
-train_normal, val_normal, test_normal, train_noise, val_noise, test_noise = loaders
+# Normalize features
+dataset.normalize_features(method='standard')
 
-# Use in training
-for batch in train_normal:
-    x, edge_index, y = batch.x, batch.edge_index, batch.y
-    # Process batch...
+# Filter by molecular size
+dataset.filter_by_size(min_atoms=5, max_atoms=50)
 </code></pre>
 
-<h3 id="example-3-descriptors">Example 3: Comparing Multiple Descriptors<a class="headerlink" href="#example-3-descriptors" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python">qm9 = qm9_tabular()
+<h3 id="qm9-tabular">qm9_tabular<a class="headerlink" href="#qm9-tabular" title="Permanent link">&para;</a></h3>
 
-descriptors = ['Morgan', 'MACCS', 'Physicochemical', '3D']
-results = {}
+<p><em>class</em> <strong>chemxai.data.qm9_tabular</strong>(<em>descriptor_type='ECFPs'</em>)</p>
 
-for desc_type in descriptors:
-    # Compute descriptors
-    X, Y, props = qm9.compute_descriptors(
-        descriptor_type=desc_type,
-        att_index=10
-    )
-    
-    # Get feature names
-    feature_names = qm9.get_descriptor_names(descriptor_type=desc_type)
-    
-    # Get details
-    details = qm9.get_descriptor_details(descriptor_type=desc_type)
-    
-    results[desc_type] = {
-        'n_features': X.shape[1],
-        'n_samples': X.shape[0],
-        'details': details
-    }
-    
-    print(f"
-{desc_type}:")
-    print(f"  Features: {X.shape[1]}")
-    print(f"  Description: {details['description']}")
-</code></pre>
+<p>Generates tabular molecular descriptors from QM9 dataset for traditional machine learning and neural network models.</p>
 
-<h2 id="performance">Performance Considerations<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
+<p><strong>Parameters:</strong></p>
 <ul>
-<li><strong>Caching</strong>: Descriptors are cached to disk for faster repeated access</li>
-<li><strong>Parallel Processing</strong>: Uses ThreadPoolExecutor for large datasets</li>
-<li><strong>Memory Efficiency</strong>: Lazy loading and batch processing for large datasets</li>
-<li><strong>Reproducibility</strong>: All random operations use configurable seeds</li>
+<li><strong>descriptor_type</strong> (<em>str</em>) – Type of molecular descriptor to generate. Available options:
+  <ul>
+  <li><code>'ECFPs'</code> – Extended-Connectivity Fingerprints (Morgan fingerprints, 2048-bit)</li>
+  <li><code>'MACCSKeys'</code> – 166-bit MACCS structural keys</li>
+  <li><code>'Avalon'</code> – Avalon fingerprints (512-bit)</li>
+  <li><code>'ErG'</code> – Estate indices + Gasteiger charges</li>
+  <li><code>'pubchem'</code> – PubChem fingerprints (881-bit)</li>
+  <li><code>'EstateIndices'</code> – Electrotopological state indices</li>
+  <li><code>'fragments'</code> – Fragment-based descriptors</li>
+  <li><code>'graph'</code> – Graph-based descriptors</li>
+  <li><code>'moe_type'</code> – MOE-type descriptors</li>
+  <li><code>'constitutional'</code> – Constitutional descriptors</li>
+  <li><code>'AUTOCORR2D'</code> – 2D autocorrelation descriptors</li>
+  <li><code>'charge'</code> – Charge-based descriptors</li>
+  <li><code>'connectivity'</code> – Connectivity indices</li>
+  <li><code>'kappa'</code> – Kappa shape indices</li>
+  </ul>
+  Default: <code>'ECFPs'</code>
+</li>
 </ul>
 
-<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
-<ol>
-<li><strong>Enable caching</strong> with <code>cache_descriptors=True</code> for repeated experiments</li>
-<li><strong>Start small</strong>: Test with <code>list_mols</code> filter before processing full dataset</li>
-<li><strong>Choose appropriate descriptors</strong>: Use <code>get_descriptor_details()</code> to understand each type</li>
-<li><strong>Normalize data</strong>: The module automatically normalizes using StandardScaler</li>
-<li><strong>Use paired loaders</strong> for robustness evaluation (normal + noisy data)</li>
-</ol>
+<p><strong>Methods:</strong></p>
 
+<dl>
+<dt><code>load_data(target_idx=7)</code></dt>
+<dd>
+<p>Loads QM9 dataset and generates specified molecular descriptors.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>target_idx</strong> (<em>int</em>) – Index of target property to predict (0-18). Default: 7 (U0 - internal energy at 0K)</li>
+</ul>
+<p><strong>Returns:</strong> <code>tuple</code> – (features, targets) where:
+<ul>
+<li><code>features</code> (<em>numpy.ndarray</em>) – Descriptor matrix of shape (num_molecules, num_features)</li>
+<li><code>targets</code> (<em>numpy.ndarray</em>) – Target values of shape (num_molecules,)</li>
+</ul>
+</p>
+</dd>
+
+<dt><code>compute_ECFPs(radius=2, n_bits=2048)</code></dt>
+<dd>
+<p>Computes Extended-Connectivity Fingerprints using RDKit.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>radius</strong> (<em>int</em>) – Radius for Morgan algorithm. Default: 2</li>
+<li><strong>n_bits</strong> (<em>int</em>) – Fingerprint length. Default: 2048</li>
+</ul>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Binary fingerprint matrix</p>
+</dd>
+
+<dt><code>compute_MACCSKeys()</code></dt>
+<dd>
+<p>Computes 166-bit MACCS structural keys representing common substructures.</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – MACCS keys matrix of shape (num_molecules, 166)</p>
+</dd>
+
+<dt><code>compute_Avalon(n_bits=512)</code></dt>
+<dd>
+<p>Computes Avalon fingerprints.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>n_bits</strong> (<em>int</em>) – Fingerprint length. Default: 512</li>
+</ul>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Avalon fingerprint matrix</p>
+</dd>
+
+<dt><code>compute_ErG()</code></dt>
+<dd>
+<p>Computes Estate (electrotopological state) indices combined with Gasteiger partial charges.</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Combined descriptor matrix</p>
+</dd>
+
+<dt><code>compute_pubchem()</code></dt>
+<dd>
+<p>Computes 881-bit PubChem fingerprints.</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – PubChem fingerprint matrix</p>
+</dd>
+
+<dt><code>compute_EstateIndices()</code></dt>
+<dd>
+<p>Computes electrotopological state indices for each atom type.</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Estate indices matrix</p>
+</dd>
+
+<dt><code>compute_fragments()</code></dt>
+<dd>
+<p>Computes fragment-based descriptors (functional groups, ring systems).</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Fragment descriptor matrix</p>
+</dd>
+
+<dt><code>compute_graph()</code></dt>
+<dd>
+<p>Computes graph-theoretical descriptors (Wiener index, Zagreb indices, etc.).</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Graph descriptor matrix</p>
+</dd>
+
+<dt><code>compute_moe_type()</code></dt>
+<dd>
+<p>Computes MOE-type (Molecular Operating Environment) descriptors.</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – MOE descriptor matrix</p>
+</dd>
+
+<dt><code>compute_constitutional()</code></dt>
+<dd>
+<p>Computes constitutional descriptors (atom counts, molecular weight, etc.).</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Constitutional descriptor matrix</p>
+</dd>
+
+<dt><code>compute_AUTOCORR2D()</code></dt>
+<dd>
+<p>Computes 2D autocorrelation descriptors based on molecular properties.</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Autocorrelation descriptor matrix</p>
+</dd>
+
+<dt><code>compute_charge()</code></dt>
+<dd>
+<p>Computes charge-related descriptors (partial charges, charge distribution).</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Charge descriptor matrix</p>
+</dd>
+
+<dt><code>compute_connectivity()</code></dt>
+<dd>
+<p>Computes molecular connectivity indices (Randić, Balaban, etc.).</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Connectivity descriptor matrix</p>
+</dd>
+
+<dt><code>compute_kappa()</code></dt>
+<dd>
+<p>Computes kappa shape indices describing molecular shape.</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Kappa descriptor matrix</p>
+</dd>
+
+<dt><code>inject_noise(noise_level=0.1, random_seed=42)</code></dt>
+<dd>
+<p>Injects Gaussian noise into descriptor features for robustness testing.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>noise_level</strong> (<em>float</em>) – Standard deviation of Gaussian noise relative to feature std. Default: 0.1</li>
+<li><strong>random_seed</strong> (<em>int</em>) – Random seed for reproducibility. Default: 42</li>
+</ul>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Noisy descriptor matrix</p>
+</dd>
+
+<dt><code>get_descriptor_names()</code></dt>
+<dd>
+<p>Returns human-readable names for each descriptor dimension.</p>
+<p><strong>Returns:</strong> <code>list</code> – List of descriptor names</p>
+</dd>
+
+<dt><code>save_descriptors(filepath)</code></dt>
+<dd>
+<p>Saves computed descriptors to disk.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>filepath</strong> (<em>str</em>) – Path to save file (.npz format)</li>
+</ul>
+</dd>
+
+<dt><code>load_descriptors(filepath)</code></dt>
+<dd>
+<p>Loads previously computed descriptors from disk.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>filepath</strong> (<em>str</em>) – Path to saved descriptors (.npz format)</li>
+</ul>
+<p><strong>Returns:</strong> <code>tuple</code> – (features, targets)</p>
+</dd>
+</dl>
+
+<p><strong>Example:</strong></p>
+<pre><code class="language-python">from chemxai.data import qm9_tabular
+import numpy as np
+
+# Load QM9 with ECFP descriptors
+loader = qm9_tabular(descriptor_type='ECFPs')
+features, targets = loader.load_data(target_idx=7)
+
+print(f"Feature matrix shape: {features.shape}")
+print(f"Target shape: {targets.shape}")
+
+# Compute custom ECFP with different parameters
+custom_ecfp = loader.compute_ECFPs(radius=3, n_bits=4096)
+
+# Try different descriptor types
+loader_maccs = qm9_tabular(descriptor_type='MACCSKeys')
+maccs_features, _ = loader_maccs.load_data(target_idx=7)
+
+# Add noise for robustness testing
+noisy_features = loader.inject_noise(noise_level=0.15)
+
+# Get descriptor names for interpretability
+descriptor_names = loader.get_descriptor_names()
+print(f"First 5 descriptors: {descriptor_names[:5]}")
+
+# Save for later use
+loader.save_descriptors('qm9_ecfp_descriptors.npz')
+</code></pre>
+
+<h3 id="cluster">Cluster<a class="headerlink" href="#cluster" title="Permanent link">&para;</a></h3>
+
+<p><em>class</em> <strong>chemxai.data.Cluster</strong>(<em>n_clusters=5, method='kmeans'</em>)</p>
+
+<p>Performs clustering analysis on molecular descriptors for dataset stratification and analysis.</p>
+
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>n_clusters</strong> (<em>int</em>) – Number of clusters to generate. Default: 5</li>
+<li><strong>method</strong> (<em>str</em>) – Clustering algorithm: <code>'kmeans'</code>, <code>'hierarchical'</code>, or <code>'dbscan'</code>. Default: <code>'kmeans'</code></li>
+</ul>
+
+<p><strong>Methods:</strong></p>
+
+<dl>
+<dt><code>fit(features)</code></dt>
+<dd>
+<p>Fits the clustering model to descriptor features.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>features</strong> (<em>numpy.ndarray</em>) – Descriptor matrix of shape (num_samples, num_features)</li>
+</ul>
+<p><strong>Returns:</strong> <code>self</code> – Fitted clustering model</p>
+</dd>
+
+<dt><code>predict(features)</code></dt>
+<dd>
+<p>Assigns cluster labels to new data points.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>features</strong> (<em>numpy.ndarray</em>) – Descriptor matrix to cluster</li>
+</ul>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Cluster labels of shape (num_samples,)</p>
+</dd>
+
+<dt><code>fit_predict(features)</code></dt>
+<dd>
+<p>Fits model and returns cluster assignments in one step.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>features</strong> (<em>numpy.ndarray</em>) – Descriptor matrix</li>
+</ul>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Cluster labels</p>
+</dd>
+
+<dt><code>get_cluster_centers()</code></dt>
+<dd>
+<p>Returns cluster centroid coordinates.</p>
+<p><strong>Returns:</strong> <code>numpy.ndarray</code> – Centroid matrix of shape (n_clusters, num_features)</p>
+</dd>
+
+<dt><code>get_cluster_sizes()</code></dt>
+<dd>
+<p>Returns number of samples in each cluster.</p>
+<p><strong>Returns:</strong> <code>dict</code> – Mapping from cluster_id to sample count</p>
+</dd>
+
+<dt><code>compute_silhouette_score()</code></dt>
+<dd>
+<p>Computes silhouette coefficient to evaluate clustering quality.</p>
+<p><strong>Returns:</strong> <code>float</code> – Silhouette score in range [-1, 1], higher is better</p>
+</dd>
+
+<dt><code>visualize_clusters(method='pca', figsize=(10, 8))</code></dt>
+<dd>
+<p>Visualizes clusters using dimensionality reduction.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>method</strong> (<em>str</em>) – Dimensionality reduction: <code>'pca'</code>, <code>'tsne'</code>, or <code>'umap'</code>. Default: <code>'pca'</code></li>
+<li><strong>figsize</strong> (<em>tuple</em>) – Figure size. Default: (10, 8)</li>
+</ul>
+<p><strong>Returns:</strong> <code>matplotlib.figure.Figure</code> – Cluster visualization</p>
+</dd>
+
+<dt><code>stratified_split(labels, train_ratio=0.8, random_seed=42)</code></dt>
+<dd>
+<p>Creates stratified train/test splits ensuring cluster representation.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>labels</strong> (<em>numpy.ndarray</em>) – Cluster assignments</li>
+<li><strong>train_ratio</strong> (<em>float</em>) – Fraction for training. Default: 0.8</li>
+<li><strong>random_seed</strong> (<em>int</em>) – Random seed. Default: 42</li>
+</ul>
+<p><strong>Returns:</strong> <code>tuple</code> – (train_indices, test_indices)</p>
+</dd>
+</dl>
+
+<p><strong>Example:</strong></p>
+<pre><code class="language-python">from chemxai.data import qm9_tabular, Cluster
+from sklearn.preprocessing import StandardScaler
+
+# Load and prepare data
+loader = qm9_tabular(descriptor_type='ECFPs')
+features, targets = loader.load_data(target_idx=7)
+
+# Standardize features
+scaler = StandardScaler()
+features_scaled = scaler.fit_transform(features)
+
+# Perform K-means clustering
+clusterer = Cluster(n_clusters=8, method='kmeans')
+cluster_labels = clusterer.fit_predict(features_scaled)
+
+# Evaluate clustering quality
+silhouette = clusterer.compute_silhouette_score()
+print(f"Silhouette score: {silhouette:.3f}")
+
+# Get cluster information
+centers = clusterer.get_cluster_centers()
+sizes = clusterer.get_cluster_sizes()
+print(f"Cluster sizes: {sizes}")
+
+# Visualize clusters
+fig = clusterer.visualize_clusters(method='tsne', figsize=(12, 10))
+
+# Create stratified splits
+train_idx, test_idx = clusterer.stratified_split(
+    cluster_labels,
+    train_ratio=0.8,
+    random_seed=42
+)
+</code></pre>
+
+<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
+
+<ul>
+<li>All descriptor computations require RDKit to be installed</li>
+<li>For large datasets (>100k molecules), consider using sparse matrix representations for fingerprint descriptors</li>
+<li>When using noise injection, apply it only to training data to avoid test set contamination</li>
+<li>QM9 target properties are provided in original units (Hartree, Bohr³, etc.) - normalize before training</li>
+</ul>
 </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">

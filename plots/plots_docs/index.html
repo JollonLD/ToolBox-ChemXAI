@@ -144,408 +144,507 @@
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-            <div class="section" itemprop="articleBody"><h1 id="plots">Plots Module - 100% Code Coverage<a class="headerlink" href="#plots" title="Permanent link">&para;</a></h1>
+            <div class="section" itemprop="articleBody"><h1 id="chemxai-plots">chemxai.plots<a class="headerlink" href="#chemxai-plots" title="Permanent link">&para;</a></h1>
 
-<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>Complete visualization toolkit with 3 specialized functions for graph extraction, radar plots, and horizontal bar charts. All parameters and usage patterns documented.</p>
+<p>Visualization utilities for molecular graphs and feature importance analysis. Provides functions for subgraph extraction, radar charts, and horizontal bar plots optimized for explainability visualization.</p>
 
-<h2 id="functions">Visualization Functions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h2>
+<h2 id="k-hop-subgraph">k_hop_subgraph<a class="headerlink" href="#k-hop-subgraph" title="Permanent link">&para;</a></h2>
 
-<h3 id="k-hop">1. k_hop_subgraph - Extract K-Hop Subgraph<a class="headerlink" href="#k-hop" title="Permanent link">&para;</a></h3>
+<p><em>function</em> <strong>chemxai.plots.k_hop_subgraph</strong>(<em>node_idx, num_hops, edge_index, relabel_nodes=False, num_nodes=None, flow='source_to_target'</em>)</p>
 
-<pre><code>k_hop_subgraph(node_idx, num_hops, edge_index, relabel_nodes=False, num_nodes=None, flow='source_to_target')</code></pre>
+<p>Extracts the k-hop neighborhood subgraph around specified nodes from a molecular graph. Useful for visualizing local chemical environments and GNN explanation results.</p>
 
-<p><strong>Complete Parameter List (6 parameters):</strong></p>
+<p><strong>Parameters:</strong></p>
 
-<ol>
-<li><code>node_idx</code> (int or list): Central node index or list of indices</li>
+<dl>
+<dt><strong>node_idx</strong> (<em>int or list of int</em>)</dt>
+<dd>Central node index or list of central nodes. For molecular graphs, this corresponds to atom indices.</dd>
 
-<li><code>num_hops</code> (int): Number of hops (neighborhood radius)
-   <ul>
-   <li>1: Direct neighbors</li>
-   <li>2: Neighbors of neighbors</li>
-   <li>3+: Extended neighborhood</li>
-   </ul>
-</li>
+<dt><strong>num_hops</strong> (<em>int</em>)</dt>
+<dd>
+Neighborhood radius in graph hops:
+<ul>
+<li>1: Direct neighbors (bonded atoms)</li>
+<li>2: Second-degree neighbors (atoms 2 bonds away)</li>
+<li>3+: Extended neighborhood</li>
+</ul>
+Typical chemistry applications use 2-3 hops to capture local functional groups.
+</dd>
 
-<li><code>edge_index</code> (torch.Tensor): Edge connectivity [2, num_edges]
-   <ul>
-   <li>Format: [[source_nodes], [target_nodes]]</li>
-   </ul>
-</li>
+<dt><strong>edge_index</strong> (<em>torch.Tensor</em>)</dt>
+<dd>Graph connectivity in COO format with shape (2, num_edges).<br>
+Format: <code>[[source_0, source_1, ...], [target_0, target_1, ...]]</code><br>
+For undirected graphs (molecules), each edge appears twice (i→j and j→i).</dd>
 
-<li><code>relabel_nodes</code> (bool): Relabel nodes to consecutive indices. Default: False
-   <ul>
-   <li>True: New indices 0, 1, 2, ...</li>
-   <li>False: Keep original indices</li>
-   </ul>
-</li>
+<dt><strong>relabel_nodes</strong> (<em>bool</em>)</dt>
+<dd>
+Whether to relabel subgraph nodes to consecutive indices starting from 0.
+<ul>
+<li><code>True</code>: New indices 0, 1, 2, ..., convenient for visualization</li>
+<li><code>False</code>: Keep original global indices, useful for cross-referencing</li>
+</ul>
+Default: False
+</dd>
 
-<li><code>num_nodes</code> (int, optional): Total number of nodes in graph
-   <ul>
-   <li>If None, inferred from edge_index</li>
-   </ul>
-</li>
+<dt><strong>num_nodes</strong> (<em>int</em>, <em>optional</em>)</dt>
+<dd>Total number of nodes in the full graph. If None, inferred from edge_index maximum. Providing this parameter can improve performance.</dd>
 
-<li><code>flow</code> (str): Message passing direction. Default: 'source_to_target'
-   <ul>
-   <li>'source_to_target': Follow outgoing edges</li>
-   <li>'target_to_source': Follow incoming edges</li>
-   </ul>
-</li>
-</ol>
+<dt><strong>flow</strong> (<em>str</em>)</dt>
+<dd>
+Message passing direction for directed graphs:
+<ul>
+<li><code>'source_to_target'</code>: Follow outgoing edges (standard)</li>
+<li><code>'target_to_source'</code>: Follow incoming edges</li>
+</ul>
+For undirected molecular graphs, this parameter has no effect. Default: <code>'source_to_target'</code>
+</dd>
+</dl>
 
 <p><strong>Returns:</strong></p>
 <ul>
-<li><code>subset</code> (torch.Tensor): Indices of nodes in subgraph</li>
-<li><code>edge_index</code> (torch.Tensor): Edges within subgraph</li>
-<li><code>mapping</code> (torch.Tensor): Mapping from old to new indices (if relabel_nodes=True)</li>
-<li><code>edge_mask</code> (torch.Tensor): Boolean mask for edges in subgraph</li>
+<li><strong>subset</strong> (<em>torch.Tensor</em>) – Indices of nodes in the extracted subgraph, shape (num_subgraph_nodes,)</li>
+<li><strong>edge_index</strong> (<em>torch.Tensor</em>) – Edges within the subgraph, shape (2, num_subgraph_edges)</li>
+<li><strong>mapping</strong> (<em>torch.Tensor</em>) – Mapping from old to new node indices (only if relabel_nodes=True), shape (num_subgraph_nodes,)</li>
+<li><strong>edge_mask</strong> (<em>torch.Tensor</em>) – Boolean mask indicating which edges from original graph are in subgraph, shape (num_edges,)</li>
 </ul>
 
-<h3 id="radar">2. radar_plot - Create Radar Chart<a class="headerlink" href="#radar" title="Permanent link">&para;</a></h3>
+<p><strong>Example - Basic Subgraph Extraction:</strong></p>
+<pre><code class="language-python">import torch
+from chemxai.plots import k_hop_subgraph
 
-<pre><code>radar_plot(feature_names, values, title='Radar Plot')</code></pre>
+# Example molecular graph: benzene ring
+edge_index = torch.tensor([
+    [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0],  # source nodes
+    [1, 0, 2, 1, 3, 2, 4, 3, 5, 4, 0, 5]   # target nodes (undirected)
+], dtype=torch.long)
 
-<p><strong>Complete Parameter List (3 parameters):</strong></p>
+# Extract 1-hop neighborhood around atom 0
+subset, sub_edges, mapping, edge_mask = k_hop_subgraph(
+    node_idx=0,
+    num_hops=1,
+    edge_index=edge_index,
+    relabel_nodes=True,
+    num_nodes=6
+)
 
-<ol>
-<li><code>feature_names</code> (list): Feature labels for radar axes
-   <ul>
-   <li>Example: ['C', 'H', 'O', 'N', 'F', 'Cl', 'Br']</li>
-   <li>Length: number of features to plot</li>
-   </ul>
-</li>
+print(f"Subgraph nodes: {subset}")           # Atom indices in subgraph
+print(f"Subgraph edges shape: {sub_edges.shape}")
+print(f"Node mapping: {mapping}")
 
-<li><code>values</code> (list or np.array): Feature values (importance scores)
-   <ul>
-   <li>Shape: (num_features,) or (num_samples, num_features)</li>
-   <li>Range: typically 0-1 (normalized)</li>
-   </ul>
-</li>
+# Extract 2-hop neighborhood (entire benzene ring)
+subset_2hop, _, _, _ = k_hop_subgraph(
+    node_idx=0,
+    num_hops=2,
+    edge_index=edge_index
+)
+print(f"2-hop subgraph size: {len(subset_2hop)}")  # Should be 6 (entire ring)
+</code></pre>
 
-<li><code>title</code> (str): Plot title. Default: 'Radar Plot'</li>
-</ol>
+<p><strong>Example - Visualizing GNN Explanations:</strong></p>
+<pre><code class="language-python">from chemxai.explainers import GNNExplain
+from chemxai.plots import k_hop_subgraph
+import networkx as nx
+import matplotlib.pyplot as plt
+
+# Get GNN explanation
+gnn_explainer = GNNExplain(model, device, data, epochs=200)
+node_importance, edge_importance, _ = gnn_explainer.explain(index=0)
+
+# Find most important atoms
+threshold = 0.6
+important_atoms = torch.where(torch.tensor(node_importance) > threshold)[0]
+
+# Extract subgraph around important atoms
+subset, sub_edges, mapping, _ = k_hop_subgraph(
+    node_idx=important_atoms.tolist(),
+    num_hops=1,
+    edge_index=data.edge_index,
+    relabel_nodes=True
+)
+
+# Visualize with NetworkX
+G = nx.Graph()
+G.add_edges_from(sub_edges.T.numpy())
+
+# Node colors based on importance
+node_colors = [node_importance[i] for i in subset]
+
+plt.figure(figsize=(10, 8))
+pos = nx.spring_layout(G)
+nx.draw(G, pos, 
+        node_color=node_colors,
+        node_size=500,
+        cmap='YlOrRd',
+        with_labels=True,
+        edge_color='gray')
+plt.colorbar(label='Node Importance')
+plt.title('Important Subgraph for Prediction')
+plt.show()
+</code></pre>
+
+<h2 id="radar-plot">radar_plot<a class="headerlink" href="#radar-plot" title="Permanent link">&para;</a></h2>
+
+<p><em>function</em> <strong>chemxai.plots.radar_plot</strong>(<em>feature_names, values, title='Radar Plot'</em>)</p>
+
+<p>Creates a radar (spider) chart for visualizing multi-dimensional feature importance or property distributions. Particularly effective for comparing molecular properties or atom-type contributions.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<dl>
+<dt><strong>feature_names</strong> (<em>list of str</em>)</dt>
+<dd>Labels for each radial axis. Length must match the number of features.<br>
+Example: <code>['C', 'H', 'O', 'N', 'F']</code> for atom types or<br>
+<code>['Polarity', 'Size', 'Charge', 'Hydrophobicity']</code> for properties.</dd>
+
+<dt><strong>values</strong> (<em>list or numpy.ndarray</em>)</dt>
+<dd>
+Feature values to plot:
+<ul>
+<li>1D array: shape (num_features,) – Single sample</li>
+<li>2D array: shape (num_samples, num_features) – Multiple samples (plots first row)</li>
+</ul>
+Values should ideally be normalized to [0, 1] for fair comparison across features.
+</dd>
+
+<dt><strong>title</strong> (<em>str</em>)</dt>
+<dd>Plot title. Default: <code>'Radar Plot'</code></dd>
+</dl>
 
 <p><strong>Returns:</strong></p>
 <ul>
-<li><code>fig</code> (matplotlib.figure.Figure): Radar plot figure</li>
-<li><code>ax</code> (matplotlib.axes.Axes): Plot axes</li>
+<li><strong>fig</strong> (<em>matplotlib.figure.Figure</em>) – Figure object containing the radar plot</li>
+<li><strong>ax</strong> (<em>matplotlib.axes.Axes</em>) – Axes object (polar projection)</li>
 </ul>
 
 <p><strong>Visualization Features:</strong></p>
 <ul>
-<li>Circular layout with radial axes</li>
-<li>Closed polygon connecting points</li>
-<li>Filled area under curve</li>
-<li>Grid lines for readability</li>
-<li>Customizable colors and markers</li>
+<li>Circular layout with radial axes for each feature</li>
+<li>Closed polygon connecting all data points</li>
+<li>Filled area under the curve for emphasis</li>
+<li>Radial grid lines for value reference</li>
+<li>Customizable colors, markers, and line styles</li>
 </ul>
 
-<h3 id="bar">3. horizontal_bar_plot - Create Horizontal Bar Chart<a class="headerlink" href="#bar" title="Permanent link">&para;</a></h3>
+<p><strong>Example - Atom Type Importance:</strong></p>
+<pre><code class="language-python">import numpy as np
+from chemxai.plots import radar_plot
+from chemxai.explainers import GNNExplain
 
-<pre><code>horizontal_bar_plot(feature_names, values, title='Feature Importance', xlabel='Importance', ylabel='Features', figsize=(10, 6), color='skyblue', sort=True, top_k=None)</code></pre>
+# Get atom importance from GNN explainer
+gnn_exp = GNNExplain(model, device, data, epochs=200)
+node_imp, _, _ = gnn_exp.explain(index=5)
 
-<p><strong>Complete Parameter List (9 parameters):</strong></p>
+# Aggregate importance by atom type
+atom_types = data.x.argmax(dim=1).numpy()  # Assuming one-hot encoding
+type_importance = {}
+for atom_idx, imp_score in enumerate(node_imp):
+    atom_type = atom_types[atom_idx]
+    type_importance[atom_type] = type_importance.get(atom_type, 0) + imp_score
 
-<ol>
-<li><code>feature_names</code> (list): Feature labels
-   <ul>
-   <li>Example: ['ECFPs_bit_0', 'ECFPs_bit_1', ...]</li>
-   </ul>
-</li>
+# Convert to radar plot format
+type_names = ['C', 'H', 'O', 'N', 'F', 'P', 'S']
+importance_values = [type_importance.get(i, 0) for i in range(len(type_names))]
 
-<li><code>values</code> (list or np.array): Feature importance values
-   <ul>
-   <li>Can be positive/negative (e.g., SHAP values)</li>
-   </ul>
-</li>
+# Normalize to [0, 1]
+importance_normalized = np.array(importance_values) / np.max(importance_values)
 
-<li><code>title</code> (str): Plot title. Default: 'Feature Importance'</li>
+fig, ax = radar_plot(
+    feature_names=type_names,
+    values=importance_normalized,
+    title='Atom Type Contribution to Property Prediction'
+)
 
-<li><code>xlabel</code> (str): X-axis label. Default: 'Importance'</li>
+plt.tight_layout()
+plt.savefig('atom_importance_radar.png', dpi=300, bbox_inches='tight')
+plt.show()
+</code></pre>
 
-<li><code>ylabel</code> (str): Y-axis label. Default: 'Features'</li>
+<p><strong>Example - Comparing Multiple Molecules:</strong></p>
+<pre><code class="language-python">from chemxai.plots import radar_plot
+import matplotlib.pyplot as plt
 
-<li><code>figsize</code> (tuple): Figure size (width, height). Default: (10, 6)</li>
+# Molecular properties for 3 different molecules
+properties = ['MW', 'LogP', 'TPSA', 'H-Bond Donors', 'H-Bond Acceptors']
+molecule_data = {
+    'Aspirin': np.array([180.16, 1.19, 63.6, 1, 4]),
+    'Caffeine': np.array([194.19, -0.07, 58.4, 0, 6]),
+    'Ibuprofen': np.array([206.28, 3.97, 37.3, 1, 2])
+}
 
-<li><code>color</code> (str or list): Bar color(s). Default: 'skyblue'
-   <ul>
-   <li>Single color: all bars same color</li>
-   <li>List: one color per bar</li>
-   </ul>
-</li>
+# Normalize each property to [0, 1] across molecules
+data_array = np.array(list(molecule_data.values()))
+normalized_data = (data_array - data_array.min(axis=0)) / (data_array.max(axis=0) - data_array.min(axis=0))
 
-<li><code>sort</code> (bool): Sort bars by value. Default: True
-   <ul>
-   <li>True: Descending order (highest first)</li>
-   <li>False: Original order</li>
-   </ul>
-</li>
+# Create radar plots
+fig, axes = plt.subplots(1, 3, figsize=(18, 6), subplot_kw=dict(projection='polar'))
+for idx, (name, values) in enumerate(zip(molecule_data.keys(), normalized_data)):
+    angles = np.linspace(0, 2 * np.pi, len(properties), endpoint=False).tolist()
+    values_list = values.tolist()
+    values_list += values_list[:1]  # Close the polygon
+    angles += angles[:1]
+    
+    axes[idx].plot(angles, values_list, 'o-', linewidth=2)
+    axes[idx].fill(angles, values_list, alpha=0.25)
+    axes[idx].set_xticks(angles[:-1])
+    axes[idx].set_xticklabels(properties)
+    axes[idx].set_title(name, size=14, weight='bold')
+    axes[idx].set_ylim(0, 1)
 
-<li><code>top_k</code> (int, optional): Show only top K features
-   <ul>
-   <li>If None: show all features</li>
-   <li>If int: show top_k most important</li>
-   </ul>
-</li>
-</ol>
+plt.tight_layout()
+plt.show()
+</code></pre>
+
+<h2 id="horizontal-bar-plot">horizontal_bar_plot<a class="headerlink" href="#horizontal-bar-plot" title="Permanent link">&para;</a></h2>
+
+<p><em>function</em> <strong>chemxai.plots.horizontal_bar_plot</strong>(<em>feature_names, values, title='Feature Importance', xlabel='Importance', ylabel='Features', figsize=(10, 6), color='skyblue', sort=True, top_k=None</em>)</p>
+
+<p>Creates a horizontal bar chart for displaying ranked feature importance. Optimized for SHAP values, LIME coefficients, and other feature attribution methods.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<dl>
+<dt><strong>feature_names</strong> (<em>list of str</em>)</dt>
+<dd>Feature labels corresponding to each value. Length must match values.<br>
+Example: <code>['ECFP_bit_0', 'ECFP_bit_1', ...]</code> or <code>['Molecular Weight', 'LogP', ...]</code></dd>
+
+<dt><strong>values</strong> (<em>list or numpy.ndarray</em>)</dt>
+<dd>Feature importance scores. Can include negative values (e.g., SHAP values where negative indicates decreased prediction).</dd>
+
+<dt><strong>title</strong> (<em>str</em>)</dt>
+<dd>Plot title. Default: <code>'Feature Importance'</code></dd>
+
+<dt><strong>xlabel</strong> (<em>str</em>)</dt>
+<dd>Label for x-axis (importance axis). Default: <code>'Importance'</code></dd>
+
+<dt><strong>ylabel</strong> (<em>str</em>)</dt>
+<dd>Label for y-axis (feature axis). Default: <code>'Features'</code></dd>
+
+<dt><strong>figsize</strong> (<em>tuple of float</em>)</dt>
+<dd>Figure dimensions as (width, height) in inches. Increase height for many features. Default: (10, 6)</dd>
+
+<dt><strong>color</strong> (<em>str or list</em>)</dt>
+<dd>
+Bar color(s):
+<ul>
+<li>Single string: all bars same color (e.g., <code>'skyblue'</code>, <code>'coral'</code>)</li>
+<li>List: one color per bar (e.g., <code>['red', 'green', ...]</code>)</li>
+</ul>
+Default: <code>'skyblue'</code>
+</dd>
+
+<dt><strong>sort</strong> (<em>bool</em>)</dt>
+<dd>
+Whether to sort features by importance:
+<ul>
+<li><code>True</code>: Sort by absolute value, descending (most important first)</li>
+<li><code>False</code>: Preserve original order</li>
+</ul>
+Default: True
+</dd>
+
+<dt><strong>top_k</strong> (<em>int</em>, <em>optional</em>)</dt>
+<dd>
+Number of top features to display:
+<ul>
+<li>If None: show all features</li>
+<li>If int: show only top_k most important (by absolute value)</li>
+</ul>
+Useful for focusing on most relevant features. Default: None
+</dd>
+</dl>
 
 <p><strong>Returns:</strong></p>
 <ul>
-<li><code>fig</code> (matplotlib.figure.Figure): Bar plot figure</li>
-<li><code>ax</code> (matplotlib.axes.Axes): Plot axes</li>
+<li><strong>fig</strong> (<em>matplotlib.figure.Figure</em>) – Figure object</li>
+<li><strong>ax</strong> (<em>matplotlib.axes.Axes</em>) – Axes object with the bar plot</li>
 </ul>
 
-<h2 id="usage">Complete Usage Examples<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<p><strong>Example - SHAP Values Visualization:</strong></p>
+<pre><code class="language-python">from chemxai.explainers import Shap
+from chemxai.plots import horizontal_bar_plot
 
-<h3 id="ex1">Subgraph Extraction<a class="headerlink" href="#ex1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python">import torch
-from chemxai.plots import k_hop_subgraph
-
-# Extract 2-hop subgraph around node 5
-edge_index = torch.tensor([[0, 1, 2, 3, 4, 5],
-                           [1, 2, 3, 4, 5, 0]], dtype=torch.long)
-
-subset, sub_edge_index, mapping, edge_mask = k_hop_subgraph(
-    node_idx=5,
-    num_hops=2,
-    edge_index=edge_index,
-    relabel_nodes=True,
-    num_nodes=10,
-    flow='source_to_target'
-)
-
-print(f"Subgraph nodes: {subset}")
-print(f"Subgraph edges: {sub_edge_index}")
-print(f"Node mapping: {mapping}")
-
-# Visualize with NetworkX
-import networkx as nx
-import matplotlib.pyplot as plt
-
-G = nx.Graph()
-G.add_edges_from(sub_edge_index.T.numpy())
-nx.draw(G, with_labels=True, node_color='lightblue', node_size=500)
-plt.title('2-Hop Subgraph around Node 5')
-plt.show()
-</code></pre>
-
-<h3 id="ex2">Radar Plot for Feature Importance<a class="headerlink" href="#ex2" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python">import numpy as np
-from chemxai.plots import radar_plot
-
-# Atom importance from GNN explainer
-atom_types = ['C', 'H', 'O', 'N', 'F', 'Cl', 'Br']
-importance_scores = np.array([0.85, 0.45, 0.92, 0.78, 0.35, 0.60, 0.50])
-
-fig, ax = radar_plot(
-    feature_names=atom_types,
-    values=importance_scores,
-    title='Atom Type Importance for Property Prediction'
-)
-
-plt.tight_layout()
-plt.savefig('atom_importance_radar.png', dpi=300)
-plt.show()
-
-# Multiple samples comparison
-samples = np.array([
-    [0.85, 0.45, 0.92, 0.78, 0.35, 0.60, 0.50],  # Sample 1
-    [0.70, 0.55, 0.80, 0.65, 0.40, 0.50, 0.45]   # Sample 2
-])
-
-for i, sample in enumerate(samples):
-    fig, ax = radar_plot(atom_types, sample, title=f'Sample {i+1}')
-    plt.show()
-</code></pre>
-
-<h3 id="ex3">Horizontal Bar Plot for SHAP Values<a class="headerlink" href="#ex3" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python">from chemxai.plots import horizontal_bar_plot
-from chemxai.explainers import Shap
-
-# Get SHAP values
-shap_explainer = Shap(model, train_data, test_data, device)
+# Compute SHAP values
+shap_explainer = Shap(model, train_features, test_features, device)
 shap_values = shap_explainer.explain_local(index=0)
 
-# Plot top 15 features
-feature_names = [f'Feature_{i}' for i in range(len(shap_values))]
+# Get descriptor names
+from chemxai.data import qm9_tabular
+loader = qm9_tabular(descriptor_type='ECFPs')
+descriptor_names = loader.get_descriptor_names()
 
+# Visualize top 20 features
 fig, ax = horizontal_bar_plot(
-    feature_names=feature_names,
+    feature_names=descriptor_names,
     values=shap_values,
-    title='SHAP Feature Importance (Instance 0)',
-    xlabel='SHAP Value',
-    ylabel='Molecular Descriptors',
-    figsize=(12, 8),
+    title='SHAP Feature Importance for Molecule 0',
+    xlabel='SHAP Value (impact on prediction)',
+    ylabel='ECFP Bits',
+    figsize=(12, 10),
     color='coral',
     sort=True,
-    top_k=15
+    top_k=20
 )
 
 plt.tight_layout()
-plt.savefig('shap_importance.png', dpi=300, bbox_inches='tight')
+plt.savefig('shap_importance_top20.png', dpi=300, bbox_inches='tight')
 plt.show()
 </code></pre>
 
-<h3 id="ex4">Custom Bar Colors (Positive/Negative)<a class="headerlink" href="#ex4" title="Permanent link">&para;</a></h3>
+<p><strong>Example - Positive/Negative Contributions:</strong></p>
 <pre><code class="language-python">from chemxai.plots import horizontal_bar_plot
 import numpy as np
 
-# Mixed positive/negative values
-feature_names = ['MW', 'LogP', 'TPSA', 'HBD', 'HBA', 'Rotatable']
-values = np.array([0.45, -0.30, 0.80, -0.15, 0.60, -0.25])
+# Example: Feature contributions with mixed signs
+feature_names = ['Molecular Weight', 'LogP', 'TPSA', 'H-Bond Donors', 
+                 'H-Bond Acceptors', 'Rotatable Bonds']
+contributions = np.array([0.45, -0.32, 0.78, -0.18, 0.65, -0.28])
 
-# Color by sign
-colors = ['green' if v > 0 else 'red' for v in values]
+# Color by contribution sign
+colors = ['green' if v > 0 else 'red' for v in contributions]
 
 fig, ax = horizontal_bar_plot(
     feature_names=feature_names,
-    values=values,
-    title='Feature Impact on Solubility',
-    xlabel='Impact (positive = increase)',
+    values=contributions,
+    title='Feature Impact on Solubility Prediction',
+    xlabel='Contribution (green=increase, red=decrease)',
+    ylabel='Molecular Descriptors',
+    figsize=(10, 6),
     color=colors,
-    sort=False  # Keep original order
+    sort=False  # Keep original order to preserve feature grouping
 )
 
-plt.axvline(x=0, color='black', linestyle='--', linewidth=1)
+# Add vertical line at zero
+ax.axvline(x=0, color='black', linestyle='--', linewidth=1)
+plt.tight_layout()
 plt.show()
 </code></pre>
 
-<h3 id="ex5">Complete Visualization Workflow<a class="headerlink" href="#ex5" title="Permanent link">&para;</a></h3>
+<p><strong>Example - Global Feature Importance:</strong></p>
+<pre><code class="language-python">from chemxai.explainers import Shap
+from chemxai.plots import horizontal_bar_plot
+
+# Global importance across all test instances
+global_importance = shap_explainer.explain_global()
+
+# Create cleaner feature names
+feature_names_clean = [f'Bit {i}' if i < 100 else f'...' for i in range(len(global_importance))]
+
+# Focus on top 30 features
+fig, ax = horizontal_bar_plot(
+    feature_names=feature_names_clean,
+    values=global_importance,
+    title='Global Feature Importance (Mean |SHAP|)',
+    xlabel='Mean Absolute SHAP Value',
+    ylabel='ECFP Bits',
+    figsize=(12, 15),
+    color='steelblue',
+    sort=True,
+    top_k=30
+)
+
+# Adjust figure for many features
+plt.subplots_adjust(left=0.15)
+plt.show()
+</code></pre>
+
+<h2 id="integration-examples">Integration with ChemXAI Workflow<a class="headerlink" href="#integration-examples" title="Permanent link">&para;</a></h2>
+
+<p><strong>Complete Analysis Pipeline:</strong></p>
 <pre><code class="language-python">import torch
-import matplotlib.pyplot as plt
-from chemxai.plots import k_hop_subgraph, radar_plot, horizontal_bar_plot
+from chemxai.train import train_gcn_qm9
 from chemxai.explainers import GNNExplain
+from chemxai.plots import k_hop_subgraph, radar_plot, horizontal_bar_plot
+import matplotlib.pyplot as plt
+import numpy as np
 
-# 1. Train GNN and get explanations
-gnn_explainer = GNNExplain(model, device, graph_data, epochs=200)
-node_importance, edge_importance, explanation = gnn_explainer.explain(index=0)
+# 1. Train model
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model, test_loader, scaler, train_loader = train_gcn_qm9(
+    target_idx=7,
+    epochs=50,
+    device=device
+)
 
-# 2. Extract important subgraph
-important_nodes = torch.where(node_importance > 0.5)[0]
-subset, sub_edge_index, mapping, edge_mask = k_hop_subgraph(
+# 2. Get graph to explain
+test_graph = next(iter(test_loader))
+
+# 3. Generate explanation
+explainer = GNNExplain(model, device, test_graph, epochs=200, task_level='graph')
+node_importance, edge_importance, _ = explainer.explain(index=0)
+
+# 4. Extract important subgraph
+threshold = np.percentile(node_importance, 75)  # Top 25% nodes
+important_nodes = np.where(node_importance > threshold)[0]
+
+subset, sub_edges, mapping, _ = k_hop_subgraph(
     node_idx=important_nodes.tolist(),
     num_hops=1,
-    edge_index=graph_data.edge_index,
+    edge_index=test_graph.edge_index,
     relabel_nodes=True
 )
 
-# 3. Radar plot for top atoms
-top_k = 7
-top_indices = torch.argsort(node_importance)[-top_k:]
-top_values = node_importance[top_indices].numpy()
-atom_labels = [f'Atom_{i}' for i in top_indices]
+# 5. Create visualizations
+fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
-fig1, ax1 = radar_plot(atom_labels, top_values, 'Top Atom Importance')
+# Subplot 1: Radar plot of top atoms
+top_k_atoms = 7
+top_atom_indices = np.argsort(node_importance)[-top_k_atoms:]
+top_atom_values = node_importance[top_atom_indices]
+radar_plot(
+    feature_names=[f'Atom {i}' for i in top_atom_indices],
+    values=top_atom_values / np.max(top_atom_values),  # Normalize
+    title='Top Atom Contributions'
+)
 
-# 4. Bar plot for all nodes
-fig2, ax2 = horizontal_bar_plot(
-    feature_names=[f'Node_{i}' for i in range(len(node_importance))],
-    values=node_importance.numpy(),
+# Subplot 2: Bar plot of all nodes
+horizontal_bar_plot(
+    feature_names=[f'Node {i}' for i in range(len(node_importance))],
+    values=node_importance,
     title='Node Importance Distribution',
+    xlabel='Importance Score',
+    figsize=(10, 12),
     top_k=20
 )
 
+plt.tight_layout()
+plt.savefig('complete_explanation.png', dpi=300, bbox_inches='tight')
 plt.show()
 </code></pre>
 
-<h2 id="comparison">Function Comparison<a class="headerlink" href="#comparison" title="Permanent link">&para;</a></h2>
-<table>
-<tr><th>Function</th><th>Purpose</th><th>Input Type</th><th>Output Type</th><th>Use Case</th></tr>
-<tr><td>k_hop_subgraph</td><td>Graph extraction</td><td>Graph structure</td><td>Subgraph</td><td>Local neighborhoods, GNN explanations</td></tr>
-<tr><td>radar_plot</td><td>Circular comparison</td><td>Feature scores</td><td>Radar chart</td><td>Multi-feature comparison, atom importance</td></tr>
-<tr><td>horizontal_bar_plot</td><td>Ranked importance</td><td>Feature scores</td><td>Bar chart</td><td>SHAP/LIME values, sorted features</td></tr>
-</table>
+<h2 id="visualization-guidelines">Visualization Best Practices<a class="headerlink" href="#visualization-guidelines" title="Permanent link">&para;</a></h2>
 
-<h2 id="integration">Integration with ChemXAI Modules<a class="headerlink" href="#integration" title="Permanent link">&para;</a></h2>
-
-<h3 id="with-explainers">With Explainers Module<a class="headerlink" href="#with-explainers" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python"># SHAP + Bar Plot
-from chemxai.explainers import Shap
-from chemxai.plots import horizontal_bar_plot
-
-shap_exp = Shap(model, train_data, test_data, device)
-global_importance = shap_exp.explain_global()
-
-horizontal_bar_plot(
-    feature_names=descriptor_names,
-    values=global_importance,
-    title='Global Feature Importance (SHAP)',
-    top_k=20
-)
-
-# GNNExplain + Radar Plot
-from chemxai.explainers import GNNExplain
-from chemxai.plots import radar_plot, k_hop_subgraph
-
-gnn_exp = GNNExplain(gcn_model, device, graph_data, epochs=200)
-node_imp, edge_imp, _ = gnn_exp.explain(index=5)
-
-# Visualize top atoms
-top_atoms = torch.argsort(node_imp)[-7:]
-radar_plot(
-    feature_names=[f'Atom_{i}' for i in top_atoms],
-    values=node_imp[top_atoms],
-    title='Critical Atoms for Prediction'
-)
-
-# Extract and visualize subgraph
-subset, sub_edges, _, _ = k_hop_subgraph(5, 2, graph_data.edge_index)
-</code></pre>
-
-<h3 id="with-evaluate">With Evaluate Module<a class="headerlink" href="#with-evaluate" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python"># Evaluate + Visualization
-from chemxai.evaluate import evaluate_model
-from chemxai.plots import horizontal_bar_plot
-
-# Get feature importance from evaluation
-metrics = evaluate_model(model, test_loader, scaler)
-feature_importance = metrics.get('feature_importance', None)
-
-if feature_importance is not None:
-    horizontal_bar_plot(
-        feature_names=feature_names,
-        values=feature_importance,
-        title='Model Feature Importance',
-        top_k=15
-    )
-</code></pre>
-
-<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
-
-<h3 id="subgraph-tips">k_hop_subgraph<a class="headerlink" href="#subgraph-tips" title="Permanent link">&para;</a></h3>
+<h3 id="subgraph-extraction-tips">Subgraph Extraction</h3>
 <ul>
-<li><strong>num_hops:</strong> Start with 2, increase for sparse graphs</li>
-<li><strong>relabel_nodes:</strong> Use True for clean visualization</li>
-<li><strong>flow:</strong> 'source_to_target' for most cases, 'target_to_source' for directed graphs</li>
-<li><strong>Multiple nodes:</strong> Pass list for union of neighborhoods</li>
+<li><strong>Hop selection:</strong> Use 1-2 hops for focused analysis, 3+ for broader context</li>
+<li><strong>Relabeling:</strong> Enable for cleaner visualizations, disable for cross-referencing with full graph</li>
+<li><strong>Multiple centers:</strong> Pass list of nodes to extract union of neighborhoods</li>
+<li><strong>Performance:</strong> Provide num_nodes parameter for large graphs (10k+ nodes)</li>
 </ul>
 
-<h3 id="radar-tips">radar_plot<a class="headerlink" href="#radar-tips" title="Permanent link">&para;</a></h3>
+<h3 id="radar-chart-tips">Radar Charts</h3>
 <ul>
-<li><strong>Normalization:</strong> Scale values to [0, 1] for fair comparison</li>
-<li><strong>Feature count:</strong> 5-10 features optimal, >15 gets crowded</li>
-<li><strong>Comparison:</strong> Use separate plots for >2 samples</li>
-<li><strong>Colors:</strong> Distinct colors for multiple series</li>
+<li><strong>Feature count:</strong> Optimal: 5-10 features. Maximum: 15 (beyond this, consider bar plots)</li>
+<li><strong>Normalization:</strong> Always normalize to [0, 1] for fair comparison across features</li>
+<li><strong>Comparison:</strong> Use separate subplots for comparing >3 samples</li>
+<li><strong>Color scheme:</strong> Use distinct colors (e.g., colormap) for multiple overlaid series</li>
 </ul>
 
-<h3 id="bar-tips">horizontal_bar_plot<a class="headerlink" href="#bar-tips" title="Permanent link">&para;</a></h3>
+<h3 id="bar-chart-tips">Horizontal Bar Charts</h3>
 <ul>
-<li><strong>top_k:</strong> Use 15-20 for readability, avoid showing 100+ bars</li>
-<li><strong>sort:</strong> Enable for importance ranking, disable for temporal data</li>
-<li><strong>colors:</strong> Use conditional coloring for positive/negative values</li>
-<li><strong>figsize:</strong> Increase height for many features: (10, 0.5*num_features)</li>
-<li><strong>Labels:</strong> Shorten long feature names for clarity</li>
+<li><strong>Feature limit:</strong> Show 15-30 features maximum for readability</li>
+<li><strong>Figure size:</strong> Increase height proportionally: <code>figsize=(10, 0.4 * num_features)</code></li>
+<li><strong>Sorting:</strong> Enable for importance ranking, disable for preserving feature groups</li>
+<li><strong>Color coding:</strong> Use conditional colors for positive/negative values (SHAP)</li>
+<li><strong>Labels:</strong> Truncate long feature names to improve legibility</li>
 </ul>
 
-<h3 id="general">General Tips<a class="headerlink" href="#general" title="Permanent link">&para;</a></h3>
+<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Save plots with high DPI (300) for publications</li>
-<li>Use tight_layout() to prevent label cutoff</li>
-<li>Combine plots in subplots for comprehensive reports</li>
-<li>Export to PDF for vector graphics</li>
-<li>Add grid lines for precise value reading</li>
+<li>All plotting functions return matplotlib Figure and Axes objects for further customization</li>
+<li>Save plots with high DPI (300) for publication quality: <code>plt.savefig('plot.png', dpi=300)</code></li>
+<li>Use <code>plt.tight_layout()</code> to prevent label cutoff</li>
+<li>For vector graphics, save as PDF: <code>plt.savefig('plot.pdf')</code></li>
+<li>Subgraph extraction is compatible with PyTorch Geometric's Data objects</li>
 </ul>
 </div>
           </div><footer>

@@ -80,171 +80,127 @@
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-            <div class="section" itemprop="articleBody"><h1 id="train">Train Module - 100% Code Coverage<a class="headerlink" href="#train" title="Permanent link">&para;</a></h1>
+            <div class="section" itemprop="articleBody"><h1 id="chemxai-train">chemxai.train<a class="headerlink" href="#chemxai-train" title="Permanent link">&para;</a></h1>
 
-<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>Complete training pipeline for MLP and GCN models with QM9 dataset. All parameters, configurations, and workflows documented.</p>
+<p>Training pipelines for molecular property prediction models. Provides high-level interfaces for training MLPs on tabular descriptors and GCNs on molecular graphs, with support for adversarial robustness and various preprocessing options.</p>
 
-<h2 id="mlp-training">MLP Training Function<a class="headerlink" href="#mlp-training" title="Permanent link">&para;</a></h2>
+<h2 id="train-mlp-qm9">train_mlp_qm9<a class="headerlink" href="#train-mlp-qm9" title="Permanent link">&para;</a></h2>
 
-<h3 id="train-mlp">train_mlp_qm9(att_index, epochs, layers, learning_rate, batch_size, descriptor, noise_level, attack_method, att_train_size, custom_att, random_seed)<a class="headerlink" href="#train-mlp" title="Permanent link">&para;</a></h3>
+<p><em>function</em> <strong>chemxai.train.train_mlp_qm9</strong>(<em>att_index, epochs, layers, learning_rate, batch_size, descriptor, noise_level, attack_method, att_train_size, custom_att, random_seed</em>)</p>
 
-<p><strong>Complete Parameter List (11 parameters):</strong></p>
+<p>Trains a multi-layer perceptron on QM9 molecular descriptors for property prediction.</p>
 
-<ol>
-<li><code>att_index</code> (int): QM9 target property index (0-11)
-   <ul>
-   <li>0: mu (dipole moment)</li>
-   <li>1: alpha (isotropic polarizability)</li>
-   <li>2: homo (HOMO energy)</li>
-   <li>3: lumo (LUMO energy)</li>
-   <li>4: gap (HOMO-LUMO gap)</li>
-   <li>5: r2 (electronic spatial extent)</li>
-   <li>6: zpve (zero point vibrational energy)</li>
-   <li>7: U0 (internal energy at 0K)</li>
-   <li>8: U (internal energy at 298K)</li>
-   <li>9: H (enthalpy at 298K)</li>
-   <li>10: G (free energy at 298K)</li>
-   <li>11: Cv (heat capacity at 298K)</li>
-   </ul>
-</li>
+<p><strong>Parameters:</strong></p>
 
-<li><code>epochs</code> (int): Number of training epochs</li>
+<dl>
+<dt><strong>att_index</strong> (<em>int</em>)</dt>
+<dd>
+Target property index from QM9 dataset (0-11):
+<ul>
+<li>0: μ (dipole moment in Debye)</li>
+<li>1: α (isotropic polarizability in Bohr³)</li>
+<li>2: ε<sub>HOMO</sub> (HOMO energy in Hartree)</li>
+<li>3: ε<sub>LUMO</sub> (LUMO energy in Hartree)</li>
+<li>4: Δε (HOMO-LUMO gap in Hartree)</li>
+<li>5: ⟨R²⟩ (electronic spatial extent in Bohr²)</li>
+<li>6: ZPVE (zero point vibrational energy in Hartree)</li>
+<li>7: U<sub>0</sub> (internal energy at 0K in Hartree)</li>
+<li>8: U (internal energy at 298.15K in Hartree)</li>
+<li>9: H (enthalpy at 298.15K in Hartree)</li>
+<li>10: G (free energy at 298.15K in Hartree)</li>
+<li>11: c<sub>v</sub> (heat capacity at 298.15K in cal/mol·K)</li>
+</ul>
+</dd>
 
-<li><code>layers</code> (list): Network architecture. Example: [64, 128, 64]
-   <ul>
-   <li>Length: number of hidden layers</li>
-   <li>Values: neurons per layer</li>
-   </ul>
-</li>
+<dt><strong>epochs</strong> (<em>int</em>)</dt>
+<dd>Number of training epochs. Typical range: 50-200.</dd>
 
-<li><code>learning_rate</code> (float): Optimizer learning rate. Typical: 0.001-0.01</li>
+<dt><strong>layers</strong> (<em>list of int</em>)</dt>
+<dd>Hidden layer architecture specification. Each element defines the number of neurons in that layer.<br>
+Example: [128, 256, 128] creates a 3-layer network with bottleneck architecture.</dd>
 
-<li><code>batch_size</code> (int): Training batch size. Default: 32</li>
+<dt><strong>learning_rate</strong> (<em>float</em>)</dt>
+<dd>Initial learning rate for Adam optimizer. Typical values: 0.001-0.01.</dd>
 
-<li><code>descriptor</code> (str): Molecular descriptor type
-   <ul>
-   <li>'ECFPs': Extended Connectivity Fingerprints</li>
-   <li>'MACCSKeys': MACCS structural keys</li>
-   <li>'Avalon': Avalon fingerprints</li>
-   <li>'ErG': Estate + Gasteiger</li>
-   <li>'pubchem': PubChem fingerprints</li>
-   <li>'EstateIndices', 'fragments', 'moe_type', 'AUTOCORR2D', etc.</li>
-   </ul>
-</li>
+<dt><strong>batch_size</strong> (<em>int</em>)</dt>
+<dd>Mini-batch size for training. Larger batches provide more stable gradients but require more memory.</dd>
 
-<li><code>noise_level</code> (float): Noise intensity for training data. Range: 0.0-1.0</li>
+<dt><strong>descriptor</strong> (<em>str</em>)</dt>
+<dd>
+Molecular descriptor type to generate:
+<ul>
+<li><code>'ECFPs'</code> – Extended-Connectivity Fingerprints (2048-bit, radius=2)</li>
+<li><code>'MACCSKeys'</code> – MACCS structural keys (166-bit)</li>
+<li><code>'Avalon'</code> – Avalon fingerprints (512-bit)</li>
+<li><code>'ErG'</code> – Estate + Gasteiger combined descriptors</li>
+<li><code>'pubchem'</code> – PubChem fingerprints (881-bit)</li>
+<li><code>'EstateIndices'</code> – Electrotopological state indices</li>
+<li><code>'fragments'</code> – Fragment-based descriptors</li>
+<li><code>'graph'</code> – Graph-theoretical descriptors</li>
+<li><code>'moe_type'</code> – MOE-type descriptors</li>
+<li><code>'constitutional'</code> – Constitutional descriptors</li>
+<li><code>'AUTOCORR2D'</code> – 2D autocorrelation</li>
+<li><code>'charge'</code> – Charge-based descriptors</li>
+<li><code>'connectivity'</code> – Connectivity indices</li>
+<li><code>'kappa'</code> – Kappa shape indices</li>
+</ul>
+</dd>
 
-<li><code>attack_method</code> (str): Attack type for adversarial training
-   <ul>
-   <li>'PGD': Projected Gradient Descent</li>
-   <li>'FGSM': Fast Gradient Sign Method</li>
-   <li>None: No attack</li>
-   </ul>
-</li>
+<dt><strong>noise_level</strong> (<em>float</em>)</dt>
+<dd>Gaussian noise standard deviation for data augmentation. Range: [0.0, 1.0].<br>
+Applied as: x' = x + noise_level × σ(x) × ε, where ε ~ N(0,1) and σ(x) is feature std.<br>
+Use 0.0 for no noise, 0.05-0.15 for robustness enhancement.</dd>
 
-<li><code>att_train_size</code> (int): Number of adversarial training samples</li>
+<dt><strong>attack_method</strong> (<em>str or None</em>)</dt>
+<dd>
+Adversarial training method:
+<ul>
+<li><code>'PGD'</code> – Projected Gradient Descent (stronger, slower)</li>
+<li><code>'FGSM'</code> – Fast Gradient Sign Method (faster, weaker)</li>
+<li><code>None</code> – No adversarial training</li>
+</ul>
+</dd>
 
-<li><code>custom_att</code> (optional): Custom attack implementation</li>
+<dt><strong>att_train_size</strong> (<em>int</em>)</dt>
+<dd>Number of adversarial examples to generate per epoch. Only used when attack_method is not None.<br>
+Typical values: 100-1000 depending on dataset size.</dd>
 
-<li><code>random_seed</code> (int): Seed for reproducibility. Default: 42</li>
-</ol>
+<dt><strong>custom_att</strong> (<em>callable or None</em>)</dt>
+<dd>Custom attack function with signature: <code>attack_fn(model, data, labels, device) -> adversarial_data</code>.<br>
+If None, uses built-in attack specified by attack_method.</dd>
+
+<dt><strong>random_seed</strong> (<em>int</em>)</dt>
+<dd>Random seed for reproducibility. Sets seeds for Python, NumPy, and PyTorch.</dd>
+</dl>
 
 <p><strong>Returns:</strong></p>
 <ul>
-<li><code>model</code> (torch.nn.Module): Trained MLP model</li>
-<li><code>test_loader</code> (DataLoader): Test data loader</li>
-<li><code>target_scaler</code> (StandardScaler): Scaler for predictions</li>
+<li><strong>model</strong> (<em>chemxai.models.MLP</em>) – Trained MLP model in evaluation mode</li>
+<li><strong>test_loader</strong> (<em>torch.utils.data.DataLoader</em>) – Test data loader with normalized features</li>
+<li><strong>target_scaler</strong> (<em>sklearn.preprocessing.StandardScaler</em>) – Fitted scaler for target denormalization</li>
 </ul>
 
 <p><strong>Training Process:</strong></p>
 <ol>
-<li>Load QM9 tabular data with specified descriptor</li>
+<li>Load QM9 dataset and compute specified molecular descriptors</li>
 <li>Apply noise injection if noise_level > 0</li>
-<li>Create train/validation/test splits (80/10/10)</li>
-<li>Initialize MLP with specified layers</li>
-<li>Train with Adam optimizer + MSE loss</li>
-<li>Apply adversarial training if attack_method specified</li>
-<li>Return trained model + test data</li>
+<li>Split data: 80% train, 10% validation, 10% test (stratified by target)</li>
+<li>Normalize features using StandardScaler (fit on train, transform all)</li>
+<li>Normalize targets using StandardScaler</li>
+<li>Initialize MLP with specified architecture</li>
+<li>Train using Adam optimizer with MSE loss</li>
+<li>Apply adversarial training if attack_method is specified</li>
+<li>Return trained model, test loader, and target scaler</li>
 </ol>
 
-<h2 id="gcn-training">GCN Training Function<a class="headerlink" href="#gcn-training" title="Permanent link">&para;</a></h2>
-
-<h3 id="train-gcn">train_gcn_qm9(target_idx=7, epochs=10, batch_size=32, lr=0.01, weight_decay=5e-4, device='cpu', random_seed=42)<a class="headerlink" href="#train-gcn" title="Permanent link">&para;</a></h3>
-
-<p><strong>Complete Parameter List (7 parameters):</strong></p>
-
-<ol>
-<li><code>target_idx</code> (int): QM9 target property (0-11). Default: 7 (U0)</li>
-
-<li><code>epochs</code> (int): Training epochs. Default: 10</li>
-
-<li><code>batch_size</code> (int): Batch size. Default: 32</li>
-
-<li><code>lr</code> (float): Learning rate. Default: 0.01</li>
-
-<li><code>weight_decay</code> (float): L2 regularization. Default: 5e-4</li>
-
-<li><code>device</code> (str or torch.device): 'cpu' or 'cuda'. Default: 'cpu'</li>
-
-<li><code>random_seed</code> (int): Random seed. Default: 42</li>
-</ol>
-
-<p><strong>Returns:</strong></p>
-<ul>
-<li><code>model</code> (torch.nn.Module): Trained GCN model</li>
-<li><code>test_loader</code> (DataLoader): Test data loader</li>
-<li><code>scaler</code> (StandardScaler): Target scaler</li>
-<li><code>train_loader</code> (DataLoader): Training data loader</li>
-</ul>
-
-<p><strong>Training Process:</strong></p>
-<ol>
-<li>Load QM9 graph dataset</li>
-<li>Create molecular graphs with node features (11D) and edge indices</li>
-<li>Split: 80% train, 10% val, 10% test</li>
-<li>Initialize GCN with 2 conv layers (11→64→64→1)</li>
-<li>Train with Adam optimizer + MSE loss</li>
-<li>Monitor validation loss for early stopping</li>
-<li>Return trained model + data loaders</li>
-</ol>
-
-<h2 id="main-function">Master Training Function<a class="headerlink" href="#main-function" title="Permanent link">&para;</a></h2>
-
-<h3 id="main">main()<a class="headerlink" href="#main" title="Permanent link">&para;</a></h3>
-
-<p><strong>Purpose:</strong> Comprehensive training orchestration with:</p>
-<ul>
-<li>Command-line argument parsing</li>
-<li>Model type selection (MLP or GCN)</li>
-<li>Hyperparameter configuration</li>
-<li>Training execution</li>
-<li>Result saving</li>
-</ul>
-
-<p><strong>Supported Arguments:</strong></p>
-<ul>
-<li><code>--model</code>: 'mlp' or 'gcn'</li>
-<li><code>--target</code>: Target property index (0-11)</li>
-<li><code>--epochs</code>: Training epochs</li>
-<li><code>--lr</code>: Learning rate</li>
-<li><code>--batch_size</code>: Batch size</li>
-<li><code>--descriptor</code>: Descriptor type (MLP only)</li>
-<li><code>--noise</code>: Noise level (MLP only)</li>
-<li><code>--layers</code>: Hidden layers (MLP only)</li>
-<li><code>--seed</code>: Random seed</li>
-</ul>
-
-<h2 id="usage-examples">Complete Usage Examples<a class="headerlink" href="#usage-examples" title="Permanent link">&para;</a></h2>
-
-<h3 id="ex1">Basic MLP Training<a class="headerlink" href="#ex1" title="Permanent link">&para;</a></h3>
+<p><strong>Example - Basic Training:</strong></p>
 <pre><code class="language-python">from chemxai.train import train_mlp_qm9
 
-# Train MLP for HOMO-LUMO gap with ECFPs
+# Train MLP for HOMO-LUMO gap prediction
 model, test_loader, scaler = train_mlp_qm9(
-    att_index=4,              # gap property
+    att_index=4,                    # gap property
     epochs=100,
-    layers=[128, 256, 128],   # 3 hidden layers
+    layers=[256, 512, 256],         # 3 hidden layers
     learning_rate=0.001,
     batch_size=64,
     descriptor='ECFPs',
@@ -254,36 +210,122 @@ model, test_loader, scaler = train_mlp_qm9(
     custom_att=None,
     random_seed=42
 )
+
+# Evaluate on test set
+import torch
+model.eval()
+test_loss = 0
+predictions_list = []
+targets_list = []
+
+with torch.no_grad():
+    for features, targets in test_loader:
+        features = features.to(model.device)
+        predictions = model(features)
+        predictions_list.append(predictions.cpu())
+        targets_list.append(targets)
+
+predictions = torch.cat(predictions_list).numpy()
+targets = torch.cat(targets_list).numpy()
+
+# Denormalize predictions
+predictions_original = scaler.inverse_transform(predictions)
+targets_original = scaler.inverse_transform(targets.reshape(-1, 1))
+
+# Compute metrics
+from sklearn.metrics import mean_absolute_error, r2_score
+mae = mean_absolute_error(targets_original, predictions_original)
+r2 = r2_score(targets_original, predictions_original)
+print(f"Test MAE: {mae:.4f} Hartree")
+print(f"Test R²: {r2:.4f}")
 </code></pre>
 
-<h3 id="ex2">Adversarial MLP Training<a class="headerlink" href="#ex2" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python">from chemxai.train import train_mlp_qm9
-
-# Robust training with PGD attack
-model, test_loader, scaler = train_mlp_qm9(
-    att_index=7,              # U0 property
-    epochs=200,
-    layers=[64, 128, 64],
+<p><strong>Example - Adversarial Training:</strong></p>
+<pre><code class="language-python"># Train with PGD adversarial examples for robustness
+robust_model, test_loader, scaler = train_mlp_qm9(
+    att_index=7,                    # U0 property
+    epochs=150,
+    layers=[128, 256, 128],
     learning_rate=0.005,
     batch_size=32,
     descriptor='MACCSKeys',
-    noise_level=0.1,          # 10% noise injection
-    attack_method='PGD',      # Adversarial training
-    att_train_size=1000,      # 1000 adversarial samples
+    noise_level=0.1,                # 10% noise augmentation
+    attack_method='PGD',            # Projected Gradient Descent
+    att_train_size=500,             # 500 adversarial examples per epoch
     custom_att=None,
     random_seed=123
 )
 </code></pre>
 
-<h3 id="ex3">GCN Training<a class="headerlink" href="#ex3" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python">from chemxai.train import train_gcn_qm9
-import torch
+<h2 id="train-gcn-qm9">train_gcn_qm9<a class="headerlink" href="#train-gcn-qm9" title="Permanent link">&para;</a></h2>
 
+<p><em>function</em> <strong>chemxai.train.train_gcn_qm9</strong>(<em>target_idx=7, epochs=10, batch_size=32, lr=0.01, weight_decay=5e-4, device='cpu', random_seed=42</em>)</p>
+
+<p>Trains a Graph Convolutional Network on QM9 molecular graphs.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<dl>
+<dt><strong>target_idx</strong> (<em>int</em>)</dt>
+<dd>Target property index (0-11), same as train_mlp_qm9. Default: 7 (U<sub>0</sub>)</dd>
+
+<dt><strong>epochs</strong> (<em>int</em>)</dt>
+<dd>Number of training epochs. GCNs typically converge faster than MLPs. Default: 10</dd>
+
+<dt><strong>batch_size</strong> (<em>int</em>)</dt>
+<dd>Number of graphs per mini-batch. Smaller than tabular due to variable graph sizes. Default: 32</dd>
+
+<dt><strong>lr</strong> (<em>float</em>)</dt>
+<dd>Learning rate for Adam optimizer. Higher than MLP due to simpler architecture. Default: 0.01</dd>
+
+<dt><strong>weight_decay</strong> (<em>float</em>)</dt>
+<dd>L2 regularization coefficient for Adam optimizer. Helps prevent overfitting. Default: 5e-4</dd>
+
+<dt><strong>device</strong> (<em>str or torch.device</em>)</dt>
+<dd>Computation device: <code>'cpu'</code>, <code>'cuda'</code>, or <code>torch.device</code> object. Default: <code>'cpu'</code></dd>
+
+<dt><strong>random_seed</strong> (<em>int</em>)</dt>
+<dd>Random seed for reproducibility. Default: 42</dd>
+</dl>
+
+<p><strong>Returns:</strong></p>
+<ul>
+<li><strong>model</strong> (<em>chemxai.models.GCN</em>) – Trained GCN model</li>
+<li><strong>test_loader</strong> (<em>torch_geometric.loader.DataLoader</em>) – Test data loader</li>
+<li><strong>scaler</strong> (<em>sklearn.preprocessing.StandardScaler</em>) – Target scaler</li>
+<li><strong>train_loader</strong> (<em>torch_geometric.loader.DataLoader</em>) – Training data loader (for continued training)</li>
+</ul>
+
+<p><strong>Model Architecture:</strong></p>
+<pre><code>Input: Node features (11-dimensional)
+├── GCNConv(11 → 64) + ReLU
+├── GCNConv(64 → 64) + ReLU
+├── Global Mean Pooling
+└── Linear(64 → 1)
+Output: Graph-level prediction
+</code></pre>
+
+<p><strong>Training Process:</strong></p>
+<ol>
+<li>Load QM9 molecular graphs with node features (atom type, chirality, etc.)</li>
+<li>Create graph representations with edge indices (bond connectivity)</li>
+<li>Split: 80% train, 10% validation, 10% test</li>
+<li>Normalize target values using StandardScaler</li>
+<li>Initialize GCN with 2 convolutional layers</li>
+<li>Train with Adam optimizer and MSE loss</li>
+<li>Monitor validation loss for convergence</li>
+</ol>
+
+<p><strong>Example:</strong></p>
+<pre><code class="language-python">import torch
+from chemxai.train import train_gcn_qm9
+
+# Set device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Train GCN for internal energy U0
+# Train GCN for internal energy prediction
 model, test_loader, scaler, train_loader = train_gcn_qm9(
-    target_idx=7,             # U0
+    target_idx=7,                   # U0 property
     epochs=50,
     batch_size=64,
     lr=0.01,
@@ -292,36 +334,72 @@ model, test_loader, scaler, train_loader = train_gcn_qm9(
     random_seed=42
 )
 
-# Evaluate
+# Evaluation
 model.eval()
-test_loss = 0
+test_predictions = []
+test_targets = []
+
 with torch.no_grad():
     for batch in test_loader:
         batch = batch.to(device)
         pred = model(batch.x, batch.edge_index, batch.batch)
-        loss = torch.nn.functional.mse_loss(pred, batch.y[:, target_idx])
-        test_loss += loss.item()
+        test_predictions.append(pred.cpu())
+        test_targets.append(batch.y[:, target_idx].cpu())
+
+predictions = torch.cat(test_predictions).numpy()
+targets = torch.cat(test_targets).numpy()
+
+# Denormalize
+predictions_real = scaler.inverse_transform(predictions.reshape(-1, 1))
+targets_real = scaler.inverse_transform(targets.reshape(-1, 1))
+
+# Metrics
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+mae = mean_absolute_error(targets_real, predictions_real)
+rmse = mean_squared_error(targets_real, predictions_real, squared=False)
+print(f"Test MAE: {mae:.4f} Hartree")
+print(f"Test RMSE: {rmse:.4f} Hartree")
 </code></pre>
 
-<h3 id="ex4">Command-Line Training<a class="headerlink" href="#ex4" title="Permanent link">&para;</a></h3>
-<pre><code class="language-bash"># MLP training
-python -m chemxai.train --model mlp --target 4 --epochs 100 --lr 0.001 --descriptor ECFPs
+<h2 id="main-function">main<a class="headerlink" href="#main-function" title="Permanent link">&para;</a></h2>
 
-# GCN training with GPU
-python -m chemxai.train --model gcn --target 7 --epochs 50 --lr 0.01 --batch_size 64
+<p><em>function</em> <strong>chemxai.train.main</strong>()</p>
+
+<p>Command-line interface for training molecular property prediction models. Parses arguments and dispatches to appropriate training function.</p>
+
+<p><strong>Command-Line Arguments:</strong></p>
+<ul>
+<li><code>--model</code> (<em>str</em>): Model type: <code>'mlp'</code> or <code>'gcn'</code></li>
+<li><code>--target</code> (<em>int</em>): Target property index (0-11)</li>
+<li><code>--epochs</code> (<em>int</em>): Number of training epochs</li>
+<li><code>--lr</code> (<em>float</em>): Learning rate</li>
+<li><code>--batch_size</code> (<em>int</em>): Batch size</li>
+<li><code>--descriptor</code> (<em>str</em>): Descriptor type (MLP only)</li>
+<li><code>--noise</code> (<em>float</em>): Noise level (MLP only)</li>
+<li><code>--layers</code> (<em>str</em>): Hidden layers as comma-separated values (MLP only)</li>
+<li><code>--seed</code> (<em>int</em>): Random seed</li>
+</ul>
+
+<p><strong>Example Usage:</strong></p>
+<pre><code class="language-bash"># Train MLP
+python -m chemxai.train     --model mlp     --target 4     --epochs 100     --lr 0.001     --batch_size 64     --descriptor ECFPs     --layers 256,512,256     --seed 42
+
+# Train GCN with GPU
+python -m chemxai.train     --model gcn     --target 7     --epochs 50     --lr 0.01     --batch_size 32     --seed 42
 </code></pre>
 
-<h2 id="workflow">Complete Training Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h2>
+<h2 id="complete-workflow">Complete Workflow Example<a class="headerlink" href="#complete-workflow" title="Permanent link">&para;</a></h2>
 
 <pre><code class="language-python">import torch
-from chemxai.train import train_mlp_qm9, train_gcn_qm9
-from chemxai.evaluate import evaluate_model
+from chemxai.train import train_mlp_qm9
+from chemxai.explainers import Shap
+from chemxai.plots import horizontal_bar_plot
 
 # 1. Train model
 model, test_loader, scaler = train_mlp_qm9(
     att_index=4,
     epochs=100,
-    layers=[128, 256, 128],
+    layers=[256, 512, 256],
     learning_rate=0.001,
     batch_size=64,
     descriptor='ECFPs',
@@ -332,61 +410,134 @@ model, test_loader, scaler = train_mlp_qm9(
     random_seed=42
 )
 
-# 2. Save model
+# 2. Save model checkpoint
 torch.save({
     'model_state_dict': model.state_dict(),
     'scaler': scaler,
     'descriptor': 'ECFPs',
-    'target_index': 4
-}, 'trained_mlp_gap.pth')
+    'target_index': 4,
+    'architecture': [256, 512, 256]
+}, 'mlp_gap_qm9.pth')
 
-# 3. Evaluate
-metrics = evaluate_model(model, test_loader, scaler)
-print(f"Test MAE: {metrics['mae']:.4f}")
-print(f"Test R²: {metrics['r2']:.4f}")
+# 3. Load and evaluate
+checkpoint = torch.load('mlp_gap_qm9.pth')
+model.load_state_dict(checkpoint['model_state_dict'])
+model.eval()
+
+# 4. Explain predictions
+from chemxai.data import qm9_tabular
+loader = qm9_tabular(descriptor_type='ECFPs')
+train_features, _ = loader.load_data(target_idx=4)
+
+shap_explainer = Shap(
+    model=model,
+    background_tensor=torch.tensor(train_features[:200], dtype=torch.float32),
+    test_tensor=next(iter(test_loader))[0],
+    device=model.device
+)
+
+global_importance = shap_explainer.explain_global()
+
+# 5. Visualize
+descriptor_names = [f'ECFP_bit_{i}' for i in range(2048)]
+horizontal_bar_plot(
+    feature_names=descriptor_names,
+    values=global_importance,
+    title='Global Feature Importance for HOMO-LUMO Gap',
+    top_k=20
+)
 </code></pre>
 
-<h2 id="comparison">Model Comparison<a class="headerlink" href="#comparison" title="Permanent link">&para;</a></h2>
+<h2 id="model-comparison">MLP vs GCN Comparison<a class="headerlink" href="#model-comparison" title="Permanent link">&para;</a></h2>
+
 <table>
-<tr><th>Feature</th><th>MLP</th><th>GCN</th></tr>
-<tr><td>Input</td><td>Molecular descriptors</td><td>Graph structure</td></tr>
-<tr><td>Parameters</td><td>11 (highly configurable)</td><td>7 (simpler)</td></tr>
-<tr><td>Descriptors</td><td>14 types supported</td><td>Node features (11D)</td></tr>
-<tr><td>Adversarial Training</td><td>✓ (PGD, FGSM)</td><td>✗</td></tr>
-<tr><td>Noise Injection</td><td>✓</td><td>✗</td></tr>
-<tr><td>Speed</td><td>Fast</td><td>Medium</td></tr>
-<tr><td>Accuracy</td><td>Good</td><td>Better (graph-aware)</td></tr>
-<tr><td>Use Case</td><td>Tabular data, quick experiments</td><td>Graph data, molecular structure</td></tr>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>train_mlp_qm9</th>
+<th>train_gcn_qm9</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Input Representation</strong></td>
+<td>Fixed-size molecular descriptors</td>
+<td>Variable-size molecular graphs</td>
+</tr>
+<tr>
+<td><strong>Parameters</strong></td>
+<td>11 (highly configurable)</td>
+<td>7 (simpler interface)</td>
+</tr>
+<tr>
+<td><strong>Descriptor Options</strong></td>
+<td>14 types (fingerprints, topological, etc.)</td>
+<td>Learned from graph structure</td>
+</tr>
+<tr>
+<td><strong>Adversarial Training</strong></td>
+<td>Supported (PGD, FGSM)</td>
+<td>Not implemented</td>
+</tr>
+<tr>
+<td><strong>Data Augmentation</strong></td>
+<td>Noise injection</td>
+<td>None (implicit from batching)</td>
+</tr>
+<tr>
+<td><strong>Training Speed</strong></td>
+<td>Fast (dense operations)</td>
+<td>Medium (sparse graph operations)</td>
+</tr>
+<tr>
+<td><strong>Typical Accuracy</strong></td>
+<td>Good (descriptor-dependent)</td>
+<td>Better (learns structure)</td>
+</tr>
+<tr>
+<td><strong>Memory Usage</strong></td>
+<td>Fixed per molecule</td>
+<td>Scales with molecule size</td>
+</tr>
+<tr>
+<td><strong>Best Use Case</strong></td>
+<td>Large datasets, quick experiments, adversarial robustness</td>
+<td>Smaller datasets, structural insights, graph-level tasks</td>
+</tr>
+</tbody>
 </table>
 
 <h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
 
-<h3 id="mlp-tips">MLP Training<a class="headerlink" href="#mlp-tips" title="Permanent link">&para;</a></h3>
+<h3 id="hyperparameter-tuning">Hyperparameter Tuning<a class="headerlink" href="#hyperparameter-tuning" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Descriptor Selection:</strong> ECFPs for general use, MACCSKeys for quick tests, ErG for interpretability</li>
-<li><strong>Architecture:</strong> Start with [128, 256, 128], adjust based on descriptor size</li>
-<li><strong>Learning Rate:</strong> 0.001 for Adam, reduce if loss oscillates</li>
-<li><strong>Noise:</strong> Use 0.05-0.15 for robustness, higher for adversarial scenarios</li>
-<li><strong>Adversarial Training:</strong> PGD for strong robustness, FGSM for speed</li>
-<li><strong>Epochs:</strong> 100-200 sufficient for QM9, use early stopping</li>
+<li><strong>Learning rate:</strong> Start with 0.001 for MLPs, 0.01 for GCNs. Reduce by 10x if loss plateaus.</li>
+<li><strong>Batch size:</strong> Larger batches (64-128) for MLPs, smaller (32-64) for GCNs due to memory.</li>
+<li><strong>Architecture:</strong> For MLPs, try pyramid structures (decreasing dimensions). For GCNs, 2-3 layers suffice.</li>
+<li><strong>Regularization:</strong> Use dropout (0.2-0.4) for MLPs, weight_decay (5e-4) for GCNs.</li>
 </ul>
 
-<h3 id="gcn-tips">GCN Training<a class="headerlink" href="#gcn-tips" title="Permanent link">&para;</a></h3>
+<h3 id="data-preprocessing">Data Preprocessing<a class="headerlink" href="#data-preprocessing" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Learning Rate:</strong> 0.01 works well, reduce to 0.005 for stability</li>
-<li><strong>Weight Decay:</strong> 5e-4 for regularization, increase for overfitting</li>
-<li><strong>Batch Size:</strong> 32-64 for good gradient estimates</li>
-<li><strong>Epochs:</strong> 50-100 sufficient, GCNs converge faster than MLPs</li>
-<li><strong>Device:</strong> Use GPU for large datasets (10k+ molecules)</li>
+<li><strong>Feature scaling:</strong> Always normalize features and targets (handled automatically).</li>
+<li><strong>Descriptor selection:</strong> ECFPs are generally most effective. Try multiple types for best results.</li>
+<li><strong>Train/val/test split:</strong> 80/10/10 is default. Increase validation set if hyperparameter tuning extensively.</li>
 </ul>
 
-<h3 id="general-tips">General Tips<a class="headerlink" href="#general-tips" title="Permanent link">&para;</a></h3>
+<h3 id="robustness">Robustness Training<a class="headerlink" href="#robustness" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Always set <code>random_seed</code> for reproducibility</li>
-<li>Monitor both training and validation losses</li>
-<li>Save best model based on validation performance</li>
-<li>Use StandardScaler for target normalization</li>
-<li>Evaluate on held-out test set only once</li>
+<li><strong>Noise injection:</strong> Use 0.05-0.15 for general robustness.</li>
+<li><strong>Adversarial training:</strong> PGD is stronger but slower. Start with att_train_size=100-500.</li>
+<li><strong>Evaluation:</strong> Test on both clean and noisy data to assess robustness.</li>
+</ul>
+
+<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Both functions automatically handle data loading, preprocessing, and train/val/test splits</li>
+<li>Models are returned in evaluation mode (<code>model.eval()</code>)</li>
+<li>Target scalers must be used to denormalize predictions back to original units</li>
+<li>QM9 properties have different units and scales - normalize targets before training</li>
+<li>For reproducibility, always set random_seed consistently across runs</li>
 </ul>
 </div>
           </div><footer>

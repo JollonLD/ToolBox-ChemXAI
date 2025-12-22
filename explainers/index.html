@@ -80,202 +80,504 @@
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-            <div class="section" itemprop="articleBody"><h1 id="explainers">Explainers Module - 100% Code Coverage (7 Classes)<a class="headerlink" href="#explainers" title="Permanent link">&para;</a></h1>
+            <div class="section" itemprop="articleBody"><h1 id="chemxai-explainers">chemxai.explainers<a class="headerlink" href="#chemxai-explainers" title="Permanent link">&para;</a></h1>
 
-<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>Complete explainability toolkit with 2 tabular and 5 graph explainers. All methods, parameters, and usage patterns documented.</p>
+<p>Model interpretation and explainability methods for both tabular and graph-based molecular models. Implements SHAP, LIME, and GNN-specific explanation techniques.</p>
 
-<h2 id="tabular">Tabular Explainers<a class="headerlink" href="#tabular" title="Permanent link">&para;</a></h2>
+<h2 id="tabular-explainers">Tabular Explainers<a class="headerlink" href="#tabular-explainers" title="Permanent link">&para;</a></h2>
 
-<h3 id="shap">1. Shap - KernelSHAP<a class="headerlink" href="#shap" title="Permanent link">&para;</a></h3>
-<pre><code>__init__(model, background_tensor, test_tensor, device)</code></pre>
+<h3 id="shap-class">Shap<a class="headerlink" href="#shap-class" title="Permanent link">&para;</a></h3>
+
+<p><em>class</em> <strong>chemxai.explainers.Shap</strong>(<em>model, background_tensor, test_tensor, device</em>)</p>
+
+<p>KernelSHAP explainer for computing Shapley values on tabular molecular descriptors. Shapley values quantify each feature's contribution to the prediction, satisfying desirable properties like efficiency, symmetry, and additivity.</p>
+
 <p><strong>Parameters:</strong></p>
 <ul>
-<li><code>model</code>: Trained model</li>
-<li><code>background_tensor</code> (torch.Tensor): Training/background data</li>
-<li><code>test_tensor</code> (torch.Tensor): Test data to explain</li>
-<li><code>device</code> (torch.device): CPU or CUDA</li>
-</ul>
-<p><strong>Methods:</strong></p>
-<ul>
-<li><code>explain_local(index)</code> → list: SHAP values for instance at index</li>
-<li><code>explain_global()</code> → list: Mean absolute SHAP values (global importance)</li>
+<li><strong>model</strong> (<em>torch.nn.Module</em>) – Trained PyTorch model to explain</li>
+<li><strong>background_tensor</strong> (<em>torch.Tensor</em>) – Reference dataset used for marginalizing out features. Shape: (num_background, num_features). Typically uses training data subset (100-500 samples)</li>
+<li><strong>test_tensor</strong> (<em>torch.Tensor</em>) – Test instances to explain. Shape: (num_test, num_features)</li>
+<li><strong>device</strong> (<em>torch.device</em>) – Device for computations (<code>torch.device('cpu')</code> or <code>torch.device('cuda')</code>)</li>
 </ul>
 
-<h3 id="lime">2. LIME - Local Interpretable Model-agnostic Explanations<a class="headerlink" href="#lime" title="Permanent link">&para;</a></h3>
-<pre><code>__init__(model, background_tensor, test_tensor, device, mode='regression')</code></pre>
+<p><strong>Methods:</strong></p>
+
+<dl>
+<dt><code>explain_local(index)</code></dt>
+<dd>
+<p>Computes SHAP values for a single test instance.</p>
 <p><strong>Parameters:</strong></p>
 <ul>
-<li><code>model</code>: Trained model</li>
-<li><code>background_tensor</code>: Training data</li>
-<li><code>test_tensor</code>: Test data</li>
-<li><code>device</code>: Device</li>
-<li><code>mode</code> (str): 'regression' or 'classification'. Default: 'regression'</li>
+<li><strong>index</strong> (<em>int</em>) – Index of test instance to explain</li>
 </ul>
-<p><strong>Methods:</strong></p>
-<ul>
-<li><code>explain_local(index, num_features=None)</code> → list: LIME importance values. If num_features=None, uses all features.</li>
-</ul>
+<p><strong>Returns:</strong> <code>list</code> – SHAP values for each feature, where positive values increase the prediction and negative values decrease it. Length equals num_features.</p>
+</dd>
 
-<h2 id="graph">Graph Explainers<a class="headerlink" href="#graph" title="Permanent link">&para;</a></h2>
+<dt><code>explain_global()</code></dt>
+<dd>
+<p>Computes global feature importance across all test instances.</p>
+<p><strong>Returns:</strong> <code>list</code> – Mean absolute SHAP values for each feature, representing average importance. Higher values indicate more important features.</p>
+</dd>
+</dl>
 
-<h3 id="gnn">3. GNNExplain<a class="headerlink" href="#gnn" title="Permanent link">&para;</a></h3>
-<pre><code>__init__(model, device, data, epochs, mode='regression', task_level='graph', return_type='raw')</code></pre>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>model</code> (torch.nn.Module): Trained GNN</li>
-<li><code>device</code>: Device</li>
-<li><code>data</code> (torch_geometric.data.Data): Graph data</li>
-<li><code>epochs</code> (int): Training epochs for explainer</li>
-<li><code>mode</code> (str): 'regression' or 'classification'</li>
-<li><code>task_level</code> (str): 'node' or 'graph'</li>
-<li><code>return_type</code> (str): 'raw' or 'probabilities'</li>
-</ul>
-<p><strong>Methods:</strong></p>
-<ul>
-<li><code>explain(index=None)</code> → tuple: (node_mask, edge_mask, explanation_object)
-  <ul>
-  <li>node_mask: Importance scores for each node</li>
-  <li>edge_mask: Importance scores for each edge</li>
-  </ul>
-</li>
-</ul>
+<p><strong>Mathematical Background:</strong></p>
+<p>The Shapley value φ_i for feature i is defined as:</p>
+<pre><code>φ_i = Σ_{S⊆F\{i}} (|S|!(|F|-|S|-1)!)/(|F|!) [f(S∪{i}) - f(S)]
+</code></pre>
+<p>where F is the set of all features, S is a subset, and f(S) is the prediction using only features in S.</p>
 
-<h3 id="node-lime">4. NodeGraphLIME<a class="headerlink" href="#node-lime" title="Permanent link">&para;</a></h3>
-<pre><code>__init__(data, model, device, gpu=False, hop=2, rho=0.1, cached=True)</code></pre>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>data</code>: Graph data</li>
-<li><code>model</code>: GNN model</li>
-<li><code>device</code>: Device</li>
-<li><code>gpu</code> (bool): Use GPU. Default: False</li>
-<li><code>hop</code> (int): K-hop subgraph extraction. Default: 2</li>
-<li><code>rho</code> (float): Lasso regularization. Default: 0.1</li>
-<li><code>cached</code> (bool): Cache predictions. Default: True</li>
-</ul>
-<p><strong>Methods:</strong></p>
-<ul>
-<li><code>explain(node_index, hops, num_samples, info=False, multiclass=False)</code> → list: Feature importance coefficients for node prediction</li>
-</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="language-python">import torch
+from chemxai.explainers import Shap
+from chemxai.models import MLP
+from chemxai.data import qm9_tabular
 
-<h3 id="node-shap">5. NodeGraphShap<a class="headerlink" href="#node-shap" title="Permanent link">&para;</a></h3>
-<pre><code>__init__(data, model, device, gpu=False)</code></pre>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>data</code>: Graph data</li>
-<li><code>model</code>: GNN model</li>
-<li><code>device</code>: Device</li>
-<li><code>gpu</code> (bool): Use GPU</li>
-</ul>
-<p><strong>Methods:</strong></p>
-<ul>
-<li><code>explain(node_index=0, hops=2, num_samples=10, info=True, multiclass=False)</code> → list: Shapley values for node features</li>
-</ul>
+# Load data and model
+loader = qm9_tabular(descriptor_type='ECFPs')
+features, targets = loader.load_data(target_idx=7)
 
-<h3 id="graph-lime">6. GraphLIME<a class="headerlink" href="#graph-lime" title="Permanent link">&para;</a></h3>
-<pre><code>__init__(model, device='cpu', rho=0.1)</code></pre>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>model</code>: GNN model</li>
-<li><code>device</code> (torch.device): Device. Default: 'cpu'</li>
-<li><code>rho</code> (float): Lasso regularization. Default: 0.1</li>
-</ul>
-<p><strong>Methods:</strong></p>
-<ul>
-<li><code>explain(data, num_samples=100)</code> → list: Feature importance for entire graph
-  <ul>
-  <li><code>data</code> (torch_geometric.data.Data): Graph to explain</li>
-  <li><code>num_samples</code> (int): Number of perturbed graphs. Default: 100</li>
-  </ul>
-</li>
-</ul>
+model = MLP(input_dim=2048, hidden_dims=[256, 128], output_dim=1)
+# ... train model ...
 
-<h3 id="graph-shap">7. GraphShap<a class="headerlink" href="#graph-shap" title="Permanent link">&para;</a></h3>
-<pre><code>__init__(data, model, device=None, gpu=False)</code></pre>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>data</code>: Graph data</li>
-<li><code>model</code>: GNN model</li>
-<li><code>device</code>: Device (auto-detected if None)</li>
-<li><code>gpu</code> (bool): Use GPU</li>
-</ul>
-<p><strong>Methods:</strong></p>
-<ul>
-<li><code>explain(num_samples=30, info=True)</code> → list: SHAP values for graph-level prediction
-  <ul>
-  <li><code>num_samples</code> (int): Binary samples for Shapley kernel. Default: 30</li>
-  </ul>
-</li>
-</ul>
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model.to(device)
 
-<h2 id="usage">Complete Usage Examples<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+# Select background and test sets
+train_features = torch.tensor(features[:10000], dtype=torch.float32)
+test_features = torch.tensor(features[10000:10100], dtype=torch.float32)
 
-<h3 id="ex1">Tabular SHAP<a class="headerlink" href="#ex1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python">from chemxai.explainers import Shap
+# Create explainer
+shap_explainer = Shap(
+    model=model,
+    background_tensor=train_features[:200],  # Use 200 background samples
+    test_tensor=test_features,
+    device=device
+)
 
-explainer = Shap(trained_model, train_features, test_features, device)
-local_shap = explainer.explain_local(0)  # Instance 0
-global_importance = explainer.explain_global()
+# Explain single instance
+shap_values = shap_explainer.explain_local(index=0)
+print(f"SHAP values shape: {len(shap_values)}")
+print(f"Top positive feature: {shap_values.index(max(shap_values))}")
+print(f"Top negative feature: {shap_values.index(min(shap_values))}")
+
+# Global importance
+global_importance = shap_explainer.explain_global()
+top_k = 10
+top_features = sorted(range(len(global_importance)), 
+                      key=lambda i: global_importance[i], 
+                      reverse=True)[:top_k]
+print(f"Top {top_k} important features: {top_features}")
 </code></pre>
 
-<h3 id="ex2">Tabular LIME<a class="headerlink" href="#ex2" title="Permanent link">&para;</a></h3>
+<h3 id="lime-class">LIME<a class="headerlink" href="#lime-class" title="Permanent link">&para;</a></h3>
+
+<p><em>class</em> <strong>chemxai.explainers.LIME</strong>(<em>model, background_tensor, test_tensor, device, mode='regression'</em>)</p>
+
+<p>Local Interpretable Model-agnostic Explanations for tabular data. LIME explains predictions by fitting an interpretable linear model locally around the instance of interest.</p>
+
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>model</strong> (<em>torch.nn.Module</em>) – Trained model to explain</li>
+<li><strong>background_tensor</strong> (<em>torch.Tensor</em>) – Training data for establishing feature distributions</li>
+<li><strong>test_tensor</strong> (<em>torch.Tensor</em>) – Test instances to explain</li>
+<li><strong>device</strong> (<em>torch.device</em>) – Computation device</li>
+<li><strong>mode</strong> (<em>str</em>) – Task type: <code>'regression'</code> or <code>'classification'</code>. Default: <code>'regression'</code></li>
+</ul>
+
+<p><strong>Methods:</strong></p>
+
+<dl>
+<dt><code>explain_local(index, num_features=None)</code></dt>
+<dd>
+<p>Generates local explanation by perturbing features and fitting a linear model.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>index</strong> (<em>int</em>) – Index of test instance to explain</li>
+<li><strong>num_features</strong> (<em>int</em>, <em>optional</em>) – Number of features to include in explanation. If None, uses all features. Default: None</li>
+</ul>
+<p><strong>Returns:</strong> <code>list</code> – Feature importance coefficients from the local linear model. Positive coefficients indicate features that increase the prediction.</p>
+</dd>
+</dl>
+
+<p><strong>Algorithm:</strong></p>
+<ol>
+<li>Generate perturbed samples by randomly masking features</li>
+<li>Get model predictions for perturbed samples</li>
+<li>Weight samples by proximity to original instance</li>
+<li>Fit interpretable linear model (e.g., Lasso) on weighted samples</li>
+<li>Return linear model coefficients as feature importance</li>
+</ol>
+
+<p><strong>Example:</strong></p>
 <pre><code class="language-python">from chemxai.explainers import LIME
 
-lime = LIME(model, train_data, test_data, device, mode='regression')
-lime_values = lime.explain_local(index=5, num_features=20)  # Top 20 features
-</code></pre>
+# Create LIME explainer
+lime_explainer = LIME(
+    model=model,
+    background_tensor=train_features,
+    test_tensor=test_features,
+    device=device,
+    mode='regression'
+)
 
-<h3 id="ex3">GNN Explainer<a class="headerlink" href="#ex3" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python">from chemxai.explainers import GNNExplain
+# Explain instance with top 20 features
+lime_values = lime_explainer.explain_local(index=5, num_features=20)
 
-gnn_exp = GNNExplain(gcn_model, device, graph_data, epochs=200, task_level='graph')
-node_importance, edge_importance, explanation = gnn_exp.explain(index=0)
-
-# Visualize top nodes/edges
+# Visualize
+import matplotlib.pyplot as plt
 import numpy as np
-top_nodes = np.argsort(node_importance)[-10:]
-top_edges = np.argsort(edge_importance)[-10:]
+
+top_indices = np.argsort(np.abs(lime_values))[-20:]
+plt.barh(range(20), [lime_values[i] for i in top_indices])
+plt.xlabel('LIME Coefficient')
+plt.ylabel('Feature Index')
+plt.title('Top 20 Features by LIME')
+plt.show()
 </code></pre>
 
-<h3 id="ex4">Node-Level LIME<a class="headerlink" href="#ex4" title="Permanent link">&para;</a></h3>
+<h2 id="graph-explainers">Graph Explainers<a class="headerlink" href="#graph-explainers" title="Permanent link">&para;</a></h2>
+
+<h3 id="gnnexplain-class">GNNExplain<a class="headerlink" href="#gnnexplain-class" title="Permanent link">&para;</a></h3>
+
+<p><em>class</em> <strong>chemxai.explainers.GNNExplain</strong>(<em>model, device, data, epochs, mode='regression', task_level='graph', return_type='raw'</em>)</p>
+
+<p>Explains GNN predictions by learning an edge mask and node feature mask that maximize mutual information with the prediction. Based on the paper "GNNExplainer: Generating Explanations for Graph Neural Networks" (NeurIPS 2019).</p>
+
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>model</strong> (<em>torch.nn.Module</em>) – Trained GNN model (e.g., GCN, GAT)</li>
+<li><strong>device</strong> (<em>torch.device</em>) – Computation device</li>
+<li><strong>data</strong> (<em>torch_geometric.data.Data</em>) – Molecular graph dataset</li>
+<li><strong>epochs</strong> (<em>int</em>) – Number of optimization epochs for learning masks (typically 100-300)</li>
+<li><strong>mode</strong> (<em>str</em>) – <code>'regression'</code> or <code>'classification'</code>. Default: <code>'regression'</code></li>
+<li><strong>task_level</strong> (<em>str</em>) – <code>'node'</code> for node-level tasks or <code>'graph'</code> for graph-level tasks. Default: <code>'graph'</code></li>
+<li><strong>return_type</strong> (<em>str</em>) – <code>'raw'</code> for raw mask values or <code>'probabilities'</code> for sigmoid-transformed values. Default: <code>'raw'</code></li>
+</ul>
+
+<p><strong>Methods:</strong></p>
+
+<dl>
+<dt><code>explain(index=None)</code></dt>
+<dd>
+<p>Generates explanation by optimizing edge and node masks.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>index</strong> (<em>int</em>, <em>optional</em>) – Graph index to explain (for graph-level tasks) or node index (for node-level tasks). If None, explains the first instance.</li>
+</ul>
+<p><strong>Returns:</strong> <code>tuple</code> – (node_mask, edge_mask, explanation_object) where:
+<ul>
+<li><strong>node_mask</strong> (<em>numpy.ndarray</em>) – Importance score for each node. Shape: (num_nodes,)</li>
+<li><strong>edge_mask</strong> (<em>numpy.ndarray</em>) – Importance score for each edge. Shape: (num_edges,)</li>
+<li><strong>explanation_object</strong> – Additional explanation details</li>
+</ul>
+</p>
+</dd>
+</dl>
+
+<p><strong>Optimization Objective:</strong></p>
+<p>GNNExplain learns masks by minimizing:</p>
+<pre><code>L = -MI(Y, (G_S, X_S)) + α₁‖M_E‖₁ + α₂H(M_E)
+</code></pre>
+<p>where MI is mutual information, G_S is the masked subgraph, X_S are masked features, M_E is the edge mask, and α₁, α₂ are regularization coefficients.</p>
+
+<p><strong>Example:</strong></p>
+<pre><code class="language-python">from chemxai.explainers import GNNExplain
+from chemxai.models import GCN
+from chemxai.data import graph_datasets
+
+# Load graph dataset
+dataset = graph_datasets(dataset_name='qm9')
+data = dataset.load_data()
+
+# Train GCN
+model = GCN(num_node_features=11, hidden_dim=64)
+# ... train model ...
+
+# Create explainer
+gnn_explainer = GNNExplain(
+    model=model,
+    device=device,
+    data=data,
+    epochs=200,
+    mode='regression',
+    task_level='graph',
+    return_type='raw'
+)
+
+# Explain prediction for molecule 0
+node_importance, edge_importance, explanation = gnn_explainer.explain(index=0)
+
+# Identify critical atoms and bonds
+import numpy as np
+threshold = 0.5
+critical_atoms = np.where(node_importance > threshold)[0]
+critical_bonds = np.where(edge_importance > threshold)[0]
+
+print(f"Critical atoms: {critical_atoms}")
+print(f"Critical bonds: {critical_bonds}")
+
+# Visualize with RDKit
+from chemxai.plots import k_hop_subgraph
+subset, sub_edges, _, _ = k_hop_subgraph(
+    node_idx=critical_atoms.tolist(),
+    num_hops=1,
+    edge_index=data.edge_index
+)
+</code></pre>
+
+<h3 id="nodegraphlime-class">NodeGraphLIME<a class="headerlink" href="#nodegraphlime-class" title="Permanent link">&para;</a></h3>
+
+<p><em>class</em> <strong>chemxai.explainers.NodeGraphLIME</strong>(<em>data, model, device, gpu=False, hop=2, rho=0.1, cached=True</em>)</p>
+
+<p>Node-level LIME for GNNs. Explains node predictions by fitting a linear model on perturbed subgraphs.</p>
+
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>data</strong> (<em>torch_geometric.data.Data</em>) – Graph data</li>
+<li><strong>model</strong> (<em>torch.nn.Module</em>) – Trained GNN</li>
+<li><strong>device</strong> (<em>torch.device</em>) – Computation device</li>
+<li><strong>gpu</strong> (<em>bool</em>) – Enable GPU acceleration. Default: False</li>
+<li><strong>hop</strong> (<em>int</em>) – Number of hops for extracting local subgraph. Default: 2</li>
+<li><strong>rho</strong> (<em>float</em>) – Lasso regression regularization strength. Default: 0.1</li>
+<li><strong>cached</strong> (<em>bool</em>) – Cache model predictions to speed up explanations. Default: True</li>
+</ul>
+
+<p><strong>Methods:</strong></p>
+
+<dl>
+<dt><code>explain(node_index, hops, num_samples, info=False, multiclass=False)</code></dt>
+<dd>
+<p>Explains prediction for a specific node.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>node_index</strong> (<em>int</em>) – Target node to explain</li>
+<li><strong>hops</strong> (<em>int</em>) – Subgraph radius (typically 2-3)</li>
+<li><strong>num_samples</strong> (<em>int</em>) – Number of perturbed graphs to generate (typically 50-200)</li>
+<li><strong>info</strong> (<em>bool</em>) – Print explanation info. Default: False</li>
+<li><strong>multiclass</strong> (<em>bool</em>) – Multi-class classification task. Default: False</li>
+</ul>
+<p><strong>Returns:</strong> <code>list</code> – Feature importance coefficients for node features</p>
+</dd>
+</dl>
+
+<p><strong>Example:</strong></p>
 <pre><code class="language-python">from chemxai.explainers import NodeGraphLIME
 
-node_lime = NodeGraphLIME(graph_data, gnn_model, device, hop=2)
-coefficients = node_lime.explain(node_index=10, hops=2, num_samples=50)
+node_lime = NodeGraphLIME(
+    data=graph_data,
+    model=gcn_model,
+    device=device,
+    gpu=torch.cuda.is_available(),
+    hop=2,
+    rho=0.1
+)
+
+# Explain node 15
+coefficients = node_lime.explain(
+    node_index=15,
+    hops=2,
+    num_samples=100,
+    info=True
+)
+
+print(f"Feature importance: {coefficients}")
 </code></pre>
 
-<h3 id="ex5">Graph-Level SHAP<a class="headerlink" href="#ex5" title="Permanent link">&para;</a></h3>
+<h3 id="nodegraphshap-class">NodeGraphShap<a class="headerlink" href="#nodegraphshap-class" title="Permanent link">&para;</a></h3>
+
+<p><em>class</em> <strong>chemxai.explainers.NodeGraphShap</strong>(<em>data, model, device, gpu=False</em>)</p>
+
+<p>Computes Shapley values for node-level GNN predictions.</p>
+
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>data</strong> (<em>torch_geometric.data.Data</em>) – Graph data</li>
+<li><strong>model</strong> (<em>torch.nn.Module</em>) – Trained GNN</li>
+<li><strong>device</strong> (<em>torch.device</em>) – Device</li>
+<li><strong>gpu</strong> (<em>bool</em>) – Use GPU. Default: False</li>
+</ul>
+
+<p><strong>Methods:</strong></p>
+
+<dl>
+<dt><code>explain(node_index=0, hops=2, num_samples=10, info=True, multiclass=False)</code></dt>
+<dd>
+<p>Computes node-level Shapley values.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>node_index</strong> (<em>int</em>) – Node to explain. Default: 0</li>
+<li><strong>hops</strong> (<em>int</em>) – Subgraph hops. Default: 2</li>
+<li><strong>num_samples</strong> (<em>int</em>) – Sampling iterations. Default: 10</li>
+<li><strong>info</strong> (<em>bool</em>) – Print info. Default: True</li>
+<li><strong>multiclass</strong> (<em>bool</em>) – Multiclass setting. Default: False</li>
+</ul>
+<p><strong>Returns:</strong> <code>list</code> – Shapley values for node features</p>
+</dd>
+</dl>
+
+<h3 id="graphlime-class">GraphLIME<a class="headerlink" href="#graphlime-class" title="Permanent link">&para;</a></h3>
+
+<p><em>class</em> <strong>chemxai.explainers.GraphLIME</strong>(<em>model, device='cpu', rho=0.1</em>)</p>
+
+<p>Graph-level LIME for explaining entire molecular graph predictions.</p>
+
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>model</strong> (<em>torch.nn.Module</em>) – Trained GNN</li>
+<li><strong>device</strong> (<em>torch.device or str</em>) – Device. Default: <code>'cpu'</code></li>
+<li><strong>rho</strong> (<em>float</em>) – Lasso regularization. Default: 0.1</li>
+</ul>
+
+<p><strong>Methods:</strong></p>
+
+<dl>
+<dt><code>explain(data, num_samples=100)</code></dt>
+<dd>
+<p>Explains graph-level prediction.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>data</strong> (<em>torch_geometric.data.Data</em>) – Molecular graph to explain</li>
+<li><strong>num_samples</strong> (<em>int</em>) – Number of perturbed graphs. Default: 100</li>
+</ul>
+<p><strong>Returns:</strong> <code>list</code> – Feature importance for graph</p>
+</dd>
+</dl>
+
+<h3 id="graphshap-class">GraphShap<a class="headerlink" href="#graphshap-class" title="Permanent link">&para;</a></h3>
+
+<p><em>class</em> <strong>chemxai.explainers.GraphShap</strong>(<em>data, model, device=None, gpu=False</em>)</p>
+
+<p>Graph-level Shapley values for molecular property prediction.</p>
+
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>data</strong> (<em>torch_geometric.data.Data</em>) – Graph data</li>
+<li><strong>model</strong> (<em>torch.nn.Module</em>) – Trained GNN</li>
+<li><strong>device</strong> (<em>torch.device</em>, <em>optional</em>) – Device (auto-detected if None)</li>
+<li><strong>gpu</strong> (<em>bool</em>) – Use GPU. Default: False</li>
+</ul>
+
+<p><strong>Methods:</strong></p>
+
+<dl>
+<dt><code>explain(num_samples=30, info=True)</code></dt>
+<dd>
+<p>Computes graph-level SHAP values.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><strong>num_samples</strong> (<em>int</em>) – Number of coalitions to sample. Default: 30</li>
+<li><strong>info</strong> (<em>bool</em>) – Print progress. Default: True</li>
+</ul>
+<p><strong>Returns:</strong> <code>list</code> – SHAP values for graph features</p>
+</dd>
+</dl>
+
+<p><strong>Example:</strong></p>
 <pre><code class="language-python">from chemxai.explainers import GraphShap
 
-graph_shap = GraphShap(graph_data, gnn_model, device, gpu=True)
-shap_values = graph_shap.explain(num_samples=50)
+graph_shap = GraphShap(
+    data=molecular_graph,
+    model=gcn_model,
+    device=device,
+    gpu=True
+)
 
-# Top features
+shap_values = graph_shap.explain(num_samples=50, info=True)
+
+# Analyze top features
 import numpy as np
-feature_importance = np.abs(shap_values)
-top_features_idx = np.argsort(feature_importance)[::-1][:15]
+top_features = np.argsort(np.abs(shap_values))[-10:]
+print(f"Top 10 important features: {top_features}")
 </code></pre>
 
-<h2 id="comparison-table">Method Comparison<a class="headerlink" href="#comparison-table" title="Permanent link">&para;</a></h2>
+<h2 id="method-selection">Method Selection Guide<a class="headerlink" href="#method-selection" title="Permanent link">&para;</a></h2>
+
 <table>
-<tr><th>Method</th><th>Type</th><th>Level</th><th>Speed</th><th>Use Case</th></tr>
-<tr><td>SHAP</td><td>Tabular</td><td>Local+Global</td><td>Slow</td><td>Rigorous feature importance</td></tr>
-<tr><td>LIME</td><td>Tabular</td><td>Local</td><td>Fast</td><td>Quick local explanations</td></tr>
-<tr><td>GNNExplain</td><td>Graph</td><td>Node+Graph</td><td>Medium</td><td>Node & edge importance</td></tr>
-<tr><td>NodeGraphLIME</td><td>Graph</td><td>Node</td><td>Medium</td><td>Node-level LIME</td></tr>
-<tr><td>NodeGraphShap</td><td>Graph</td><td>Node</td><td>Slow</td><td>Node-level Shapley</td></tr>
-<tr><td>GraphLIME</td><td>Graph</td><td>Graph</td><td>Fast</td><td>Graph-level LIME</td></tr>
-<tr><td>GraphShap</td><td>Graph</td><td>Graph</td><td>Slow</td><td>Graph-level Shapley</td></tr>
+<thead>
+<tr>
+<th>Method</th>
+<th>Data Type</th>
+<th>Prediction Level</th>
+<th>Theoretical Foundation</th>
+<th>Computation Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SHAP</td>
+<td>Tabular</td>
+<td>Instance & Global</td>
+<td>Game theory (Shapley values)</td>
+<td>Slow (O(2^n))</td>
+</tr>
+<tr>
+<td>LIME</td>
+<td>Tabular</td>
+<td>Instance</td>
+<td>Local linear approximation</td>
+<td>Fast (O(n))</td>
+</tr>
+<tr>
+<td>GNNExplain</td>
+<td>Graph</td>
+<td>Node & Graph</td>
+<td>Mutual information</td>
+<td>Medium (requires training)</td>
+</tr>
+<tr>
+<td>NodeGraphLIME</td>
+<td>Graph</td>
+<td>Node</td>
+<td>Local linear approximation</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>NodeGraphShap</td>
+<td>Graph</td>
+<td>Node</td>
+<td>Shapley values</td>
+<td>Slow</td>
+</tr>
+<tr>
+<td>GraphLIME</td>
+<td>Graph</td>
+<td>Graph</td>
+<td>Local linear approximation</td>
+<td>Fast</td>
+</tr>
+<tr>
+<td>GraphShap</td>
+<td>Graph</td>
+<td>Graph</td>
+<td>Shapley values</td>
+<td>Slow</td>
+</tr>
+</tbody>
 </table>
 
-<h2 id="tips">Best Practices<a class="headerlink" href="#tips" title="Permanent link">&para;</a></h2>
+<h2 id="usage-guidelines">Usage Guidelines<a class="headerlink" href="#usage-guidelines" title="Permanent link">&para;</a></h2>
+
+<h3 id="tabular-guidelines">Tabular Explainers<a class="headerlink" href="#tabular-guidelines" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>SHAP:</strong> Use smaller background sets (100-500 samples) for speed</li>
-<li><strong>LIME:</strong> Increase num_samples (1000+) for stability</li>
-<li><strong>GNNExplain:</strong> Train for 100-200 epochs; more for complex graphs</li>
-<li><strong>Node methods:</strong> Adjust hop parameter based on graph connectivity</li>
-<li><strong>Graph methods:</strong> Use num_samples=30-100 for good approximation</li>
-<li><strong>GPU:</strong> Enable for large graphs or many samples</li>
+<li><strong>SHAP:</strong> Use when you need theoretically grounded explanations with consistency guarantees. Reduce background set size (50-200 samples) for faster computation.</li>
+<li><strong>LIME:</strong> Use for quick exploratory analysis. Increase num_samples to 1000+ for more stable explanations.</li>
+<li><strong>Feature selection:</strong> SHAP's explain_global() is more reliable than LIME for global importance.</li>
+</ul>
+
+<h3 id="graph-guidelines">Graph Explainers<a class="headerlink" href="#graph-guidelines" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>GNNExplain:</strong> Best for understanding which atoms and bonds are critical. Train for 100-300 epochs depending on graph complexity.</li>
+<li><strong>GraphLIME vs GraphShap:</strong> Use GraphLIME for speed, GraphShap for theoretical guarantees.</li>
+<li><strong>Subgraph extraction:</strong> For node-level methods, set hops=2-3 to capture local chemistry.</li>
+<li><strong>Sampling:</strong> More samples (100-200) give stable results but increase computation time.</li>
+</ul>
+
+<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
+<ul>
+<li>All explainers assume the model is already trained and in evaluation mode</li>
+<li>For classification tasks, explanation values indicate contribution to the predicted class</li>
+<li>Graph explainers require PyTorch Geometric</li>
+<li>SHAP and Shapley-based methods provide additive explanations: sum of contributions equals prediction difference from baseline</li>
 </ul>
 </div>
           </div><footer>
